@@ -32,7 +32,7 @@ type Index[Key any] interface {
 	Next(id Key) (Key, int)
 	// Len fulfills slice.Lener. Indicates how many values are currently stored
 	// in the index.
-	Len(int)
+	Len() int
 }
 
 // IndexFactory creates an empty Index for a slice that has a length of
