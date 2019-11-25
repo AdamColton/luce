@@ -20,7 +20,7 @@ type Index[Key any] interface {
 	Next(id Key) (Key, int)
 	// Len fulfills slice.Lener. Indicates how many values are currently stored
 	// in the index.
-	Len(int)
+	Len() int
 }
 
 type IndexFactory[Key any] func(slicelen int) Index[Key]
