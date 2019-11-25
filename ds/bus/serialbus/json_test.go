@@ -1,4 +1,4 @@
-package bus_test
+package serialbus_test
 
 import (
 	"errors"
