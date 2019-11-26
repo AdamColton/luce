@@ -6,12 +6,12 @@ import (
 
 type structField struct {
 	offset uintptr
-	uintPtrOp
+	UintPtrOp
 	fieldHeader uint64
 }
 
 type ptrMarshaller struct {
-	op uintPtrOp
+	op UintPtrOp
 	t  reflect.Type
 }
 
@@ -21,12 +21,12 @@ type structMarshaller struct {
 }
 
 type marshaller struct {
-	op uintPtrOp
+	op UintPtrOp
 	t  reflect.Type
 }
 
 type sliceMarshaller struct {
-	op        uintPtrOp
+	op        UintPtrOp
 	recordLen uintptr
 }
 

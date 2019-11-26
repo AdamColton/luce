@@ -37,7 +37,7 @@ func (t *Thresher) Unmarshal(data []byte) (HasType, error) {
 	r := reflect.New(m.t)
 	i := r.Elem().Interface()
 	base := uintptr(unsafe.Pointer(&i)) + ifcePtrOffset
-	m.op.unmarshal(uintptr(unsafe.Pointer(base)), d)
+	m.op.Unmarshal(uintptr(unsafe.Pointer(base)), d)
 	return i.(HasType), nil
 }
 
@@ -60,13 +60,13 @@ func (t *Thresher) MarshalBuf(v HasType, in []byte) ([]byte, error) {
 
 	s := &rye.Serializer{}
 	if in == nil {
-		s.Data = make([]byte, m.op.size(base)+int(rye.Size(vt)))
+		s.Data = make([]byte, m.op.Size(base)+int(rye.Size(vt)))
 	} else {
 		s.Size = len(in)
 		s.Data = in
 	}
 	s.PrefixSlice(vt)
-	m.op.marshal(base, s)
+	m.op.Marshal(base, s)
 	return s.Data, nil
 }
 

@@ -4,7 +4,7 @@ import (
 	"reflect"
 )
 
-func (t *Thresher) compile(rt reflect.Type) uintPtrOp {
+func (t *Thresher) compile(rt reflect.Type) UintPtrOp {
 	switch rt.Kind() {
 	case reflect.Ptr:
 		rt = rt.Elem()
@@ -77,10 +77,10 @@ func (t *Thresher) compileStruct(rt reflect.Type) *structMarshaller {
 			offset: rf.Offset,
 		}
 		if skip {
-			sf.uintPtrOp = uintPtrOpSkip{}
+			sf.UintPtrOp = uintPtrOpSkip{}
 			sf.fieldHeader = 0
 		} else {
-			sf.uintPtrOp = t.compile(rf.Type)
+			sf.UintPtrOp = t.compile(rf.Type)
 			sf.fieldHeader = id
 		}
 		sm.byOrder = append(sm.byOrder, sf)
