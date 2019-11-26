@@ -57,22 +57,25 @@ func (i interfaceMarshaller) zero(u uintptr) bool {
 }
 
 func (i interfaceMarshaller) size(u uintptr) int {
-	tid := reflect.NewAt(i.rt, unsafe.Pointer(u)).Elem().Interface().(HasType).TypeID()
-	m := i.t.typedIDMarshallers[tid]
-	return int(rye.SizeCompactUint64(tid)) + m.op.size(u+ifcePtrOffset)
+	tid := reflect.NewAt(i.rt, unsafe.Pointer(u)).Elem().Interface().(HasType).Type()
+	idx, _ := i.t.typedIDMarshallersIdx.Get(tid)
+	m := i.t.typedIDMarshallers[idx]
+	return int(rye.Size(tid)) + m.op.size(u+ifcePtrOffset)
 }
 
 func (i interfaceMarshaller) marshal(u uintptr, s *rye.Serializer) {
-	tid := reflect.NewAt(i.rt, unsafe.Pointer(u)).Elem().Interface().(HasType).TypeID()
+	tid := reflect.NewAt(i.rt, unsafe.Pointer(u)).Elem().Interface().(HasType).Type()
+	idx, _ := i.t.typedIDMarshallersIdx.Get(tid)
 
-	m := i.t.typedIDMarshallers[tid]
-	s.CompactUint64(tid)
+	m := i.t.typedIDMarshallers[idx]
+	s.PrefixSlice(tid)
 	m.op.marshal(u+ifcePtrOffset, s)
 }
 
 func (i interfaceMarshaller) unmarshal(u uintptr, d *rye.Deserializer) {
-	tid := d.CompactUint64()
-	m := i.t.typedIDMarshallers[tid]
+	tid := d.PrefixSlice()
+	idx, _ := i.t.typedIDMarshallersIdx.Get(tid)
+	m := i.t.typedIDMarshallers[idx]
 	ifce := reflect.New(m.t).Elem().Interface()
 	base := uintptr(unsafe.Pointer(&ifce)) + ifcePtrOffset
 	m.op.unmarshal(base, d)

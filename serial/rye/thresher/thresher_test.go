@@ -23,8 +23,8 @@ type Person struct {
 	City         string
 }
 
-func (p *Person) TypeID() uint64 {
-	return 2
+func (p *Person) Type() []byte {
+	return []byte("Person")
 }
 
 func TestRegister(t *testing.T) {
@@ -40,7 +40,7 @@ func TestRegister(t *testing.T) {
 
 	//p = nil
 
-	th := &Thresher{}
+	th := New()
 	th.Register((*Person)(nil))
 
 	b, err := th.Marshal(p)
@@ -55,11 +55,13 @@ func TestRegister(t *testing.T) {
 
 type Foo []string
 
-func (*Foo) TypeID() uint64   { return 3 }
+func (*Foo) Type() []byte {
+	return []byte("Foo")
+}
 func (f *Foo) String() string { return strings.Join(*f, "|") }
 
 func TestStringSlice(t *testing.T) {
-	th := &Thresher{}
+	th := New()
 	th.Register((*Foo)(nil))
 
 	f := &Foo{"this", "is", "a", "test"}
@@ -89,12 +91,12 @@ type AllTypes struct {
 	Interface fmt.Stringer
 }
 
-func (*AllTypes) TypeID() uint64 {
-	return 4
+func (*AllTypes) Type() []byte {
+	return []byte("AllTypes")
 }
 
 func TestAllTypes(t *testing.T) {
-	th := &Thresher{}
+	th := New()
 	assert.NoError(t, th.Register((*AllTypes)(nil), (*Foo)(nil)))
 
 	iPtr := 123
@@ -127,16 +129,18 @@ func TestAllTypes(t *testing.T) {
 }
 
 func TestAllTypesZero(t *testing.T) {
-	th := &Thresher{}
+	th := New()
 	th.Register((*AllTypes)(nil))
 
 	ai3 := &AllTypes{}
 	b, err := th.Marshal(ai3)
 	assert.NoError(t, err)
-	// 0: TypeID
-	// 1: Ptr not null
-	// 2: End
-	assert.Len(t, b, 3)
+	// 0: TypeID Prefix
+	// 1-10: TypeID
+	// 11: Ptr not null
+	// 12: End
+	expected := len(ai3.Type()) + 3
+	assert.Len(t, b, expected)
 }
 
 type Bar struct {
@@ -146,10 +150,12 @@ type Bar struct {
 
 type BarSlice []Bar
 
-func (*BarSlice) TypeID() uint64 { return 5 }
+func (*BarSlice) Type() []byte {
+	return []byte("BarSlice")
+}
 
 func TestSliceOfStruct(t *testing.T) {
-	th := &Thresher{}
+	th := New()
 	th.Register((*BarSlice)(nil))
 
 	bs := &BarSlice{
@@ -172,7 +178,9 @@ type A struct {
 	C HasType
 }
 
-func (*A) TypeID() uint64 { return 6 }
+func (*A) Type() []byte {
+	return []byte("A")
+}
 
 type B struct {
 	B int
@@ -180,10 +188,12 @@ type B struct {
 	C HasType
 }
 
-func (*B) TypeID() uint64 { return 7 }
+func (*B) Type() []byte {
+	return []byte("B")
+}
 
 func TestCyclic(t *testing.T) {
-	th := &Thresher{}
+	th := New()
 	th.Register((*A)(nil))
 	th.Register((*B)(nil))
 
@@ -233,7 +243,7 @@ func b(u uint64) string {
 }
 
 func BenchmarkRye(b *testing.B) {
-	th := &Thresher{}
+	th := New()
 	th.Register((*AllTypes)(nil), (*Foo)(nil))
 
 	iPtr := 123

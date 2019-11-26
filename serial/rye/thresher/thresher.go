@@ -5,29 +5,34 @@ import (
 	"reflect"
 	"unsafe"
 
+	"github.com/adamcolton/luce/ds/idx/byteid/bytebtree"
+
+	"github.com/adamcolton/luce/ds/idx/byteid"
 	"github.com/adamcolton/luce/serial/rye"
 )
 
 type Thresher struct {
-	typedIDMarshallers []*marshaller
-	structMarshallers  map[reflect.Type]*structMarshaller
-	fields             map[uint64]field
+	typedIDMarshallersIdx byteid.Index
+	typedIDMarshallers    []*marshaller
+	structMarshallers     map[reflect.Type]*structMarshaller
+	fields                map[uint64]field
 }
 
 func New() *Thresher {
-	return &Thresher{}
+	return &Thresher{
+		typedIDMarshallersIdx: bytebtree.Factory(20),
+		typedIDMarshallers:    make([]*marshaller, 20),
+	}
 }
 
 func (t *Thresher) Unmarshal(data []byte) (HasType, error) {
 	d := rye.NewDeserializer(data)
-	vt := int(d.CompactUint64())
-	if vt > len(t.typedIDMarshallers) {
+	vt := d.PrefixSlice()
+	idx, found := t.typedIDMarshallersIdx.Get(vt)
+	if !found {
 		return nil, errors.New("Not found")
 	}
-	m := t.typedIDMarshallers[vt]
-	if m == nil {
-		return nil, errors.New("Not found")
-	}
+	m := t.typedIDMarshallers[idx]
 
 	r := reflect.New(m.t)
 	i := r.Elem().Interface()
@@ -41,11 +46,12 @@ func (t *Thresher) Marshal(v HasType) ([]byte, error) {
 }
 
 func (t *Thresher) MarshalBuf(v HasType, in []byte) ([]byte, error) {
-	vt := v.TypeID()
-	if len(t.typedIDMarshallers) < int(vt) {
+	vt := v.Type()
+	idx, found := t.typedIDMarshallersIdx.Get(vt)
+	if !found {
 		return nil, errors.New("Not found")
 	}
-	m := t.typedIDMarshallers[vt]
+	m := t.typedIDMarshallers[idx]
 	if m == nil {
 		return nil, errors.New("not found")
 	}
@@ -54,12 +60,12 @@ func (t *Thresher) MarshalBuf(v HasType, in []byte) ([]byte, error) {
 
 	s := &rye.Serializer{}
 	if in == nil {
-		s.Data = make([]byte, m.op.size(base)+int(rye.SizeCompactUint64(vt)))
+		s.Data = make([]byte, m.op.size(base)+int(rye.Size(vt)))
 	} else {
 		s.Size = len(in)
 		s.Data = in
 	}
-	s.CompactUint64(vt)
+	s.PrefixSlice(vt)
 	m.op.marshal(base, s)
 	return s.Data, nil
 }
@@ -79,26 +85,21 @@ func (t *Thresher) Register(vs ...HasType) (err error) {
 	return
 }
 
-func (t *Thresher) register(v HasType) error {
-	vid := v.TypeID()
-	if len(t.typedIDMarshallers) <= int(vid) {
-		ln := int(vid)
-		if ln < 256 {
-			ln = 256
-		}
-		s := make([]*marshaller, ln)
-		if t.typedIDMarshallers != nil {
-			copy(s, t.typedIDMarshallers)
-		}
-		t.typedIDMarshallers = s
-	}
-	if t.typedIDMarshallers[vid] != nil {
+func (th *Thresher) register(v HasType) error {
+	vt := v.Type()
+	idx, app := th.typedIDMarshallersIdx.Insert(vt)
+	if !app && th.typedIDMarshallers[idx] != nil {
 		return errors.New("TypeID redefined")
 	}
-	vt := reflect.TypeOf(v)
-	t.typedIDMarshallers[vid] = &marshaller{
-		op: t.compile(vt),
-		t:  vt,
+	t := reflect.TypeOf(v)
+	m := &marshaller{
+		op: th.compile(t),
+		t:  t,
+	}
+	if app {
+		th.typedIDMarshallers = append(th.typedIDMarshallers, m)
+	} else {
+		th.typedIDMarshallers[idx] = m
 	}
 	return nil
 }

@@ -12,8 +12,3 @@ type Deserializer interface {
 	Deserialize([]byte) (interface{}, error)
 	RegisterType(zeroValue interface{}) error
 }
-
-type ByteID interface {
-	Type() []byte
-	ID() []byte
-}
