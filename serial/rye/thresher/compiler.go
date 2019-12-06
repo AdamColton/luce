@@ -4,16 +4,42 @@ import (
 	"reflect"
 )
 
-func (t *Thresher) compile(rt reflect.Type) UintPtrOp {
+type Op struct {
+	IsRoot bool
+	Base   Compiler
+}
+
+func (op Op) Compile(rt reflect.Type) UintPtrOp {
+	return op.Base.Compile(rt, op)
+}
+
+type Compiler interface {
+	Compile(typ reflect.Type, op Op) UintPtrOp
+}
+
+type defaultCompiler struct {
+	compilers []Compiler
+	t         *Thresher
+}
+
+func (c defaultCompiler) Compile(rt reflect.Type, op Op) UintPtrOp {
+	typeStr := rt.String()
+	for _, c := range c.compilers {
+		op := c.Compile(rt, op)
+		if op != nil {
+			return op
+		}
+	}
+
 	switch rt.Kind() {
 	case reflect.Ptr:
 		rt = rt.Elem()
 		return ptrMarshaller{
-			op: t.compile(rt),
+			op: op.Compile(rt),
 			t:  rt,
 		}
 	case reflect.Struct:
-		return t.compileStruct(rt)
+		return c.compileStruct(rt, op)
 	case reflect.String:
 		return uintPtrOpString{}
 	case reflect.Int:
@@ -41,22 +67,25 @@ func (t *Thresher) compile(rt reflect.Type) UintPtrOp {
 	case reflect.Float64:
 		return uintPtrOpFloat64{}
 	case reflect.Slice:
-		return t.compileSlice(rt.Elem())
+		return c.compileSlice(rt.Elem(), op)
 	case reflect.Interface:
 		return interfaceMarshaller{
-			t:  t,
+			t:  c.t,
 			rt: rt,
 		}
 	}
-	return nil
+	panic("Not implemented: " + typeStr)
 }
 
-func (t *Thresher) compileStruct(rt reflect.Type) *structMarshaller {
-	if t.structMarshallers == nil {
-		t.structMarshallers = make(map[reflect.Type]*structMarshaller)
-		t.fields = make(map[uint64]field)
+func (c defaultCompiler) compileStruct(rt reflect.Type, op Op) *structMarshaller {
+	op.IsRoot = false
+	str := rt.String()
+	_ = str
+	if c.t.structMarshallers == nil {
+		c.t.structMarshallers = make(map[reflect.Type]*structMarshaller)
+		c.t.fields = make(map[uint64]field)
 	}
-	if sm, found := t.structMarshallers[rt]; found {
+	if sm, found := c.t.structMarshallers[rt]; found {
 		return sm
 	}
 	ln := rt.NumField()
@@ -64,14 +93,15 @@ func (t *Thresher) compileStruct(rt reflect.Type) *structMarshaller {
 		byOrder: make([]structField, 0, ln),
 		byId:    make(map[uint64]structField, ln),
 	}
-	t.structMarshallers[rt] = sm
+	c.t.structMarshallers[rt] = sm
 	for i := 0; i < ln; i++ {
 		rf := rt.Field(i)
-		var skip bool
 		f := field{
 			name: rf.Name,
 			kind: typeID(rf.Type),
 		}
+		// if PkgPath is populated, then the field is unexported
+		skip := rf.PkgPath != ""
 		id := f.id()
 		sf := structField{
 			offset: rf.Offset,
@@ -80,19 +110,20 @@ func (t *Thresher) compileStruct(rt reflect.Type) *structMarshaller {
 			sf.UintPtrOp = uintPtrOpSkip{}
 			sf.fieldHeader = 0
 		} else {
-			sf.UintPtrOp = t.compile(rf.Type)
+			sf.UintPtrOp = op.Compile(rf.Type)
 			sf.fieldHeader = id
 		}
 		sm.byOrder = append(sm.byOrder, sf)
 		sm.byId[id] = sf
-		t.fields[id] = f
+		c.t.fields[id] = f
 	}
 	return sm
 }
 
-func (t *Thresher) compileSlice(rt reflect.Type) sliceMarshaller {
+func (c defaultCompiler) compileSlice(rt reflect.Type, op Op) sliceMarshaller {
+	op.IsRoot = false
 	return sliceMarshaller{
 		recordLen: rt.Size(),
-		op:        t.compile(rt),
+		op:        op.Compile(rt),
 	}
 }

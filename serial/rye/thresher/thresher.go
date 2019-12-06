@@ -16,13 +16,20 @@ type Thresher struct {
 	typedIDMarshallers    []*marshaller
 	structMarshallers     map[reflect.Type]*structMarshaller
 	fields                map[uint64]field
+	compiler              defaultCompiler
 }
 
 func New() *Thresher {
-	return &Thresher{
+	th := &Thresher{
 		typedIDMarshallersIdx: bytebtree.Factory(20),
 		typedIDMarshallers:    make([]*marshaller, 20),
 	}
+	th.compiler.t = th
+	return th
+}
+
+func (th *Thresher) AddCompiler(c Compiler) {
+	th.compiler.compilers = append(th.compiler.compilers, c)
 }
 
 func (t *Thresher) Unmarshal(data []byte) (HasType, error) {
@@ -36,7 +43,7 @@ func (t *Thresher) Unmarshal(data []byte) (HasType, error) {
 
 	r := reflect.New(m.t)
 	i := r.Elem().Interface()
-	base := uintptr(unsafe.Pointer(&i)) + ifcePtrOffset
+	base := uintptr(unsafe.Pointer(&i)) + IfcePtrOffset
 	m.op.Unmarshal(uintptr(unsafe.Pointer(base)), d)
 	return i.(HasType), nil
 }
@@ -56,7 +63,7 @@ func (t *Thresher) MarshalBuf(v HasType, in []byte) ([]byte, error) {
 		return nil, errors.New("not found")
 	}
 
-	base := uintptr(unsafe.Pointer(&v)) + ifcePtrOffset
+	base := uintptr(unsafe.Pointer(&v)) + IfcePtrOffset
 
 	s := &rye.Serializer{}
 	if in == nil {
@@ -93,7 +100,7 @@ func (th *Thresher) register(v HasType) error {
 	}
 	t := reflect.TypeOf(v)
 	m := &marshaller{
-		op: th.compile(t),
+		op: Op{IsRoot: true, Base: th.compiler}.Compile(t),
 		t:  t,
 	}
 	if app {

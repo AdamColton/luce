@@ -1,6 +1,7 @@
 package thresher
 
 import (
+	"fmt"
 	"reflect"
 	"unsafe"
 
@@ -8,7 +9,7 @@ import (
 )
 
 const (
-	ifcePtrOffset uintptr = 8
+	IfcePtrOffset uintptr = 8
 )
 
 type UintPtrOp interface {
@@ -47,7 +48,7 @@ func (p ptrMarshaller) Unmarshal(u uintptr, d *rye.Deserializer) {
 	}
 
 	i := reflect.New(p.t).Elem().Interface()
-	base := *(*uintptr)(unsafe.Pointer(uintptr(unsafe.Pointer(&i)) + ifcePtrOffset))
+	base := *(*uintptr)(unsafe.Pointer(uintptr(unsafe.Pointer(&i)) + IfcePtrOffset))
 	p.op.Unmarshal(base, d)
 	*(*uintptr)(unsafe.Pointer(u)) = base
 }
@@ -60,7 +61,7 @@ func (i interfaceMarshaller) Size(u uintptr) int {
 	tid := reflect.NewAt(i.rt, unsafe.Pointer(u)).Elem().Interface().(HasType).Type()
 	idx, _ := i.t.typedIDMarshallersIdx.Get(tid)
 	m := i.t.typedIDMarshallers[idx]
-	return int(rye.Size(tid)) + m.op.Size(u+ifcePtrOffset)
+	return int(rye.Size(tid)) + m.op.Size(u+IfcePtrOffset)
 }
 
 func (i interfaceMarshaller) Marshal(u uintptr, s *rye.Serializer) {
@@ -69,7 +70,7 @@ func (i interfaceMarshaller) Marshal(u uintptr, s *rye.Serializer) {
 
 	m := i.t.typedIDMarshallers[idx]
 	s.PrefixSlice(tid)
-	m.op.Marshal(u+ifcePtrOffset, s)
+	m.op.Marshal(u+IfcePtrOffset, s)
 }
 
 func (i interfaceMarshaller) Unmarshal(u uintptr, d *rye.Deserializer) {
@@ -77,7 +78,7 @@ func (i interfaceMarshaller) Unmarshal(u uintptr, d *rye.Deserializer) {
 	idx, _ := i.t.typedIDMarshallersIdx.Get(tid)
 	m := i.t.typedIDMarshallers[idx]
 	ifce := reflect.New(m.t).Elem().Interface()
-	base := uintptr(unsafe.Pointer(&ifce)) + ifcePtrOffset
+	base := uintptr(unsafe.Pointer(&ifce)) + IfcePtrOffset
 	m.op.Unmarshal(base, d)
 
 	r := reflect.NewAt(i.rt, unsafe.Pointer(u))
@@ -136,6 +137,7 @@ func (sm structMarshaller) Size(base uintptr) int {
 		if f.fieldHeader == 0 || f.Zero(base+f.offset) {
 			continue
 		}
+		fmt.Println(f.fieldHeader)
 		size += int(rye.SizeCompactUint64(f.fieldHeader))
 		size += f.Size(base + f.offset)
 	}
