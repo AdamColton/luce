@@ -1,4 +1,4 @@
-package gob32
+package gob
 
 import (
 	"encoding/gob"

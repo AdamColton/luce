@@ -1,0 +1,75 @@
+package serial
+
+import (
+	"encoding/json"
+	"io"
+	"reflect"
+	"testing"
+
+	"github.com/adamcolton/luce/lerr"
+
+	"github.com/testify/assert"
+)
+
+type person struct {
+	Name string
+	Age  int
+}
+
+func mockSerialize(w io.Writer, i interface{}) error {
+	return json.NewEncoder(w).Encode(i)
+}
+
+func mockDeserialize(r io.Reader, i interface{}) error {
+	return json.NewDecoder(r).Decode(i)
+}
+
+type typeMap struct{}
+
+var (
+	personPtrType = reflect.TypeOf((*person)(nil))
+	personType    = reflect.TypeOf(person{})
+)
+
+func (typeMap) PrefixReflectType(t reflect.Type, b []byte) ([]byte, error) {
+	if t == personPtrType {
+		return append(b, 1), nil
+	}
+	if t == personType {
+		return append(b, 2), nil
+	}
+	return nil, lerr.Str("Only supports *person for testing")
+}
+
+func (typeMap) GetType(data []byte) (t reflect.Type, rest []byte, err error) {
+	if data[0] == 1 {
+		return personPtrType, data[1:], nil
+	}
+	if data[0] == 2 {
+		return personType, data[1:], nil
+	}
+	return personPtrType, nil, lerr.Str("Bad prefix")
+}
+
+func TestRoundTrip(t *testing.T) {
+	tm := typeMap{}
+	s := PrefixSerializer{
+		InterfaceTypePrefixer: WrapPrefixer(tm),
+		Serializer:            WriterSerializer(mockSerialize),
+	}
+	d := PrefixDeserializer{
+		Detyper:      tm,
+		Deserializer: ReaderDeserializer(mockDeserialize),
+	}
+
+	p := &person{
+		Name: "Adam",
+		Age:  35,
+	}
+	b, err := s.SerializeType(p, nil)
+	assert.NoError(t, err)
+
+	got, err := d.DeserializeType(b)
+	assert.NoError(t, err)
+	assert.Equal(t, p, got)
+}

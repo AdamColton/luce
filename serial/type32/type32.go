@@ -1,10 +1,19 @@
 package type32
 
 import (
-	"bytes"
-	"errors"
-	"io"
 	"reflect"
+
+	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/serial"
+)
+
+// Sentinal Errors
+const (
+	ErrTooShort      = lerr.Str("TypeID32 too short")
+	ErrNotRegistered = lerr.Str("No type registered")
+	ErrSerNotT32     = lerr.Str("Serialize requires interface to be TypeIDer32")
+	ErrNilZero       = lerr.Str("TypeID32Deserializer.Register) cannot register nil interface")
+	ErrTypeNotFound  = lerr.Str("Type was not found")
 )
 
 // TypeIDer32 identifies a type by a uint32. The uint32 size was chosen becuase
@@ -29,80 +38,146 @@ func sliceToUint32(b []byte) uint32 {
 	return uint32(b[0]) + (uint32(b[1]) << 8) + (uint32(b[2]) << 16) + (uint32(b[3]) << 24)
 }
 
-// SerializeTypeID32Func is a function signature that, when fulfilled, provides
-// a method that fulfills the Serializer signature and handles type id
-// prefixing.
-type SerializeTypeID32Func func(io.Writer, interface{}) error
+// MapPrefixer fulfills serial.ReflectTypePrefixer.
+type MapPrefixer map[reflect.Type]uint32
 
-// Serialize prepends the TypeID32Type uint32 to a slice then append the
-// serialized value. It fulfills the Serialize field on Sender and allows the
-// TypeID32Type prefixing strategy to be reused for different serialization
-// types.
-func (fn SerializeTypeID32Func) Serialize(i interface{}) ([]byte, error) {
-	msg, ok := i.(TypeIDer32)
+// PrefixReflectType fulfills ReflectTypePrefixer. It will prefix with 4 bytes.
+func (p MapPrefixer) PrefixReflectType(t reflect.Type, b []byte) ([]byte, error) {
+	if p == nil {
+		return nil, ErrTypeNotFound
+	}
+	u, ok := p[t]
 	if !ok {
-		return nil, errors.New("Serialize requires interface to be TypeIDer32")
+		return nil, ErrTypeNotFound
 	}
-
-	buf := bytes.NewBuffer(nil)
-	buf.Write(uint32ToSlice(msg.TypeID32()))
-	err := fn(buf, msg)
-	if err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
+	return append(b, uint32ToSlice(u)...), nil
 }
 
-// TypeID32Deserializer fulfills Deserializer and uses the TypeIDer32 prefixing
-// strategy.
-type TypeID32Deserializer struct {
-	types map[uint32]reflect.Type
-	fn    func(io.Reader, interface{}) error
-}
-
-// DeserializeTypeID32Func function signature, when fulfilled, provides a method
-// that creates a TypeID32Deserializer.
-type DeserializeTypeID32Func func(io.Reader, interface{}) error
-
-// NewTypeID32Deserializer creates a TypeID32Deserializer from a deserializing
-// func.
-func (fn DeserializeTypeID32Func) NewTypeID32Deserializer() *TypeID32Deserializer {
-	return &TypeID32Deserializer{
-		types: make(map[uint32]reflect.Type),
-		fn:    fn,
+// Serializer is a helper that will create serial.PrefixSerializer using
+// MapPrefixer as the InterfaceTypePrefixer and the provided Serializer.
+func (p MapPrefixer) Serializer(s serial.Serializer) serial.PrefixSerializer {
+	return serial.PrefixSerializer{
+		InterfaceTypePrefixer: serial.WrapPrefixer(p),
+		Serializer:            s,
 	}
 }
 
-// RegisterType with the Deserializer. Fulfills the Deserializer interface.
-func (d *TypeID32Deserializer) RegisterType(zeroValue interface{}) error {
-	msg, ok := zeroValue.(TypeIDer32)
+// Type32Prefixer fulfills PrefixInterfaceType but requires that the interfaces
+// passed to it fulfill TypeIDer32.
+type Type32Prefixer struct{}
+
+// PrefixInterfaceType casts i to TypeIDer32 and prefixes 4 bytes with that
+// value.
+func (Type32Prefixer) PrefixInterfaceType(i interface{}, b []byte) ([]byte, error) {
+	t32, ok := i.(TypeIDer32)
 	if !ok {
-		if zeroValue == nil {
-			return errors.New("TypeID32Deserializer.Register) cannot register nil interface")
-		}
-		return errors.New("TypeID32Deserializer.Register) " + reflect.TypeOf(zeroValue).Name() + " does not fulfill TypeID32Type")
+		return nil, ErrTypeNotFound
 	}
-	d.types[msg.TypeID32()] = reflect.TypeOf(msg)
-	return nil
+	b = append(b, uint32ToSlice(t32.TypeID32())...)
+	return b, nil
 }
 
-// Deserialize a TypeID32. Fulfills the Deserialize interface.
-func (d *TypeID32Deserializer) Deserialize(b []byte) (interface{}, error) {
-	if len(b) < 4 {
-		return nil, errors.New("TypeID32 too short")
+// Serializer is a helper that will create serial.PrefixSerializer using
+// Type32Prefixer as the InterfaceTypePrefixer and the provided Serializer.
+func (t Type32Prefixer) Serializer(s serial.Serializer) serial.PrefixSerializer {
+	return serial.PrefixSerializer{
+		InterfaceTypePrefixer: t,
+		Serializer:            s,
+	}
+}
+
+type typeMap struct {
+	t2u map[reflect.Type]uint32
+	u2t map[uint32]reflect.Type
+}
+
+// TypeMap tracks the mapping between types and their uint32 values.
+type TypeMap interface {
+	serial.TypeRegistrar
+	serial.TypePrefixer
+	serial.Detyper
+	Add(t reflect.Type, id uint32)
+	RegisterType32(zeroValue TypeIDer32)
+	Serializer(s serial.Serializer) serial.PrefixSerializer
+	Deserializer(d serial.Deserializer) serial.PrefixDeserializer
+	private()
+}
+
+// NewTypeMap creates a TypeMap.
+func NewTypeMap() TypeMap {
+	return typeMap{
+		t2u: make(map[reflect.Type]uint32),
+		u2t: make(map[uint32]reflect.Type),
+	}
+}
+
+func (typeMap) private() {}
+
+// RegisterType fulfills serial.TypeRegistrar. The zeroValue must fulfill
+// TypeIDer32.
+func (tm typeMap) RegisterType(zeroValue interface{}) error {
+	zv32, ok := zeroValue.(TypeIDer32)
+	if ok {
+		tm.RegisterType32(zv32)
+		return nil
+	}
+	if zeroValue == nil {
+		return ErrNilZero
+	}
+	return lerr.Str("TypeID32Deserializer.Register) " + reflect.TypeOf(zeroValue).Name() + " does not fulfill TypeID32Type")
+}
+
+// RegisterType32 registers a TypeIDer32. It functions the same as
+// serial.TypeRegistrar but adds type safety.
+func (tm typeMap) RegisterType32(zeroValue TypeIDer32) {
+	tm.Add(reflect.TypeOf(zeroValue), zeroValue.TypeID32())
+}
+
+// Add maps a type to an id. This allows for types that do not fulfill
+// TypeIDer32 to be registered.
+func (tm typeMap) Add(t reflect.Type, id uint32) {
+	tm.t2u[t] = id
+	tm.u2t[id] = t
+}
+
+// PrefixReflectType fulfills serial.ReflectTypePrefixer.
+func (tm typeMap) PrefixReflectType(t reflect.Type, b []byte) ([]byte, error) {
+	return MapPrefixer(tm.t2u).PrefixReflectType(t, b)
+}
+
+// PrefixInterfaceType fulfills serial.InterfaceTypePrefixer.
+func (tm typeMap) PrefixInterfaceType(i interface{}, b []byte) ([]byte, error) {
+	return serial.WrapPrefixer(MapPrefixer(tm.t2u)).PrefixInterfaceType(i, b)
+}
+
+// GetType fulfills serial.Detyper.
+func (tm typeMap) GetType(data []byte) (t reflect.Type, rest []byte, err error) {
+	if len(data) < 4 {
+		return nil, nil, ErrTooShort
 	}
 
-	rt := d.types[sliceToUint32(b)]
+	rt := tm.u2t[sliceToUint32(data)]
 	if rt == nil {
-		return nil, errors.New("No type registered")
+		return nil, nil, ErrNotRegistered
 	}
-	v := reflect.New(rt)
-	i := v.Interface()
 
-	err := d.fn(bytes.NewReader(b[4:]), i)
-	if err != nil {
-		return nil, err
+	return rt, data[4:], nil
+}
+
+// Serializer is a helper that will create serial.PrefixSerializer using TypeMap
+// as the InterfaceTypePrefixer and the provided Serializer.
+func (tm typeMap) Serializer(s serial.Serializer) serial.PrefixSerializer {
+	return serial.PrefixSerializer{
+		InterfaceTypePrefixer: tm,
+		Serializer:            s,
 	}
-	return reflect.ValueOf(i).Elem().Interface(), nil
+}
+
+// Deserializer is a helper that will create serial.PrefixDeserializer using
+// TypeMap as the Detyper and the provided Deserializer.
+func (tm typeMap) Deserializer(d serial.Deserializer) serial.PrefixDeserializer {
+	return serial.PrefixDeserializer{
+		Detyper:      tm,
+		Deserializer: d,
+	}
 }

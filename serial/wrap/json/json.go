@@ -1,4 +1,4 @@
-package json32
+package json
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ func Serialize(w io.Writer, i interface{}) error {
 }
 
 // Deserialize wraps encoding/json Decoder to fulfill
-// type32.DeserializeTypeID32Func
+// type32.DeserializeTypeID32Funcn
 func Deserialize(r io.Reader, i interface{}) error {
 	return json.NewDecoder(r).Decode(i)
 }
