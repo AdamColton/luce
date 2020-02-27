@@ -99,7 +99,9 @@ type TypeMap interface {
 	Add(t reflect.Type, id uint32)
 	RegisterType32(zeroValue TypeIDer32)
 	Serializer(s serial.Serializer) serial.PrefixSerializer
+	WriterSerializer(s serial.WriterSerializer) serial.PrefixSerializer
 	Deserializer(d serial.Deserializer) serial.PrefixDeserializer
+	ReaderDeserializer(d serial.ReaderDeserializer) serial.PrefixDeserializer
 	private()
 }
 
@@ -173,6 +175,10 @@ func (tm typeMap) Serializer(s serial.Serializer) serial.PrefixSerializer {
 	}
 }
 
+func (tm typeMap) WriterSerializer(s serial.WriterSerializer) serial.PrefixSerializer {
+	return tm.Serializer(s)
+}
+
 // Deserializer is a helper that will create serial.PrefixDeserializer using
 // TypeMap as the Detyper and the provided Deserializer.
 func (tm typeMap) Deserializer(d serial.Deserializer) serial.PrefixDeserializer {
@@ -180,4 +186,8 @@ func (tm typeMap) Deserializer(d serial.Deserializer) serial.PrefixDeserializer 
 		Detyper:      tm,
 		Deserializer: d,
 	}
+}
+
+func (tm typeMap) ReaderDeserializer(d serial.ReaderDeserializer) serial.PrefixDeserializer {
+	return tm.Deserializer(d)
 }
