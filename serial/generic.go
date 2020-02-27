@@ -78,10 +78,11 @@ func (ds PrefixDeserializer) DeserializeType(data []byte) (interface{}, error) {
 	}
 
 	var i interface{}
-	if t.Kind() == reflect.Ptr {
+	var isPtr = t.Kind() == reflect.Ptr
+	if isPtr {
 		i = reflect.New(t.Elem()).Interface()
 	} else {
-		i = reflect.New(t).Elem().Interface()
+		i = reflect.New(t).Interface()
 	}
 
 	err = ds.Deserialize(i, data)
@@ -89,5 +90,8 @@ func (ds PrefixDeserializer) DeserializeType(data []byte) (interface{}, error) {
 		return nil, err
 	}
 
-	return i, nil
+	if isPtr {
+		return i, nil
+	}
+	return reflect.ValueOf(i).Elem().Interface(), nil
 }
