@@ -9,11 +9,12 @@ type Serializer struct {
 
 // Make will set Data to the length of Size. If Data is already populated, it
 // will be appeded to.
-func (s *Serializer) Make() {
+func (s *Serializer) Make() *Serializer {
 	ln := s.Size - len(s.Data)
 	if ln > 0 {
 		s.Data = append(s.Data, make([]byte, ln)...)
 	}
+	return s
 }
 
 func (s *Serializer) Sub(ln int) *Serializer {
