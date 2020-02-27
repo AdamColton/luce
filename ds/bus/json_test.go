@@ -10,7 +10,7 @@ import (
 	"github.com/adamcolton/luce/ds/bus"
 	"github.com/adamcolton/luce/ds/bus/serialbus"
 	"github.com/adamcolton/luce/serial/type32"
-	"github.com/adamcolton/luce/serial/type32/json32"
+	"github.com/adamcolton/luce/serial/wrap/json"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -61,14 +61,20 @@ func TestSendReceive(t *testing.T) {
 	bCh := make(chan []byte)
 	iCh := make(chan interface{})
 
+	tm := type32.NewTypeMap()
+
 	s := &serialbus.Sender{
-		Serializer: json32.Serializer(),
-		Ch:         bCh,
+		TypeSerializer: tm.WriterSerializer(json.Serialize),
+		Ch:             bCh,
 	}
 	r := &serialbus.Receiver{
-		In:           bCh,
-		Out:          iCh,
-		Deserializer: json32.Deserializer(),
+		In:               bCh,
+		Out:              iCh,
+		TypeDeserializer: tm.ReaderDeserializer(json.Deserialize),
+		TypeRegistrar:    tm,
+		ErrHandler: func(err error) {
+			assert.NoError(t, err)
+		},
 	}
 	r.RegisterType(strSlice(nil))
 	go func() {
@@ -76,7 +82,10 @@ func TestSendReceive(t *testing.T) {
 		done <- true
 	}()
 
-	go s.Send(strSlice{"this", "is", "a", "test"})
+	go func() {
+		err := s.Send(strSlice{"this", "is", "a", "test"})
+		assert.NoError(t, err)
+	}()
 	assert.Equal(t, strSlice{"this", "is", "a", "test"}, <-iCh)
 
 	close(bCh)
@@ -95,16 +104,18 @@ func TestMultiSender(t *testing.T) {
 		r    bus.Receiver
 	}
 
-	sender := serialbus.NewMultiSender(json32.Serializer())
+	tm := type32.NewTypeMap()
+	sender := serialbus.NewMultiSender(tm.WriterSerializer(json.Serialize))
 	chs := make([]*ch, 5)
 	for i := range chs {
 		iCh := make(chan interface{})
 		bCh := make(chan []byte)
 		done := make(chan bool)
 		r := &serialbus.Receiver{
-			In:           bCh,
-			Out:          iCh,
-			Deserializer: json32.Deserializer(),
+			In:               bCh,
+			Out:              iCh,
+			TypeDeserializer: tm.ReaderDeserializer(json.Deserialize),
+			TypeRegistrar:    tm,
 		}
 		chs[i] = &ch{
 			b:    bCh,
@@ -183,13 +194,14 @@ func TestListeners(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			tm := type32.NewTypeMap()
 			done := make(chan bool)
 			bCh := make(chan []byte)
 			s := &serialbus.Sender{
-				Serializer: json32.Serializer(),
-				Ch:         bCh,
+				TypeSerializer: tm.WriterSerializer(json.Serialize),
+				Ch:             bCh,
 			}
-			l, err := serialbus.NewListener(bCh, json32.Deserializer(), nil, tc.handler)
+			l, err := serialbus.NewListener(bCh, tm.ReaderDeserializer(json.Deserialize), tm, nil, tc.handler)
 			assert.NoError(t, err)
 			go func() {
 				l.Run()
@@ -210,16 +222,18 @@ func TestListeners(t *testing.T) {
 }
 
 func TestRegisterHandlers(t *testing.T) {
+	tm := type32.NewTypeMap()
 	ho := make(handlerObj)
 	bCh := make(chan []byte)
 	done := make(chan bool)
 	s := &serialbus.Sender{
-		Serializer: json32.Serializer(),
-		Ch:         bCh,
+		TypeSerializer: tm.WriterSerializer(json.Serialize),
+		Ch:             bCh,
 	}
 	r := &serialbus.Receiver{
-		In:           bCh,
-		Deserializer: json32.Deserializer(),
+		In:               bCh,
+		TypeDeserializer: tm.ReaderDeserializer(json.Deserialize),
+		TypeRegistrar:    tm,
 	}
 	l, err := bus.NewListener(r, nil, nil)
 	assert.NoError(t, err)

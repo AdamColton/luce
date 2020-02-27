@@ -12,12 +12,12 @@ import (
 // on a channel
 type Sender struct {
 	Ch chan<- []byte
-	serial.Serializer
+	serial.TypeSerializer
 }
 
 // Send takes a message, serializes it and places it on a channel.
 func (s *Sender) Send(msg interface{}) error {
-	b, err := s.Serialize(msg)
+	b, err := s.SerializeType(msg, nil)
 	if err != nil {
 		return err
 	}
@@ -28,20 +28,20 @@ func (s *Sender) Send(msg interface{}) error {
 // MultiSender allows one message to be sent to multiple channels.
 type MultiSender struct {
 	Chans map[string]chan<- []byte
-	serial.Serializer
+	serial.TypeSerializer
 }
 
-func NewMultiSender(s serial.Serializer) *MultiSender {
+func NewMultiSender(s serial.TypeSerializer) *MultiSender {
 	return &MultiSender{
-		Chans:      make(map[string]chan<- []byte),
-		Serializer: s,
+		Chans:          make(map[string]chan<- []byte),
+		TypeSerializer: s,
 	}
 }
 
 // Send a message to the keys provided. If no keys are provided, the message will
 // be sent to all channels.
 func (ms *MultiSender) Send(msg interface{}, keys ...string) error {
-	b, err := ms.Serialize(msg)
+	b, err := ms.SerializeType(msg, nil)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,8 @@ func (ms *MultiSender) Delete(key string) {
 type Receiver struct {
 	In  <-chan []byte
 	Out chan<- interface{}
-	serial.Deserializer
+	serial.TypeDeserializer
+	serial.TypeRegistrar
 	ErrHandler func(error)
 }
 
@@ -104,7 +105,7 @@ func (r *Receiver) Run() {
 }
 
 func (r *Receiver) handle(b []byte) {
-	i, err := r.Deserialize(b)
+	i, err := r.DeserializeType(b)
 	if err != nil {
 		if r.ErrHandler != nil {
 			r.ErrHandler(err)
@@ -126,16 +127,24 @@ func (r *Receiver) SetErrorHandler(errHandler func(error)) {
 	}
 }
 
+func (r *Receiver) RegisterType(zeroValue interface{}) error {
+	if r.TypeRegistrar == nil {
+		return nil
+	}
+	return r.TypeRegistrar.RegisterType(zeroValue)
+}
+
 // NewListener creates a Listener that reads from the in channel,
 // deserializes to a value and passes the value to a ListenerMuxer.
-func NewListener(in <-chan []byte, d serial.Deserializer, errHandler func(error), handlers ...interface{}) (bus.Listener, error) {
-	r := &Receiver{
-		In:           in,
-		Deserializer: d,
+func NewListener(in <-chan []byte, d serial.TypeDeserializer, r serial.TypeRegistrar, errHandler func(error), handlers ...interface{}) (bus.Listener, error) {
+	rc := &Receiver{
+		In:               in,
+		TypeDeserializer: d,
+		TypeRegistrar:    r,
 	}
 	lm, err := bus.NewListenerMux(nil, errHandler)
 	if err != nil {
 		return nil, err
 	}
-	return bus.NewListener(r, lm, errHandler, handlers...)
+	return bus.NewListener(rc, lm, errHandler, handlers...)
 }
