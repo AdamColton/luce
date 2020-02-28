@@ -1,4 +1,4 @@
-package timeoutqueue
+package toq
 
 import (
 	"testing"

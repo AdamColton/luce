@@ -1,8 +1,8 @@
-// Package timeoutqueue provides a queue for performing a timeout action after a
+// Package toq provides a queue for performing a timeout action after a
 // constant period of time. It generates almost no garbage (only when it has to
 // grow it's internal slice). It is threadsafe. It runs a Go routine only when
 // there are timeout actions in the queue.
-package timeoutqueue
+package toq
 
 import (
 	"sync"
@@ -183,6 +183,9 @@ func (tq *TimeoutQueue) SetTimeout(timeout time.Duration) {
 // Flush calls the TimeoutAction on everything in the queue. Actions are not
 // called in Go routines so that when Flush returns all Actions are complete.
 func (tq *TimeoutQueue) Flush() {
+	if tq.running == ^uint16(0) {
+		return
+	}
 	tq.mux.Lock()
 	tq.running = ^uint16(0)
 
@@ -192,7 +195,9 @@ func (tq *TimeoutQueue) Flush() {
 		}
 		n := tq.nodes[tq.head]
 		tq.freeNode(tq.head)
+		tq.mux.Unlock()
 		n.action()
+		tq.mux.Lock()
 	}
 
 	tq.running = 0

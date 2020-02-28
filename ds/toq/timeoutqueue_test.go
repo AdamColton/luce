@@ -1,11 +1,11 @@
-package timeoutqueue_test
+package toq_test
 
 import (
 	"testing"
 	"time"
 
-	"github.com/dist-ribut-us/timeout"
-	"github.com/dist-ribut-us/timeoutqueue"
+	"github.com/adamcolton/luce/ds/toq"
+	"github.com/adamcolton/luce/util/timeout"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,13 +23,15 @@ func getAction(ch chan<- int, i int) func() {
 
 func TestTimeoutQueue(t *testing.T) {
 	d := time.Millisecond * 5
-	tq := timeoutqueue.New(d, 10)
+	tq := toq.New(d, 10)
 
 	assert.Equal(t, d, tq.Timeout())
 
 	ch := make(chan int)
 	tq.Add(getAction(ch, 1))
-	assert.NoError(t, timeout.After(20, ch))
+	assert.NoError(t, timeout.After(20, func() {
+		assert.Equal(t, 1, <-ch)
+	}))
 
 	token1 := tq.Add(func() {
 		t.Error("This should be canceled")
@@ -41,10 +43,10 @@ func TestTimeoutQueue(t *testing.T) {
 }
 
 func TestReset(t *testing.T) {
-	tq := timeoutqueue.New(time.Millisecond*6, 2)
+	tq := toq.New(time.Millisecond*6, 2)
 	ch := make(chan int)
 
-	tokens := []timeoutqueue.Token{
+	tokens := []toq.Token{
 		tq.Add(getAction(ch, 1)),
 		tq.Add(getAction(ch, 2)),
 		tq.Add(getAction(ch, 3)),
@@ -58,27 +60,30 @@ func TestReset(t *testing.T) {
 		assert.Equal(t, 2, <-ch)
 	}))
 
-	tokens = []timeoutqueue.Token{
-		tq.Add(getAction(ch, 1)),
-		tq.Add(getAction(ch, 2)),
-		tq.Add(getAction(ch, 3)),
+	tokens = []toq.Token{
+		tq.Add(getAction(ch, 4)),
+		tq.Add(getAction(ch, 5)),
+		tq.Add(getAction(ch, 6)),
 	}
 
 	time.Sleep(time.Millisecond)
 	assert.True(t, tokens[1].Reset())
+	time.Sleep(time.Millisecond)
 	assert.True(t, tokens[0].Reset())
+	time.Sleep(time.Millisecond)
 	assert.True(t, tokens[1].Cancel())
 	assert.False(t, tokens[1].Reset())
-	tq.Add(getAction(ch, 4))
+	time.Sleep(time.Millisecond)
+	tq.Add(getAction(ch, 7))
 	assert.NoError(t, timeout.After(10, func() {
-		assert.Equal(t, 3, <-ch)
-		assert.Equal(t, 1, <-ch)
+		assert.Equal(t, 6, <-ch)
 		assert.Equal(t, 4, <-ch)
+		assert.Equal(t, 7, <-ch)
 	}))
 }
 
 func TestDecreaseSetTimeout(t *testing.T) {
-	tq := timeoutqueue.New(time.Millisecond*10, 10)
+	tq := toq.New(time.Millisecond*10, 10)
 	ch := make(chan int)
 
 	tq.Add(getAction(ch, 0))
@@ -112,20 +117,22 @@ func TestDecreaseSetTimeout(t *testing.T) {
 }
 
 func TestIncreaseSetTimeout(t *testing.T) {
-	tq := timeoutqueue.New(time.Millisecond*5, 10)
+	tq := toq.New(time.Millisecond*10, 10)
 	ch := make(chan int)
 
 	tq.Add(getAction(ch, 1))
+	time.Sleep(time.Millisecond)
 	tq.Add(getAction(ch, 2))
+	time.Sleep(time.Millisecond)
 	tq.Add(getAction(ch, 3))
 
-	tq.SetTimeout(time.Millisecond * 10)
+	tq.SetTimeout(time.Millisecond * 20)
 
 	// make sure there is some delay
 	select {
 	case <-ch:
 		t.Error("too soon")
-	case <-time.After(time.Millisecond * 5):
+	case <-time.After(time.Millisecond * 8):
 	}
 
 	assert.NoError(t, timeout.After(7, func() {
@@ -134,7 +141,7 @@ func TestIncreaseSetTimeout(t *testing.T) {
 }
 
 func TestFlush(t *testing.T) {
-	tq := timeoutqueue.New(time.Millisecond*5, 10)
+	tq := toq.New(time.Millisecond*5, 10)
 	ch := make(chan int)
 
 	tq.Add(getAction(ch, 1))
