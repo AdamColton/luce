@@ -3,7 +3,7 @@ package merkle
 import "hash"
 
 // ValidatorRow represents a Branch in a Merkle Tree. It provides the digests
-// needed for Validation.
+// needed for validation.
 type ValidatorRow struct {
 	Digests  [][]byte
 	Child    int

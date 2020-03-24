@@ -6,7 +6,7 @@ import (
 	"sort"
 )
 
-// Assembler of Validators. Adds Validators to a tree until the tree is
+// Assembler of Leaves. Adds Leaves to a tree until the tree is
 // complete.
 type Assembler struct {
 	root      *branch
@@ -25,7 +25,7 @@ func (l Leaf) Assembler(h hash.Hash) *Assembler {
 	}
 }
 
-// Add a Leav to the tree being assembled. Returns a bool indicating if the
+// Add a Leaf to the tree being assembled. Returns a bool indicating if the
 // Leaf was valid. Adding a Leaf multiple times will validate the Leaf, but
 // will not change the tree. Add should not be called concurrently.
 func (a *Assembler) Add(l Leaf) bool {
@@ -78,8 +78,7 @@ func (a *Assembler) addLeaf(l Leaf, depth int, b *branch) bool {
 	return false
 }
 
-// Done checks if the Tree is fully assembled. If it is the Tree is returned,
-// if not, Tree will be null.
+// Done checks if assembly is done. If it is not, Tree will be nil.
 func (a *Assembler) Done() (bool, Tree) {
 	if a.remaining == 0 {
 		return true, a.root
@@ -99,7 +98,7 @@ func check(ns []node, d [][]byte) bool {
 	return true
 }
 
-// Need returns the indexes of all the Leaf Nodes that are still needed.
+// Need returns the indexes of all the Leaf nodes that are still needed.
 func (a *Assembler) Need() []uint32 {
 	h := a.root.have(nil)
 	sort.Slice(h, func(i, j int) bool {
