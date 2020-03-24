@@ -12,23 +12,21 @@ type Assembler struct {
 	root      *branch
 	remaining int
 	h         hash.Hash
-}
-
-// Assembler creates a new Assembler from the validator. All future validators
-// added to the tree will be validated against against the initial validator.
-func (l Leaf) Assembler(h hash.Hash) *Assembler {
-	b, r := l.branch(0, h)
-	return &Assembler{
-		root:      b,
-		remaining: r,
-		h:         h,
-	}
+	d         Description
 }
 
 // Add a Leaf to the tree being assembled. Returns a bool indicating if the
 // Leaf was valid. Adding a Leaf multiple times will validate the Leaf, but
 // will not change the tree. Add should not be called concurrently.
 func (a *Assembler) Add(l Leaf) bool {
+	if a.root == nil {
+		if !bytes.Equal(a.d.Digest, l.Digest(a.h)) {
+			return false
+		}
+		b, r := l.branch(0, a.h)
+		a.root = b
+		a.remaining = r
+	}
 	return a.addLeaf(l, 0, a.root)
 }
 
@@ -80,7 +78,7 @@ func (a *Assembler) addLeaf(l Leaf, depth int, b *branch) bool {
 
 // Done checks if assembly is done. If it is not, Tree will be nil.
 func (a *Assembler) Done() (bool, Tree) {
-	if a.remaining == 0 {
+	if a.root != nil && a.remaining == 0 {
 		return true, a.root
 	}
 	return false, nil

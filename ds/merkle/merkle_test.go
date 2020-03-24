@@ -40,20 +40,14 @@ func TestEnd2EndFuzz(t *testing.T) {
 
 		c := t1.Count()
 		lst := randList(c)
+
 		l := t1.Leaf(lst[0])
 		assert.Equal(t, td, l.Digest(sha256.New()))
-		a := l.Assembler(sha256.New())
-
-		// test incomplete tree calls
-		incpTr := Tree(a.root)
-		assert.Equal(t, -1, incpTr.size())
-		assert.Equal(t, -1, incpTr.Count())
-		assert.Equal(t, -1, incpTr.Depth())
-		assert.Nil(t, incpTr.Data())
+		a := t1.Description().Assembler(sha256.New())
 
 		done, t2 := a.Done()
 		assert.False(t, done)
-		for i, idx := range lst[1:] {
+		for i, idx := range lst {
 			done, t2 = a.Done()
 			assert.False(t, done)
 			l = t1.Leaf(idx)
@@ -61,6 +55,15 @@ func TestEnd2EndFuzz(t *testing.T) {
 			assert.Equal(t, td, l.Digest(sha256.New()))
 
 			assert.Equal(t, expectNeed(i, lst), a.Need())
+
+			if i == 0 {
+				// test incomplete tree calls
+				incpTr := Tree(a.root)
+				assert.Equal(t, -1, incpTr.size())
+				assert.Equal(t, -1, incpTr.Count())
+				assert.Equal(t, -1, incpTr.Depth())
+				assert.Nil(t, incpTr.Data())
+			}
 		}
 		done, t2 = a.Done()
 		assert.True(t, done)
@@ -109,7 +112,7 @@ func randList(c int) []int {
 
 func expectNeed(i int, lst []int) []uint32 {
 	var out []uint32
-	for _, idx := range lst[i+2:] {
+	for _, idx := range lst[i+1:] {
 		out = append(out, uint32(idx))
 	}
 	sort.Slice(out, func(i, j int) bool {

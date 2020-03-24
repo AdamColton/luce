@@ -28,4 +28,7 @@ type Tree interface {
 	// Count of the leaf nodes
 	Count() int
 	size() int
+
+	// Creates a Description of the Tree
+	Description() Description
 }
