@@ -31,4 +31,6 @@ type Tree interface {
 
 	// Creates a Description of the Tree
 	Description() Description
+	// Read fulfills io.Reader
+	Read(p []byte) (n int, err error)
 }

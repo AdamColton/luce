@@ -2,6 +2,7 @@ package merkle
 
 import (
 	"crypto/sha256"
+	"io/ioutil"
 	"math/rand"
 	"sort"
 	"testing"
@@ -104,6 +105,10 @@ func TestEnd2EndFuzz(t *testing.T) {
 		assert.Equal(t, data, t2.Data())
 		assert.Equal(t, t1.Count(), t2.Count())
 		assert.Equal(t, t1.Depth(), t2.Depth())
+
+		rdata, err := ioutil.ReadAll(t1)
+		assert.NoError(t, err)
+		assert.Equal(t, data, rdata)
 	}
 }
 

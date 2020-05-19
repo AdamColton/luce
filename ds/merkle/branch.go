@@ -1,5 +1,7 @@
 package merkle
 
+import "io"
+
 type branch struct {
 	children []node
 	digest   []byte
@@ -13,6 +15,7 @@ type branch struct {
 	data  []byte
 	count uint32
 	depth int
+	pos   int64
 }
 
 func (b *branch) Digest() []byte {
@@ -103,4 +106,24 @@ func (b *branch) have(idxs []uint32) []uint32 {
 		idxs = c.have(idxs)
 	}
 	return idxs
+}
+
+// Read implements io.Reader
+func (b *branch) Read(p []byte) (n int, err error) {
+	if b.data == nil {
+		b.Data()
+	}
+	n = len(p)
+	l64 := int64(len(b.data))
+	if b.pos+int64(n) > l64 {
+		n = int(l64 - b.pos)
+	}
+	if n == 0 {
+		err = io.EOF
+		return
+	}
+	end := b.pos + int64(n)
+	copy(p, b.data[b.pos:end])
+	b.pos = end
+	return
 }
