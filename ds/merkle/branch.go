@@ -1,6 +1,10 @@
 package merkle
 
-import "io"
+import (
+	"io"
+
+	"github.com/adamcolton/luce/lerr"
+)
 
 type branch struct {
 	children []node
@@ -126,4 +130,36 @@ func (b *branch) Read(p []byte) (n int, err error) {
 	copy(p, b.data[b.pos:end])
 	b.pos = end
 	return
+}
+
+const (
+	// ErrBadWhence is returned if Seek is called and whence is not
+	// io.SeekStart, io.SeekEnd or io.SeekCurrent.
+	ErrBadWhence = lerr.Str("Bad whence value for Seek")
+)
+
+// Seek implements io.Seeker
+func (b *branch) Seek(offset int64, whence int) (int64, error) {
+	if b.data == nil {
+		b.Data()
+	}
+	switch whence {
+	case io.SeekStart:
+		b.pos = offset
+	case io.SeekEnd:
+		b.pos = int64(len(b.data)) + offset
+	case io.SeekCurrent:
+		b.pos += offset
+	default:
+		return -1, ErrBadWhence
+	}
+
+	l64 := int64(len(b.data))
+	if b.pos < 0 {
+		b.pos = 0
+	} else if b.pos > l64 {
+		b.pos = l64
+	}
+
+	return b.pos, nil
 }

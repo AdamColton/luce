@@ -2,7 +2,7 @@ package merkle
 
 import (
 	"crypto/sha256"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"sort"
 	"testing"
@@ -106,9 +106,47 @@ func TestEnd2EndFuzz(t *testing.T) {
 		assert.Equal(t, t1.Count(), t2.Count())
 		assert.Equal(t, t1.Depth(), t2.Depth())
 
-		rdata, err := ioutil.ReadAll(t1)
+		buf := make([]byte, 100)
+		ln, err := t1.Read(buf)
+		for i := 0; err == nil; i += len(buf) {
+			if err != nil {
+				break
+			}
+			a := data[i : i+ln]
+			b := buf[:ln]
+			assert.Equal(t, a, b)
+			ln, err = t1.Read(buf)
+		}
+		assert.Equal(t, err, io.EOF)
+
+		p, err := t1.Seek(50, io.SeekStart)
 		assert.NoError(t, err)
-		assert.Equal(t, data, rdata)
+		assert.Equal(t, int64(50), p)
+		_, err = t1.Read(buf)
+		assert.NoError(t, err)
+		assert.Equal(t, data[50:150], buf)
+
+		p, err = t1.Seek(75, io.SeekCurrent)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(225), p)
+		_, err = t1.Read(buf)
+		assert.NoError(t, err)
+		assert.Equal(t, data[225:325], buf)
+
+		p, err = t1.Seek(-90, io.SeekEnd)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(len(data))-90, p)
+		_, err = t1.Read(buf)
+		assert.NoError(t, err)
+		assert.Equal(t, data[p:], buf[:90])
+
+		p, err = t1.Seek(-10, io.SeekStart)
+		assert.Equal(t, int64(0), p)
+		p, err = t1.Seek(1, io.SeekEnd)
+		assert.Equal(t, int64(len(data)), p)
+
+		_, err = t1.Seek(-10, 5)
+		assert.Equal(t, err, ErrBadWhence)
 	}
 }
 
