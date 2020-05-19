@@ -2,7 +2,7 @@ package merkle
 
 type node interface {
 	Digest() []byte
-	Count() int
+	Count() uint32
 	Depth() int
 	size() int
 	maxIdx() uint32
@@ -22,11 +22,11 @@ type Tree interface {
 	Data() []byte
 	// Leaf represents the data of a single leaf and includes all Uncle
 	// hashes allowing the data to be validated against the tree hash.
-	Leaf(idx int) Leaf
+	Leaf(idx uint32) Leaf
 	// Maximum Depth of the tree
 	Depth() int
 	// Count of the leaf nodes
-	Count() int
+	Count() uint32
 	size() int
 
 	// Creates a Description of the Tree

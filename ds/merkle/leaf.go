@@ -60,13 +60,16 @@ func (l Leaf) branch(d int, h hash.Hash) (*branch, int) {
 	return b, r
 }
 
-func (b *branch) Leaf(idx int) Leaf {
+func (b *branch) Leaf(idx uint32) Leaf {
+	if idx > b.idx {
+		return Leaf{}
+	}
 	return b.leaf(idx, Leaf{
 		Rows: make([]ValidatorRow, 0, b.Depth()),
 	})
 }
 
-func (b *branch) leaf(idx int, v Leaf) Leaf {
+func (b *branch) leaf(idx uint32, v Leaf) Leaf {
 	r := ValidatorRow{
 		Digests:  make([][]byte, 0, len(b.children)-1),
 		MaxIndex: b.idx,
@@ -75,8 +78,8 @@ func (b *branch) leaf(idx int, v Leaf) Leaf {
 	v.Rows = append(v.Rows, r)
 	for i, c := range b.children {
 		ct := c.Count()
-		if ct <= idx || idx == -1 {
-			if idx != -1 {
+		if ct <= idx || idx == maxUint32 {
+			if idx != maxUint32 {
 				idx -= ct
 			}
 			r.Digests = append(r.Digests, c.Digest())
@@ -91,7 +94,7 @@ func (b *branch) leaf(idx int, v Leaf) Leaf {
 			if nc, ok := c.(*branch); ok {
 				v = nc.leaf(idx, v)
 			}
-			idx = -1
+			idx = maxUint32
 		}
 	}
 	v.Rows[rIdx] = r

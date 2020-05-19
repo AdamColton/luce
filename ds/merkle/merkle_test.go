@@ -45,6 +45,15 @@ func TestEnd2EndFuzz(t *testing.T) {
 		assert.Equal(t, td, l.Digest(sha256.New()))
 		a := t1.Description().Assembler(sha256.New())
 
+		l.Data[0] ^= 1
+		assert.False(t, a.Add(l))
+		l.Data[0] ^= 1
+
+		r := l.Rows
+		l.Rows = l.Rows[:len(l.Rows)-1]
+		assert.False(t, a.Add(l))
+		l.Rows = r
+
 		done, t2 := a.Done()
 		assert.False(t, done)
 		for i, idx := range lst {
@@ -54,13 +63,13 @@ func TestEnd2EndFuzz(t *testing.T) {
 			assert.True(t, a.Add(l))
 			assert.Equal(t, td, l.Digest(sha256.New()))
 
-			assert.Equal(t, expectNeed(i, lst), a.Need())
+			assert.Equal(t, expectNeed(uint32(i), lst), a.Need())
 
 			if i == 0 {
 				// test incomplete tree calls
 				incpTr := Tree(a.root)
 				assert.Equal(t, -1, incpTr.size())
-				assert.Equal(t, -1, incpTr.Count())
+				assert.Equal(t, maxUint32, incpTr.Count())
 				assert.Equal(t, -1, incpTr.Depth())
 				assert.Nil(t, incpTr.Data())
 			}
@@ -98,19 +107,19 @@ func TestEnd2EndFuzz(t *testing.T) {
 	}
 }
 
-func randList(c int) []int {
-	out := make([]int, c)
+func randList(c uint32) []uint32 {
+	out := make([]uint32, c)
 	for i := range out {
-		out[i] = i
+		out[i] = uint32(i)
 	}
 	for i := range out {
-		j := rand.Intn(c)
+		j := rand.Uint32() % c
 		out[i], out[j] = out[j], out[i]
 	}
 	return out
 }
 
-func expectNeed(i int, lst []int) []uint32 {
+func expectNeed(i uint32, lst []uint32) []uint32 {
 	var out []uint32
 	for _, idx := range lst[i+1:] {
 		out = append(out, uint32(idx))

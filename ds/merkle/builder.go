@@ -67,7 +67,7 @@ func (l *nodeList) insertNodeAtCursor(b builder, ln int) *branch {
 	n := b.makeNode(ln)
 	b.h.Reset()
 	subcur := l.cur
-	c := 0
+	var c uint32
 	d := 0
 	for i := range n.children {
 		b.h.Write(subcur.node.Digest())

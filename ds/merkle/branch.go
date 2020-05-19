@@ -10,8 +10,9 @@ type branch struct {
 	// be pre-populated. All three also require a completed tree to be
 	// meaningful. A complete tree will only contain branches and dataLeaves,
 	// not digestNodes.
-	data         []byte
-	count, depth int
+	data  []byte
+	count uint32
+	depth int
 }
 
 func (b *branch) Digest() []byte {
@@ -61,15 +62,15 @@ func (b *branch) size() int {
 	return sum
 }
 
-func (b *branch) Count() int {
+func (b *branch) Count() uint32 {
 	if b.count > 0 {
 		return b.count
 	}
 
-	sum := 0
+	var sum uint32
 	for _, c := range b.children {
 		s := c.Count()
-		if s == -1 {
+		if s == maxUint32 {
 			return s
 		}
 		sum += s

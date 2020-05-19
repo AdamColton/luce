@@ -26,7 +26,7 @@ func (dl *dataLeaf) Digest() []byte {
 
 func (dl *dataLeaf) size() int { return len(dl.data) }
 
-func (*dataLeaf) Count() int                     { return 1 }
+func (*dataLeaf) Count() uint32                  { return 1 }
 func (*dataLeaf) Depth() int                     { return 0 }
 func (dl *dataLeaf) maxIdx() uint32              { return dl.idx }
 func (dl *dataLeaf) have(idxs []uint32) []uint32 { return append(idxs, dl.idx) }
