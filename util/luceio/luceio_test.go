@@ -65,13 +65,8 @@ func TestTemplate(t *testing.T) {
 	assert.Equal(t, "base template", buf.String())
 	buf.Reset()
 	twt.Name = "core"
-	twt.WriteTo(buf)
-	assert.Equal(t, "My name is testing", buf.String())
-}
-
-func TestWriteTo(t *testing.T) {
-	wt := StringWriterTo("this is a test")
-	b, err := WriteTo(wt)
+	n, err := twt.WriteTo(buf)
 	assert.NoError(t, err)
-	assert.Equal(t, string(wt), string(b))
+	assert.Equal(t, "My name is testing", buf.String())
+	assert.Equal(t, int(n), len(buf.Bytes()))
 }

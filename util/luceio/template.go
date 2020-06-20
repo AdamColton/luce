@@ -1,6 +1,8 @@
 package luceio
 
-import "io"
+import (
+	"io"
+)
 
 // TemplateExecutor is an interface representing the ExecuteTemplate method on
 // a template.
@@ -42,19 +44,17 @@ func NewTemplateTo(template TemplateExecutor, name string, data interface{}) *Te
 
 // WriteTo writes a template and fulfils WriterTo.
 func (t *TemplateTo) WriteTo(w io.Writer) (int64, error) {
-	var err error
-	buf := get()
+	sw := NewSumWriter(w)
 
+	var err error
 	if t.Name == "" {
-		err = t.Execute(buf, t.Data)
+		err = t.Execute(sw, t.Data)
 	} else {
-		err = t.ExecuteTemplate(buf, t.Name, t.Data)
+		err = t.ExecuteTemplate(sw, t.Name, t.Data)
 	}
 	if err != nil {
 		return 0, err
 	}
 
-	n, err := w.Write(buf.Bytes())
-	put(buf)
-	return int64(n), err
+	return sw.Sum, sw.Err
 }
