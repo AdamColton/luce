@@ -135,7 +135,7 @@ func TestIncreaseSetTimeout(t *testing.T) {
 	case <-time.After(time.Millisecond * 8):
 	}
 
-	assert.NoError(t, timeout.After(7, func() {
+	assert.NoError(t, timeout.After(20, func() {
 		assert.Equal(t, 1, <-ch)
 	}))
 }
