@@ -45,13 +45,13 @@ func (ps PrefixSerializer) SerializeType(i interface{}, b []byte) ([]byte, error
 	return ps.Serialize(i, b)
 }
 
-// WriterSerializer is provided by json and gob in the standard library and may
-// be provided by other interfaces.
-type WriterSerializer func(io.Writer, interface{}) error
+// WriterSerializer serializes the provided interface to the Writer.
+type WriterSerializer func(interface{}, io.Writer) error
 
+// Serialize the interface to the byte slice.
 func (fn WriterSerializer) Serialize(i interface{}, b []byte) ([]byte, error) {
 	buf := bytes.NewBuffer(b)
-	err := fn(buf, i)
+	err := fn(i, buf)
 	if err != nil {
 		return nil, err
 	}
@@ -59,18 +59,25 @@ func (fn WriterSerializer) Serialize(i interface{}, b []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-type ReaderDeserializer func(io.Reader, interface{}) error
+// ReaderDeserializer serializes the provided interface to the Reader.
+type ReaderDeserializer func(interface{}, io.Reader) error
 
+// Deserialize the interface from the byte slice.
 func (fn ReaderDeserializer) Deserialize(i interface{}, b []byte) error {
 	buf := bytes.NewBuffer(b)
-	return fn(buf, i)
+	return fn(i, buf)
 }
 
+// PrefixDeserializer handles both deserializing the type and the data. This
+// allows a byte slice to be passed in an the interface returned as opposed to
+// the normal requirement of passing in both an interface and a slice.
 type PrefixDeserializer struct {
 	Detyper
 	Deserializer
 }
 
+// DeserializeType gets the type from the data, creates an instance and then
+// deserializes the data into that instance.
 func (ds PrefixDeserializer) DeserializeType(data []byte) (interface{}, error) {
 	t, data, err := ds.GetType(data)
 	if err != nil {

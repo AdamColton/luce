@@ -11,7 +11,7 @@ import (
 // Sender combines the logic of serializing an object and placing it
 // on a channel
 type Sender struct {
-	Ch chan<- []byte
+	Chan chan<- []byte
 	serial.TypeSerializer
 }
 
@@ -21,7 +21,7 @@ func (s *Sender) Send(msg interface{}) error {
 	if err != nil {
 		return err
 	}
-	s.Ch <- b
+	s.Chan <- b
 	return nil
 }
 

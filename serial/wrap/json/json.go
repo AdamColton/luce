@@ -6,12 +6,12 @@ import (
 )
 
 // Serialize wraps encoding/json Encoder to fulfill type32.SerializeTypeID32Func
-func Serialize(w io.Writer, i interface{}) error {
+func Serialize(i interface{}, w io.Writer) error {
 	return json.NewEncoder(w).Encode(i)
 }
 
 // Deserialize wraps encoding/json Decoder to fulfill
 // type32.DeserializeTypeID32Funcn
-func Deserialize(r io.Reader, i interface{}) error {
+func Deserialize(i interface{}, r io.Reader) error {
 	return json.NewDecoder(r).Decode(i)
 }
