@@ -29,5 +29,5 @@ func TestCtx(t *testing.T) {
 
 	ctx = Wrap(testErr, "Should Err %d time", 1)
 	assert.Error(t, ctx)
-	assert.Equal(t, "Should Err 1 time\nTestError", ctx.Error())
+	assert.Equal(t, "Should Err 1 time: TestError", ctx.Error())
 }
