@@ -16,11 +16,11 @@ type person struct {
 	Age  int
 }
 
-func mockSerialize(w io.Writer, i interface{}) error {
+func mockSerialize(i interface{}, w io.Writer) error {
 	return json.NewEncoder(w).Encode(i)
 }
 
-func mockDeserialize(r io.Reader, i interface{}) error {
+func mockDeserialize(i interface{}, r io.Reader) error {
 	return json.NewDecoder(r).Decode(i)
 }
 

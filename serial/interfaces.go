@@ -62,5 +62,5 @@ type Deserializer interface {
 // InterfaceDeserializer is what is provided by the json and gob libraries,
 // the ability to populate an interface from a byte slice.
 type InterfaceDeserializer interface {
-	Deserialize([]byte, interface{}) error
+	Deserialize(interface{}, []byte) error
 }

@@ -65,7 +65,7 @@ func TestSendReceive(t *testing.T) {
 
 	s := &serialbus.Sender{
 		TypeSerializer: tm.WriterSerializer(json.Serialize),
-		Ch:             bCh,
+		Chan:           bCh,
 	}
 	r := &serialbus.Receiver{
 		In:               bCh,
@@ -199,7 +199,7 @@ func TestListeners(t *testing.T) {
 			bCh := make(chan []byte)
 			s := &serialbus.Sender{
 				TypeSerializer: tm.WriterSerializer(json.Serialize),
-				Ch:             bCh,
+				Chan:           bCh,
 			}
 			l, err := serialbus.NewListener(bCh, tm.ReaderDeserializer(json.Deserialize), tm, nil, tc.handler)
 			assert.NoError(t, err)
@@ -228,7 +228,7 @@ func TestRegisterHandlers(t *testing.T) {
 	done := make(chan bool)
 	s := &serialbus.Sender{
 		TypeSerializer: tm.WriterSerializer(json.Serialize),
-		Ch:             bCh,
+		Chan:           bCh,
 	}
 	r := &serialbus.Receiver{
 		In:               bCh,
