@@ -1,6 +1,9 @@
 package luceio
 
-import "io"
+import (
+	"io"
+	"strconv"
+)
 
 // SumWriter is helper that wraps a Writer and sums the bytes written. If it
 // encounters an error, it will stop writing.
@@ -50,4 +53,8 @@ func (s *SumWriter) Write(b []byte) (int, error) {
 // Rets is a shorthand helper for returns
 func (s *SumWriter) Rets() (int64, error) {
 	return s.Sum, s.Err
+}
+
+func (s *SumWriter) WriteInt(i int) (int, error) {
+	return s.WriteString(strconv.Itoa(i))
 }
