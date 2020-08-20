@@ -16,4 +16,19 @@ type Type interface {
 // HelpfulType fulfils Type. Currently a placeholder.
 type HelpfulType interface {
 	Type
+	Named(string) NameType
+	Unnamed() NameType
+}
+
+// HelpfulTypeWrapper turns any Type into a HelpfulType.
+type HelpfulTypeWrapper struct{ Type }
+
+// Named returns a NameType
+func (h HelpfulTypeWrapper) Named(name string) NameType {
+	return NameType{name, h}
+}
+
+// Unnamed returns a NameType with an empty string as the name.
+func (h HelpfulTypeWrapper) Unnamed() NameType {
+	return NameType{"", h}
 }
