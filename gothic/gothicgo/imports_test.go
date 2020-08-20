@@ -73,3 +73,17 @@ func TestImportRemove(t *testing.T) {
 	i.WriteTo(buf)
 	assert.Equal(t, "import (\n\t\"foo/bar\"\n)\n", buf.String())
 }
+
+func TestAlias(t *testing.T) {
+	i := NewImports(nil)
+	bar := MustPackageRef("foo/bar")
+	a := NewAlias(bar, "fb")
+	i.Add(a)
+	i.Add(bar) // should have no effect
+
+	assert.Equal(t, "fb.", i.Prefix(bar))
+
+	buf := bytes.NewBuffer(nil)
+	i.WriteTo(buf)
+	assert.Equal(t, "import (\n\tfb \"foo/bar\"\n)\n", buf.String())
+}
