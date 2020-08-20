@@ -5,19 +5,18 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/adamcolton/luce/ds/bufpool"
 	"github.com/stretchr/testify/assert"
 )
 
+var toStr = bufpool.MustWriterToString
+
 func TestImportAdd(t *testing.T) {
 	i := NewImports(nil)
-	buf := bytes.NewBuffer(nil)
-	i.WriteTo(buf)
-	assert.Equal(t, "", buf.String())
+	assert.Equal(t, "", toStr(i))
 
 	i.Add(MustPackageRef("foo/bar"), nil, MustPackageRef("foo/baz"))
-	buf.Reset()
-	i.WriteTo(buf)
-	assert.Equal(t, "import (\n\t\"foo/bar\"\n\t\"foo/baz\"\n)\n", buf.String())
+	assert.Equal(t, "import (\n\t\"foo/bar\"\n\t\"foo/baz\"\n)\n", toStr(i))
 }
 
 func TestImportDouble(t *testing.T) {
@@ -26,7 +25,7 @@ func TestImportDouble(t *testing.T) {
 	pkg2 := MustPackageRef("foo/bar")
 	i.Add(pkg1)
 	i.Add(pkg2)
-	assert.Equal(t, 1, strings.Count(i.String(), "foo/bar"))
+	assert.Equal(t, 1, strings.Count(toStr(i), "foo/bar"))
 }
 
 func TestImportAddImports(t *testing.T) {
@@ -36,7 +35,7 @@ func TestImportAddImports(t *testing.T) {
 	i2 := NewImports(nil)
 	i2.AddImports(i1)
 
-	assert.Equal(t, "import (\n\t\"foo/bar\"\n)\n", i2.String())
+	assert.Equal(t, "import (\n\t\"foo/bar\"\n)\n", toStr(i2))
 }
 
 func TestImportPrefix(t *testing.T) {
