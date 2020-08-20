@@ -4,7 +4,6 @@ import (
 	"io"
 	"sort"
 
-	"github.com/adamcolton/luce/ds/bufpool"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/luceio"
 )
@@ -15,6 +14,12 @@ import (
 type Imports struct {
 	self PackageRef
 	refs map[string]PackageRef
+}
+
+// ImportsRegistrar is called when a code chunk is included in a file to
+// register the necessary imports with the file.
+type ImportsRegistrar interface {
+	RegisterImports(*Imports)
 }
 
 // NewImports sets up an instance of Imports.
@@ -82,13 +87,6 @@ func (i *Imports) GetRefName(ref PackageRef) string {
 	}
 
 	return ref.Name()
-}
-
-// String returns the imports as Go code.
-func (i *Imports) String() string {
-	buf := bufpool.Get()
-	i.WriteTo(buf)
-	return bufpool.PutStr(buf)
 }
 
 // WriteTo writes the Go code to a writer
