@@ -20,6 +20,7 @@ type HelpfulType interface {
 	Unnamed() NameType
 	Ptr() PointerType
 	Slice() SliceType
+	Array(size int) ArrayType
 }
 
 // HelpfulTypeWrapper turns any Type into a HelpfulType.
@@ -59,4 +60,9 @@ func (h HelpfulTypeWrapper) Ptr() PointerType {
 // Slice of the underlying type.
 func (h HelpfulTypeWrapper) Slice() SliceType {
 	return SliceOf(h.Type)
+}
+
+// Array of the underlying type.
+func (h HelpfulTypeWrapper) Array(size int) ArrayType {
+	return ArrayOf(h.Type, size)
 }
