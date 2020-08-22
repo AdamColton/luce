@@ -21,6 +21,8 @@ type HelpfulType interface {
 	Ptr() PointerType
 	Slice() SliceType
 	Array(size int) ArrayType
+	AsMapElem(key Type) MapType
+	AsMapKey(elem Type) MapType
 }
 
 // HelpfulTypeWrapper turns any Type into a HelpfulType.
@@ -67,4 +69,16 @@ func (h HelpfulTypeWrapper) Slice() SliceType {
 // Array of the underlying type.
 func (h HelpfulTypeWrapper) Array(size int) ArrayType {
 	return ArrayOf(h.Type, size)
+}
+
+// AsMapElem creates a Map with the underlying type as the map element and the
+// provided type as the key.
+func (h HelpfulTypeWrapper) AsMapElem(key Type) MapType {
+	return MapOf(key, h.Type)
+}
+
+// AsMapKey creates a Map with the underlying type as the map key and the
+// provided type as the element.
+func (h HelpfulTypeWrapper) AsMapKey(elem Type) MapType {
+	return MapOf(h.Type, elem)
 }
