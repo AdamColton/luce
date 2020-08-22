@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewPackage(t *testing.T) {
-	ctx := MemoryContext()
+	ctx := NewMemoryContext()
 	pkg, err := ctx.Package("foo")
 	assert.NoError(t, err)
 
@@ -25,7 +25,7 @@ func TestPkgErrors(t *testing.T) {
 	_, err := NewPackage(nil, "foo")
 	assert.Equal(t, ErrNilContext, err)
 
-	ctx := MemoryContext()
+	ctx := NewMemoryContext()
 	_, err = ctx.Package("bad package name")
 	assert.Equal(t, ErrBadPackageName, err)
 

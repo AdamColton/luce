@@ -7,7 +7,7 @@ import (
 )
 
 func TestContext(t *testing.T) {
-	ctx := MemoryContext()
+	ctx := NewMemoryContext()
 
 	assert.NoError(t, ctx.Prepare())
 	assert.NoError(t, ctx.Generate())

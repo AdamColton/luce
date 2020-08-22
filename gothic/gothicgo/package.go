@@ -2,6 +2,7 @@ package gothicgo
 
 import (
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -15,6 +16,7 @@ type Package struct {
 	importPath string
 	OutputPath string
 	context    Context
+	files      map[string]*File
 }
 
 const (
@@ -38,22 +40,40 @@ func NewPackage(ctx Context, name string) (*Package, error) {
 		return nil, ErrBadPackageName
 	}
 	pkg := &Package{
-		name:    name,
-		context: ctx,
+		name:       name,
+		context:    ctx,
+		files:      make(map[string]*File),
+		importPath: ctx.ImportPath(),
+		OutputPath: ctx.OutputPath(name),
 	}
-	pkg.importPath = ctx.ImportPath()
-	pkg.OutputPath = ctx.OutputPath(name)
 	ctx.AddPackage(pkg)
 	return pkg, nil
 }
 
 // Prepare is currently a placeholder
 func (p *Package) Prepare() error {
+	for _, f := range p.files {
+		err := f.Prepare()
+		if err != nil {
+			return lerr.Wrap(err, "Prepare package %s", p.name)
+		}
+	}
 	return nil
 }
 
 // Generate is currently a placeholder
 func (p *Package) Generate() error {
+	path, _ := filepath.Abs(p.OutputPath)
+	err := p.context.MakeDir(path)
+	if err != nil {
+		return lerr.Wrap(err, "Generate package %s", p.name)
+	}
+	for _, f := range p.files {
+		err := f.Generate()
+		if err != nil {
+			return lerr.Wrap(err, "Generate package %s", p.name)
+		}
+	}
 	return nil
 }
 

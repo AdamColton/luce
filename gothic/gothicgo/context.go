@@ -1,7 +1,10 @@
 package gothicgo
 
 import (
+	"io"
+	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 
 	"github.com/adamcolton/luce/gothic"
@@ -28,6 +31,9 @@ type Context interface {
 	SetOutputPath(path string)
 	ImportPath() string
 	SetImportPath(path string) error
+
+	FileWriter(*File) (io.Writer, error)
+	MakeDir(string) error
 }
 
 // CtxFactory is used to configure the construction of a BaseContext.
@@ -43,6 +49,9 @@ func (c CtxFactory) New() *BaseContext {
 		importPath: c.ImportPath,
 		project:    gothic.New(),
 		packages:   make(map[string][]*Package),
+		CreateFile: func(str string) (io.Writer, error) { return os.Create(str) },
+		Abs:        filepath.Abs,
+		MkdirAll:   func(pth string) error { return os.MkdirAll(pth, 0777) },
 	}
 }
 
@@ -54,6 +63,13 @@ type BaseContext struct {
 	importPath string
 	project    *gothic.Project
 	packages   map[string][]*Package
+	// CreateFile can be swapped out change where the generated files are
+	// written. By default this is set to os.Create.
+	CreateFile func(string) (io.Writer, error)
+	// Abs can be swapped out change where the generated files are
+	// written. By default this is set to os.Abs.
+	Abs      func(string) (string, error)
+	MkdirAll func(string) error
 }
 
 // Prepare calls Prepare on all registered Generators
@@ -132,4 +148,21 @@ func (bc *BaseContext) SetImportPath(path string) error {
 // ImportPath returns the current import path
 func (bc *BaseContext) ImportPath() string {
 	return bc.importPath
+}
+
+// FileWriter creates a *os.File for the *gothicgo.File to write to.
+func (bc *BaseContext) FileWriter(f *File) (io.Writer, error) {
+	pth := path.Join(f.pkg.OutputPath, f.name+".go")
+	pth, err := bc.Abs(pth)
+	if err != nil {
+		return nil, err
+	}
+	return bc.CreateFile(pth)
+}
+
+// MakeDir will call the underlying MkdirAll. If this is set to the default
+// os.MkdirAll, it will create a directory, or that may be changed for unit
+// testing.
+func (bc *BaseContext) MakeDir(pth string) error {
+	return bc.MkdirAll(pth)
 }
