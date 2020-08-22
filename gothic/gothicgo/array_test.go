@@ -17,6 +17,7 @@ func TestArray(t *testing.T) {
 	assert.Equal(t, IntType, arr.Elem())
 	assert.Equal(t, IntType, arr.ArrayElem())
 	assert.Equal(t, 5, arr.Size())
+	assert.Equal(t, PkgBuiltin(), arr.PackageRef())
 
 	arr = IntType.Array(-5)
 	buf.Reset()

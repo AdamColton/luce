@@ -16,4 +16,5 @@ func TestPointer(t *testing.T) {
 	assert.Equal(t, PointerKind, ptr.Kind())
 	assert.Equal(t, IntType, ptr.Elem())
 	assert.Equal(t, IntType, ptr.PointerElem())
+	assert.Equal(t, PkgBuiltin(), ptr.PackageRef())
 }

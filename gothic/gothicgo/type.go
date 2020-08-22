@@ -35,6 +35,8 @@ func NewHelpfulTypeWrapper(t Type) HelpfulTypeWrapper {
 	return HelpfulTypeWrapper{t}
 }
 
+// NewHelpfulType checks if the type is already a HelpfulType and if not, wraps
+// it in a HelpfulTypeWrapper.
 func NewHelpfulType(t Type) HelpfulType {
 	if ht, ok := t.(HelpfulType); ok {
 		return ht

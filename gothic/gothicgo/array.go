@@ -32,7 +32,7 @@ func ArrayOf(t Type, size int) ArrayType {
 }
 
 // arrayT is the inner part of the pointer array structure, it inheirits
-// ImportsRegistrar and PackageRef from the underlying type but overrides Kind
+// ImportsRegistrar from the underlying type but overrides Kind, PackageRef
 // and PrefixWriteTo. It also ensures the underlying type is HelpfulType so that
 // the outerlayer doesn't have to do any conversion to return a HelpfulType.
 // This nesting structure allows using the HelpfulTypeWrapper on the inner
@@ -56,7 +56,8 @@ func (a arrayT) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw.Err = lerr.Wrap(sw.Err, "While writing array")
 	return sw.Rets()
 }
-func (arrayT) Kind() Kind { return ArrayKind }
+func (arrayT) Kind() Kind             { return ArrayKind }
+func (arrayT) PackageRef() PackageRef { return pkgBuiltin }
 
 type arrayHT struct {
 	HelpfulTypeWrapper

@@ -22,11 +22,11 @@ func PointerTo(t Type) PointerType {
 }
 
 // pointerT is the inner part of the pointer nesting structure, it inheirits
-// ImportsRegistrar and PackageRef from the underlying type but overrides Kind
-// and PrefixWriteTo. It also ensures the underlying type is HelpfulType so that
-// the outerlayer doesn't have to do any conversion to return a HelpfulType.
-// This nesting structure allows using the HelpfulTypeWrapper on the inner
-// pointer type, while the outer wrapper extends it with Elem and PointerElem.
+// ImportsRegistrar from the underlying type but overrides Kind, PackageRef and
+// PrefixWriteTo. It also ensures the underlying type is HelpfulType so that the
+// outerlayer doesn't have to do any conversion to return a HelpfulType. This
+// nesting structure allows using the HelpfulTypeWrapper on the inner pointer
+// type, while the outer wrapper extends it with Elem and PointerElem.
 
 type pointerT struct {
 	HelpfulType
@@ -39,7 +39,8 @@ func (p pointerT) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	sw.Err = lerr.Wrap(sw.Err, "While writing pointer type")
 	return sw.Rets()
 }
-func (pointerT) Kind() Kind { return PointerKind }
+func (pointerT) Kind() Kind             { return PointerKind }
+func (pointerT) PackageRef() PackageRef { return pkgBuiltin }
 
 type pointerHT struct {
 	HelpfulTypeWrapper

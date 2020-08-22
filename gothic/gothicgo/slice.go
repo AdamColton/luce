@@ -22,11 +22,11 @@ func SliceOf(t Type) SliceType {
 }
 
 // sliceT is the inner part of the pointer slice structure, it inheirits
-// ImportsRegistrar and PackageRef from the underlying type but overrides Kind
-// and PrefixWriteTo. It also ensures the underlying type is HelpfulType so that
-// the outerlayer doesn't have to do any conversion to return a HelpfulType.
-// This nesting structure allows using the HelpfulTypeWrapper on the inner
-// slice type, while the outer wrapper extends it with Elem and PointerElem.
+// ImportsRegistrar from the underlying type but overrides Kind, PackageRef and
+// PrefixWriteTo. It also ensures the underlying type is HelpfulType so that the
+// outerlayer doesn't have to do any conversion to return a HelpfulType. This
+// nesting structure allows using the HelpfulTypeWrapper on the inner slice
+// type, while the outer wrapper extends it with Elem and PointerElem.
 
 type sliceT struct {
 	HelpfulType
@@ -39,7 +39,8 @@ func (s sliceT) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw.Err = lerr.Wrap(sw.Err, "While writing slice")
 	return sw.Rets()
 }
-func (sliceT) Kind() Kind { return SliceKind }
+func (sliceT) Kind() Kind             { return SliceKind }
+func (sliceT) PackageRef() PackageRef { return pkgBuiltin }
 
 type sliceHT struct {
 	HelpfulTypeWrapper
