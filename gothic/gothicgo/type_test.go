@@ -32,3 +32,13 @@ func TestNewHelpfulTypeWrapper(t *testing.T) {
 	_, ok = singleWrap.Type.(HelpfulTypeWrapper)
 	assert.False(t, ok)
 }
+
+func TestNewHelpfulType(t *testing.T) {
+	singleWrap := NewHelpfulType(IntType)
+
+	// confirm singleWrap was not re-wrapped
+	swht, ok := singleWrap.(HelpfulTypeWrapper)
+	assert.True(t, ok)
+	_, ok = swht.Type.(HelpfulTypeWrapper)
+	assert.False(t, ok)
+}

@@ -17,14 +17,3 @@ func TestPointer(t *testing.T) {
 	assert.Equal(t, IntType, ptr.Elem())
 	assert.Equal(t, IntType, ptr.PointerElem())
 }
-
-func TestPointerAlreadyHT(t *testing.T) {
-	ptr := PointerTo(IntType)
-	buf := bytes.NewBuffer(nil)
-	ptr.PrefixWriteTo(buf, DefaultPrefixer)
-
-	assert.Equal(t, "*int", buf.String())
-	assert.Equal(t, PointerKind, ptr.Kind())
-	assert.Equal(t, IntType, ptr.Elem())
-	assert.Equal(t, IntType, ptr.PointerElem())
-}

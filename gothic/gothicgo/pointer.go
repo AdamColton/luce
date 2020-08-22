@@ -16,14 +16,8 @@ type PointerType interface {
 
 // PointerTo returns a PointerType to the underlying type.
 func PointerTo(t Type) PointerType {
-	var ht HelpfulType
-	if alreadyHT, ok := t.(HelpfulType); ok {
-		ht = alreadyHT
-	} else {
-		ht = HelpfulTypeWrapper{t}
-	}
 	return pointerHT{
-		HelpfulTypeWrapper{pointerT{ht}},
+		HelpfulTypeWrapper{pointerT{NewHelpfulType(t)}},
 	}
 }
 
@@ -45,7 +39,7 @@ func (p pointerT) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	sw.Err = lerr.Wrap(sw.Err, "While writing pointer type")
 	return sw.Rets()
 }
-func (p pointerT) Kind() Kind { return PointerKind }
+func (pointerT) Kind() Kind { return PointerKind }
 
 type pointerHT struct {
 	HelpfulTypeWrapper
