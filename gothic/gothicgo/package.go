@@ -1,6 +1,7 @@
 package gothicgo
 
 import (
+	"fmt"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -17,6 +18,14 @@ type Package struct {
 	OutputPath string
 	context    Context
 	files      map[string]*File
+	names      map[string]Namer
+	namers     map[Namer]string
+}
+
+// Namer represents a code generator that introduce a name to a package scope.
+// The is used to prevent name collisions.
+type Namer interface {
+	ScopeName() string
 }
 
 const (
@@ -45,6 +54,8 @@ func NewPackage(ctx Context, name string) (*Package, error) {
 		files:      make(map[string]*File),
 		importPath: ctx.ImportPath(),
 		OutputPath: ctx.OutputPath(name),
+		names:      make(map[string]Namer),
+		namers:     make(map[Namer]string),
 	}
 	ctx.AddPackage(pkg)
 	return pkg, nil
@@ -104,3 +115,27 @@ func (p *Package) ImportSpec() string {
 }
 
 func (*Package) privatePkgRef() {}
+
+// AddNamer to Package checking for name scope collision
+func (p *Package) AddNamer(n Namer) error {
+	name := n.ScopeName()
+	if name == "" {
+		return nil
+	}
+	if _, ok := p.names[name]; ok {
+		return fmt.Errorf("Name '%s' already exists in package '%s'", name, p.name)
+	}
+	p.names[name] = n
+	p.namers[n] = name
+	return nil
+}
+
+// UpdateNamer allows a Namer to change it's name within a package.
+func (p *Package) UpdateNamer(n Namer) error {
+	old, found := p.namers[n]
+	if found {
+		delete(p.names, old)
+		delete(p.namers, n)
+	}
+	return p.AddNamer(n)
+}

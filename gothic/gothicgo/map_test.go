@@ -1,7 +1,6 @@
 package gothicgo
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/testify/assert"
@@ -9,10 +8,9 @@ import (
 
 func TestMap(t *testing.T) {
 	mp := IntType.AsMapElem(StringType)
-	buf := bytes.NewBuffer(nil)
-	mp.PrefixWriteTo(buf, DefaultPrefixer)
+	str := PrefixWriteToString(mp, DefaultPrefixer)
 
-	assert.Equal(t, "map[string]int", buf.String())
+	assert.Equal(t, "map[string]int", str)
 	assert.Equal(t, MapKind, mp.Kind())
 	assert.Equal(t, PkgBuiltin(), mp.PackageRef())
 	assert.Equal(t, IntType, mp.Elem())
@@ -20,9 +18,8 @@ func TestMap(t *testing.T) {
 	assert.Equal(t, StringType, mp.MapKey())
 
 	mp = IntType.AsMapKey(StringType)
-	buf.Reset()
-	mp.PrefixWriteTo(buf, DefaultPrefixer)
-	assert.Equal(t, "map[int]string", buf.String())
+	str = PrefixWriteToString(mp, DefaultPrefixer)
+	assert.Equal(t, "map[int]string", str)
 	assert.Equal(t, StringType, mp.Elem())
 	assert.Equal(t, StringType, mp.MapElem())
 	assert.Equal(t, IntType, mp.MapKey())

@@ -1,6 +1,7 @@
 package gothicgo
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -22,6 +23,17 @@ type PackageRef interface {
 	privatePkgRef()
 }
 
+// ExternalPackageRef represents an external package - one that will not be
+// generated.
+type ExternalPackageRef interface {
+	PackageRef
+
+	// ExternalType represents a type in an external package. The name must
+	// be exported (begin with an uppercase character).
+	ExternalType(name string) (ExternalType, error)
+	MustExternalType(name string) ExternalType
+}
+
 var pkgBuiltin = &packageRef{}
 
 // PkgBuiltin returns a PackageRef with an empty name.
@@ -33,19 +45,43 @@ type packageRef struct {
 	path, name string
 }
 
-func (p *packageRef) ImportPath() string {
+func (p packageRef) ImportPath() string {
 	return p.path
 }
 
-func (p *packageRef) Name() string {
+func (p packageRef) Name() string {
 	return p.name
 }
 
-func (p *packageRef) ImportSpec() string {
+func (p packageRef) ImportSpec() string {
 	return strings.Join([]string{"\"", p.path, "\""}, "")
 }
 
-func (*packageRef) privatePkgRef() {}
+func (packageRef) privatePkgRef() {}
+
+type externalPackageRef struct {
+	packageRef
+}
+
+func (p externalPackageRef) ExternalType(name string) (ExternalType, error) {
+	if !IsExported(name) {
+		return nil, fmt.Errorf(`ExternalType "%s" in package "%s" is not exported`, name, p.Name())
+	}
+	return &externalTypeWrapper{
+		HelpfulTypeWrapper{
+			&externalType{
+				ref:  p,
+				name: name,
+			},
+		},
+	}, nil
+}
+
+func (p externalPackageRef) MustExternalType(name string) ExternalType {
+	et, err := p.ExternalType(name)
+	lerr.Panic(err)
+	return et
+}
 
 // TODO: this regex is only mostly right
 var packageRefRegex = regexp.MustCompile(`^(?:[\w\-\.]+\/)*([\w\-]+)$`)
@@ -53,22 +89,22 @@ var packageRefRegex = regexp.MustCompile(`^(?:[\w\-\.]+\/)*([\w\-]+)$`)
 // ErrBadPackageRef indicates a poorly formatted package ref string.
 const ErrBadPackageRef = lerr.Str("Bad Package Ref")
 
-// NewPackageRef takes the string used to import a pacakge and returns a
-// PackageRef.
-func NewPackageRef(ref string) (PackageRef, error) {
+// NewExternalPackageRef takes the string used to import a pacakge and returns
+// an ExternalPackageRef.
+func NewExternalPackageRef(ref string) (ExternalPackageRef, error) {
 	m := packageRefRegex.FindStringSubmatch(ref)
 	if len(m) == 0 {
 		return nil, ErrBadPackageRef
 	}
-	return &packageRef{
+	return externalPackageRef{packageRef{
 		path: m[0],
 		name: m[1],
-	}, nil
+	}}, nil
 }
 
-// MustPackageRef returns a new PackageRef and panics if there is an error
-func MustPackageRef(ref string) PackageRef {
-	p, err := NewPackageRef(ref)
+// MustExternalPackageRef returns a new PackageRef and panics if there is an error
+func MustExternalPackageRef(ref string) ExternalPackageRef {
+	p, err := NewExternalPackageRef(ref)
 	lerr.Panic(err)
 	return p
 }

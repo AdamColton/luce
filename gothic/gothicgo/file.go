@@ -35,10 +35,15 @@ func (f *File) Prepare() error {
 
 // AddWriterTo adds a WriterTo that will be invoked when the file is written. If
 // the WriterTo fulfils gothic.Prepper then it's Prepare method will be called
-// while File.Prepare is called.
+// while File.Prepare is called. If the WriterTo fulfills Namer, it's ScopeName
+// will be added to the package.
 func (f *File) AddWriterTo(writerTo io.WriterTo) error {
 	f.code = append(f.code, writerTo)
-	return nil
+	n, isNamer := writerTo.(Namer)
+	if !isNamer {
+		return nil
+	}
+	return lerr.Wrap(f.pkg.AddNamer(n), "File.AddWriterTo")
 }
 
 // Generate the file
@@ -113,3 +118,8 @@ func (f *File) Package() *Package { return f.pkg }
 
 // Name returns the name of the file.
 func (f *File) Name() string { return f.name }
+
+// UpdateNamer allows a Namer to change it's name within a package.
+func (f *File) UpdateNamer(n Namer) error {
+	return lerr.Wrap(f.Package().UpdateNamer(n), "UpdateNamer in file %s", f.name)
+}

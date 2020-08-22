@@ -1,7 +1,6 @@
 package gothicgo
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/testify/assert"
@@ -9,10 +8,9 @@ import (
 
 func TestArray(t *testing.T) {
 	arr := IntType.Array(5)
-	buf := bytes.NewBuffer(nil)
-	arr.PrefixWriteTo(buf, DefaultPrefixer)
+	str := PrefixWriteToString(arr, DefaultPrefixer)
 
-	assert.Equal(t, "[5]int", buf.String())
+	assert.Equal(t, "[5]int", str)
 	assert.Equal(t, ArrayKind, arr.Kind())
 	assert.Equal(t, IntType, arr.Elem())
 	assert.Equal(t, IntType, arr.ArrayElem())
@@ -20,8 +18,7 @@ func TestArray(t *testing.T) {
 	assert.Equal(t, PkgBuiltin(), arr.PackageRef())
 
 	arr = IntType.Array(-5)
-	buf.Reset()
-	arr.PrefixWriteTo(buf, DefaultPrefixer)
-	assert.Equal(t, "[...]int", buf.String())
+	str = PrefixWriteToString(arr, DefaultPrefixer)
+	assert.Equal(t, "[...]int", str)
 	assert.Equal(t, 0, arr.Size())
 }

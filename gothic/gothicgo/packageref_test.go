@@ -7,7 +7,7 @@ import (
 )
 
 func TestPackageRef(t *testing.T) {
-	r := MustPackageRef("foo/bar")
+	r := MustExternalPackageRef("foo/bar")
 
 	assert.Equal(t, "bar", r.Name())
 	assert.Equal(t, "foo/bar", r.ImportPath())
@@ -15,7 +15,7 @@ func TestPackageRef(t *testing.T) {
 }
 
 func TestBadPackageRef(t *testing.T) {
-	pkg, err := NewPackageRef("bad package ref")
+	pkg, err := NewExternalPackageRef("bad package ref")
 	assert.Nil(t, pkg)
 	assert.Error(t, err)
 }
