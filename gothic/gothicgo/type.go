@@ -18,10 +18,20 @@ type HelpfulType interface {
 	Type
 	Named(string) NameType
 	Unnamed() NameType
+	Ptr() PointerType
 }
 
 // HelpfulTypeWrapper turns any Type into a HelpfulType.
 type HelpfulTypeWrapper struct{ Type }
+
+// NewHelpfulTypeWrapper ensures that we're not re-wrapping a
+// wHelpfulTypeWrapper.
+func NewHelpfulTypeWrapper(t Type) HelpfulTypeWrapper {
+	if htw, ok := t.(HelpfulTypeWrapper); ok {
+		return NewHelpfulTypeWrapper(htw.Type)
+	}
+	return HelpfulTypeWrapper{t}
+}
 
 // Named returns a NameType
 func (h HelpfulTypeWrapper) Named(name string) NameType {
@@ -31,4 +41,9 @@ func (h HelpfulTypeWrapper) Named(name string) NameType {
 // Unnamed returns a NameType with an empty string as the name.
 func (h HelpfulTypeWrapper) Unnamed() NameType {
 	return NameType{"", h}
+}
+
+// Ptr returns a Pointer to the type.
+func (h HelpfulTypeWrapper) Ptr() PointerType {
+	return PointerTo(h.Type)
 }
