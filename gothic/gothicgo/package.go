@@ -13,13 +13,14 @@ import (
 // Package represents a directory containing Go code. Package also fulfills the
 // PackageRef interface.
 type Package struct {
-	name       string
-	importPath string
-	OutputPath string
-	context    Context
-	files      map[string]*File
-	names      map[string]Namer
-	namers     map[Namer]string
+	name           string
+	importPath     string
+	OutputPath     string
+	context        Context
+	files          map[string]*File
+	names          map[string]Namer
+	namers         map[Namer]string
+	defaultComment Comment
 }
 
 // Namer represents a code generator that introduce a name to a package scope.
@@ -56,6 +57,10 @@ func NewPackage(ctx Context, name string) (*Package, error) {
 		OutputPath: ctx.OutputPath(name),
 		names:      make(map[string]Namer),
 		namers:     make(map[Namer]string),
+		defaultComment: Comment{
+			Comment: ctx.DefaultComment(),
+			Width:   ctx.CommentWidth(),
+		},
 	}
 	ctx.AddPackage(pkg)
 	return pkg, nil

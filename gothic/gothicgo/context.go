@@ -37,13 +37,16 @@ type Context interface {
 
 	CommentWidth() int
 	SetCommentWidth(width int) error
+	DefaultComment() string
+	SetDefaultComment(string)
 }
 
 // CtxFactory is used to configure the construction of a BaseContext.
 type CtxFactory struct {
-	OutputPath   string
-	ImportPath   string
-	CommentWidth int
+	OutputPath     string
+	ImportPath     string
+	CommentWidth   int
+	DefaultComment string
 }
 
 // New BaseContext access the os with the Factory settings.
@@ -53,13 +56,14 @@ func (c CtxFactory) New() *BaseContext {
 		w = defaultCommentWidth
 	}
 	return &BaseContext{
-		outputPath: c.OutputPath,
-		importPath: c.ImportPath,
-		project:    gothic.New(),
-		packages:   make(map[string][]*Package),
-		CreateFile: func(str string) (io.Writer, error) { return os.Create(str) },
-		Abs:        filepath.Abs,
-		MkdirAll:   func(pth string) error { return os.MkdirAll(pth, 0777) },
+		outputPath:     c.OutputPath,
+		importPath:     c.ImportPath,
+		project:        gothic.New(),
+		packages:       make(map[string][]*Package),
+		CreateFile:     func(str string) (io.Writer, error) { return os.Create(str) },
+		Abs:            filepath.Abs,
+		MkdirAll:       func(pth string) error { return os.MkdirAll(pth, 0777) },
+		defaultComment: c.DefaultComment,
 	}
 }
 
@@ -76,9 +80,10 @@ type BaseContext struct {
 	CreateFile func(string) (io.Writer, error)
 	// Abs can be swapped out change where the generated files are
 	// written. By default this is set to os.Abs.
-	Abs          func(string) (string, error)
-	MkdirAll     func(string) error
-	commentWidth int
+	Abs            func(string) (string, error)
+	MkdirAll       func(string) error
+	commentWidth   int
+	defaultComment string
 }
 
 // Prepare calls Prepare on all registered Generators
@@ -197,4 +202,14 @@ func (bc *BaseContext) CommentWidth() int {
 // MustExport will panic if Export returns an error
 func (bc *BaseContext) MustExport() {
 	lerr.Panic(bc.Export())
+}
+
+// DefaultComment to be added to the top of files
+func (bc *BaseContext) DefaultComment() string {
+	return bc.defaultComment
+}
+
+// SetDefaultComment to be added to the top of files
+func (bc *BaseContext) SetDefaultComment(comment string) {
+	bc.defaultComment = comment
 }

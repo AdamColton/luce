@@ -15,9 +15,10 @@ import (
 // io.WriteCloser, it will write to that instead
 type File struct {
 	*Imports
-	name string
-	code []io.WriterTo
-	pkg  *Package
+	name           string
+	code           []io.WriterTo
+	pkg            *Package
+	defaultComment Comment
 }
 
 // Prepare runs prepare on all the generators in the file
@@ -53,6 +54,9 @@ func (f *File) Generate() (err error) {
 	buf := bytes.NewBuffer(nil)
 	sw := luceio.NewSumWriter(buf)
 
+	if f.defaultComment.Comment != "" {
+		f.defaultComment.WriteTo(sw)
+	}
 	sw.WriteRune('\n')
 	sw.WriteString("package ")
 	sw.WriteString(f.pkg.name)
@@ -105,9 +109,10 @@ func (p *Package) File(name string) *File {
 		return file
 	}
 	f := &File{
-		Imports: NewImports(p),
-		name:    name,
-		pkg:     p,
+		Imports:        NewImports(p),
+		name:           name,
+		pkg:            p,
+		defaultComment: p.defaultComment,
 	}
 	p.files[name] = f
 	return f

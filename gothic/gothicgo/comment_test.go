@@ -27,3 +27,14 @@ func TestComment(t *testing.T) {
 	assert.Contains(t, str, "// on the")
 	assert.Contains(t, str, "// sea")
 }
+
+func TestDefaultComment(t *testing.T) {
+	ctx := NewMemoryContext()
+	ctx.SetDefaultComment("Testing Default Comment")
+	pkg := ctx.MustPackage("foo")
+	pkg.File("bar")
+	ctx.MustExport()
+
+	expected := "// Testing Default Comment"
+	assert.Equal(t, expected, ctx.Last.String()[:len(expected)])
+}
