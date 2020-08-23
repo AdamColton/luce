@@ -34,16 +34,24 @@ type Context interface {
 
 	FileWriter(*File) (io.Writer, error)
 	MakeDir(string) error
+
+	CommentWidth() int
+	SetCommentWidth(width int) error
 }
 
 // CtxFactory is used to configure the construction of a BaseContext.
 type CtxFactory struct {
-	OutputPath string
-	ImportPath string
+	OutputPath   string
+	ImportPath   string
+	CommentWidth int
 }
 
 // New BaseContext access the os with the Factory settings.
 func (c CtxFactory) New() *BaseContext {
+	w := c.CommentWidth
+	if w == 0 {
+		w = defaultCommentWidth
+	}
 	return &BaseContext{
 		outputPath: c.OutputPath,
 		importPath: c.ImportPath,
@@ -68,8 +76,9 @@ type BaseContext struct {
 	CreateFile func(string) (io.Writer, error)
 	// Abs can be swapped out change where the generated files are
 	// written. By default this is set to os.Abs.
-	Abs      func(string) (string, error)
-	MkdirAll func(string) error
+	Abs          func(string) (string, error)
+	MkdirAll     func(string) error
+	commentWidth int
 }
 
 // Prepare calls Prepare on all registered Generators
@@ -165,4 +174,22 @@ func (bc *BaseContext) FileWriter(f *File) (io.Writer, error) {
 // testing.
 func (bc *BaseContext) MakeDir(pth string) error {
 	return bc.MkdirAll(pth)
+}
+
+// ErrCommentWidth is returned if the comment width is set to a value less than
+// one.
+const ErrCommentWidth = lerr.Str("Comment width must be greater than 0")
+
+// SetCommentWidth to be returned by BaseContext.CommentWidth
+func (bc *BaseContext) SetCommentWidth(width int) error {
+	if width < 1 {
+		return ErrCommentWidth
+	}
+	bc.commentWidth = width
+	return nil
+}
+
+// CommentWidth max characters
+func (bc *BaseContext) CommentWidth() int {
+	return bc.commentWidth
 }
