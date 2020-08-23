@@ -76,10 +76,10 @@ func (f *funcSigT) Kind() Kind             { return FuncKind }
 func (f *funcSigT) PackageRef() PackageRef { return pkgBuiltin }
 func (f *funcSigT) RegisterImports(i *Imports) {
 	for _, arg := range f.args {
-		arg.T.RegisterImports(i)
+		arg.RegisterImports(i)
 	}
 	for _, ret := range f.rets {
-		ret.T.RegisterImports(i)
+		ret.RegisterImports(i)
 	}
 }
 
@@ -116,7 +116,7 @@ func nameTypeSliceToString(pre Prefixer, nts []NameType, variadic bool) (string,
 		if err := validateName(nts[i].N); err != nil {
 			return "", err
 		}
-		nts[i].T.PrefixWriteTo(typeBuf, pre)
+		nts[i].HelpfulType.PrefixWriteTo(typeBuf, pre)
 		if i == l && variadic {
 			if nts[i].N == "" {
 				s[i] = fmt.Sprintf("...%s", typeBuf.String())
@@ -166,10 +166,10 @@ func (f *funcSigHT) AsType(clearName bool) FuncSig {
 	args := make([]NameType, len(fs.args))
 	rets := make([]NameType, len(fs.rets))
 	for i, a := range fs.args {
-		args[i].T = a.T
+		args[i].HelpfulType = a.HelpfulType
 	}
 	for i, r := range fs.rets {
-		rets[i].T = r.T
+		rets[i].HelpfulType = r.HelpfulType
 	}
 	var name string
 	if !clearName {
