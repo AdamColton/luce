@@ -28,15 +28,22 @@ func TestStringsWriter(t *testing.T) {
 func TestSumWriter(t *testing.T) {
 	buf := &bytes.Buffer{}
 	sw := NewSumWriter(buf)
-	sw.WriteString("test1")
+	sw.WriteString("test")
+	sw.WriteInt(1)
 	sw.WriteRune('-')
 	sw.Write([]byte("test2"))
+	i, err := sw.WriterTo(StringWriterTo("-test3"))
+	assert.NoError(t, err)
+	assert.Equal(t, int64(6), i)
 	assert.NoError(t, sw.Err)
-	sw.Err = fmt.Errorf("test error")
+	expectErr := fmt.Errorf("test error")
+	sw.Err = expectErr
 	sw.WriteString("test3")
-	assert.Error(t, sw.Err)
-	assert.Equal(t, "test1-test2", buf.String())
-	assert.Equal(t, int64(11), sw.Sum)
+	i, err = sw.Rets()
+	assert.Equal(t, expectErr, err)
+	assert.Equal(t, "test1-test2-test3", buf.String())
+	assert.Equal(t, int64(17), i)
+
 }
 
 func TestMany(t *testing.T) {

@@ -55,6 +55,20 @@ func (s *SumWriter) Rets() (int64, error) {
 	return s.Sum, s.Err
 }
 
+// WriteInt uses strconv to write an int
 func (s *SumWriter) WriteInt(i int) (int, error) {
 	return s.WriteString(strconv.Itoa(i))
+}
+
+// WriterTo passes the SumWriter into a WriterTo and captures the character
+// length and error.
+func (s *SumWriter) WriterTo(w io.WriterTo) (int64, error) {
+	if s.Err != nil {
+		return 0, s.Err
+	}
+	i, err := w.WriteTo(s)
+	if s.Err == nil {
+		s.Err = err
+	}
+	return i, err
 }
