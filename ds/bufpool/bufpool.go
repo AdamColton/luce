@@ -2,7 +2,10 @@ package bufpool
 
 import (
 	"bytes"
+	"io"
 	"sync"
+
+	"github.com/adamcolton/luce/lerr"
 )
 
 // BufferPool can Get or Put a Buffer to a pool
@@ -55,5 +58,21 @@ func PutAndCopy(buf *bytes.Buffer) []byte {
 func PutStr(buf *bytes.Buffer) string {
 	s := buf.String() // this makes a copy
 	Put(buf)
+	return s
+}
+
+// WriterToString takes a WriterTo, writes it's contents to a buffer and returns
+// the value as a string.
+func WriterToString(w io.WriterTo) (string, error) {
+	b := Get()
+	_, err := w.WriteTo(b)
+	return PutStr(b), err
+}
+
+// MustWriterToString takes a WriterTo, writes it's contents to a buffer and returns
+// the value as a string. If there is an error, it panics.
+func MustWriterToString(w io.WriterTo) string {
+	s, err := WriterToString(w)
+	lerr.Panic(err)
 	return s
 }
