@@ -78,7 +78,7 @@ func TestFile(t *testing.T) {
 	assert.Equal(t, pkg, file.Package())
 	assert.Equal(t, "bar", file.Name())
 
-	assert.NoError(t, ctx.Export())
+	ctx.MustExport()
 
 	str := ctx.Last.String()
 	assert.Contains(t, str, `var test = "testing file generation"`)

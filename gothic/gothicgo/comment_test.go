@@ -17,7 +17,7 @@ func TestComment(t *testing.T) {
 
 	assert.Equal(t, ErrCommentWidth, ctx.SetCommentWidth(0))
 
-	assert.NoError(t, ctx.Export())
+	ctx.MustExport()
 
 	str := ctx.Last.String()
 	assert.Contains(t, str, "// This is a test")

@@ -193,3 +193,8 @@ func (bc *BaseContext) SetCommentWidth(width int) error {
 func (bc *BaseContext) CommentWidth() int {
 	return bc.commentWidth
 }
+
+// MustExport will panic if Export returns an error
+func (bc *BaseContext) MustExport() {
+	lerr.Panic(bc.Export())
+}

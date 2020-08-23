@@ -18,7 +18,7 @@ func TestNewPackage(t *testing.T) {
 	assert.NoError(t, pkg.SetImportPath("bar"))
 	assert.Equal(t, `"bar/foo"`, pkg.ImportSpec())
 
-	ctx.Export()
+	ctx.MustExport()
 }
 
 func TestPkgErrors(t *testing.T) {
