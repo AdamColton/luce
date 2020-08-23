@@ -128,3 +128,8 @@ func (f *File) Name() string { return f.name }
 func (f *File) UpdateNamer(n Namer) error {
 	return lerr.Wrap(f.Package().UpdateNamer(n), "UpdateNamer in file %s", f.name)
 }
+
+// CommentWidth gets the comment width from the context
+func (f *File) CommentWidth() int {
+	return f.pkg.context.CommentWidth()
+}
