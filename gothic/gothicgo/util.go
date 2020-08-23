@@ -8,6 +8,7 @@ import (
 	"github.com/adamcolton/luce/lerr"
 )
 
+// IsExported checks if the first character of name is upper case.
 func IsExported(name string) bool {
 	r, _ := utf8.DecodeRuneInString(name)
 	return unicode.IsUpper(r)

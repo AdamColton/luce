@@ -14,8 +14,8 @@ func TestNameType(t *testing.T) {
 	assert.Equal(t, "Foo int", PrefixWriteToString(nt, DefaultPrefixer))
 }
 
-func TestRets(t *testing.T) {
-	rs := Rets(IntType, StringType)
+func TestUnnamed(t *testing.T) {
+	rs := Unnamed(IntType, StringType)
 	assert.Len(t, rs, 2)
 
 	expected := []NameType{

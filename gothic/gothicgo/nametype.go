@@ -19,9 +19,9 @@ func (n NameType) Name() string { return n.N }
 // Type value
 func (n NameType) Type() Type { return n.T }
 
-// Rets takes a slice of types and returns them as a slice of NameTypes that are
+// Unnamed takes a slice of types and returns them as a slice of NameTypes that are
 // unnamed.
-func Rets(ts ...Type) []NameType {
+func Unnamed(ts ...Type) []NameType {
 	nts := make([]NameType, len(ts))
 	for i, t := range ts {
 		nts[i].T = t
