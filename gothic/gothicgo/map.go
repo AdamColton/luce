@@ -9,35 +9,33 @@ import (
 
 // MapType extends Type with map specific information
 type MapType interface {
-	HelpfulType
-	MapElem() HelpfulType
-	Elem() HelpfulType
-	MapKey() HelpfulType
+	Type
+	MapElem() Type
+	Elem() Type
+	MapKey() Type
 }
 
 // MapOf returns a MapType around with the given key and element types.
 func MapOf(key, elem Type) MapType {
-	return mapHT{
-		HelpfulTypeWrapper: HelpfulTypeWrapper{
-			mapT{
-				key:  NewHelpfulType(key),
-				elem: NewHelpfulType(elem),
+	return mapT{
+		typeWrapper: typeWrapper{
+			mapCT{
+				key:  key,
+				elem: elem,
 			},
 		},
 	}
 }
 
-// mapT is the inner part of the pointer map structure, it implements Type. It
-// also ensures the underlying key and elem are HelpfulTypes so that the
-// outerlayer doesn't have to do any conversion to return a HelpfulType. This
-// nesting structure allows using the HelpfulTypeWrapper on the inner map type,
-// while the outer wrapper extends it with Elem and PointerElem.
+// mapCT is the inner part of the map nesting structure, it implements coreType.
+// This nesting structure allows using the typeWrapper on the inner mapCT, while
+// the outer wrapper extends it with Elem, MapElem and MapKey.
 
-type mapT struct {
-	key, elem HelpfulType
+type mapCT struct {
+	key, elem Type
 }
 
-func (m mapT) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
+func (m mapCT) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	sw.WriteString("map[")
 	m.key.PrefixWriteTo(sw, p)
@@ -46,20 +44,20 @@ func (m mapT) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw.Err = lerr.Wrap(sw.Err, "While writing map type")
 	return sw.Rets()
 }
-func (mapT) Kind() Kind { return MapKind }
+func (mapCT) Kind() Kind { return MapKind }
 
-func (m mapT) RegisterImports(i *Imports) {
+func (m mapCT) RegisterImports(i *Imports) {
 	m.elem.RegisterImports(i)
 	m.key.RegisterImports(i)
 }
 
-func (mapT) PackageRef() PackageRef { return pkgBuiltin }
+func (mapCT) PackageRef() PackageRef { return pkgBuiltin }
 
-type mapHT struct {
-	HelpfulTypeWrapper
+type mapT struct {
+	typeWrapper
 	size int
 }
 
-func (m mapHT) MapKey() HelpfulType  { return m.Type.(mapT).key }
-func (m mapHT) Elem() HelpfulType    { return m.Type.(mapT).elem }
-func (m mapHT) MapElem() HelpfulType { return m.Elem() }
+func (m mapT) MapKey() Type  { return m.coreType.(mapCT).key }
+func (m mapT) Elem() Type    { return m.coreType.(mapCT).elem }
+func (m mapT) MapElem() Type { return m.Elem() }

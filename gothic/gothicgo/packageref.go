@@ -68,7 +68,7 @@ func (p externalPackageRef) ExternalType(name string) (ExternalType, error) {
 		return nil, fmt.Errorf(`ExternalType "%s" in package "%s" is not exported`, name, p.Name())
 	}
 	return &externalTypeWrapper{
-		HelpfulTypeWrapper{
+		typeWrapper{
 			&externalType{
 				ref:  p,
 				name: name,

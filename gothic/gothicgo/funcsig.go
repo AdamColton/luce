@@ -12,7 +12,7 @@ import (
 
 // FuncSig is a function signature and fulfills Type.
 type FuncSig interface {
-	HelpfulType
+	Type
 	Name() string
 	Args() []NameType
 	Variadic() bool
@@ -35,7 +35,7 @@ const ErrMixedParameters = lerr.Str("Mixed named and unnamed function parameters
 // NewFuncSig returns a new function signature.
 func NewFuncSig(name string, args, rets []NameType, variadic bool) FuncSig {
 	return &funcSigHT{
-		HelpfulTypeWrapper{
+		typeWrapper{
 			&funcSigT{
 				name:     name,
 				args:     args,
@@ -116,7 +116,7 @@ func nameTypeSliceToString(pre Prefixer, nts []NameType, variadic bool) (string,
 		if err := validateName(nts[i].N); err != nil {
 			return "", err
 		}
-		nts[i].HelpfulType.PrefixWriteTo(typeBuf, pre)
+		nts[i].Type.PrefixWriteTo(typeBuf, pre)
 		if i == l && variadic {
 			if nts[i].N == "" {
 				s[i] = fmt.Sprintf("...%s", typeBuf.String())
@@ -142,34 +142,34 @@ func nameTypeSliceToString(pre Prefixer, nts []NameType, variadic bool) (string,
 }
 
 type funcSigHT struct {
-	HelpfulTypeWrapper
+	typeWrapper
 }
 
 func (f *funcSigHT) Returns() []NameType {
-	return f.Type.(*funcSigT).rets
+	return f.coreType.(*funcSigT).rets
 }
 
 func (f *funcSigHT) Args() []NameType {
-	return f.Type.(*funcSigT).args
+	return f.coreType.(*funcSigT).args
 }
 
 func (f *funcSigHT) Name() string {
-	return f.Type.(*funcSigT).name
+	return f.coreType.(*funcSigT).name
 }
 
 func (f *funcSigHT) Variadic() bool {
-	return f.Type.(*funcSigT).variadic
+	return f.coreType.(*funcSigT).variadic
 }
 
 func (f *funcSigHT) AsType(clearName bool) FuncSig {
-	fs := f.Type.(*funcSigT)
+	fs := f.coreType.(*funcSigT)
 	args := make([]NameType, len(fs.args))
 	rets := make([]NameType, len(fs.rets))
 	for i, a := range fs.args {
-		args[i].HelpfulType = a.HelpfulType
+		args[i].Type = a.Type
 	}
 	for i, r := range fs.rets {
-		rets[i].HelpfulType = r.HelpfulType
+		rets[i].Type = r.Type
 	}
 	var name string
 	if !clearName {

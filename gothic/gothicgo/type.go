@@ -1,5 +1,12 @@
 package gothicgo
 
+type coreType interface {
+	PrefixWriterTo
+	ImportsRegistrar
+	PackageRef() PackageRef
+	Kind() Kind
+}
+
 // The Type interface represents a type in Go. Name is the type without the
 // package, String is the type with the package and PrefixString takes a package name
 // and return the string representing the type with the package included.
@@ -11,11 +18,6 @@ type Type interface {
 	ImportsRegistrar
 	PackageRef() PackageRef
 	Kind() Kind
-}
-
-// HelpfulType fulfils Type. Currently a placeholder.
-type HelpfulType interface {
-	Type
 	Named(string) NameType
 	Unnamed() NameType
 	Ptr() PointerType
@@ -25,60 +27,46 @@ type HelpfulType interface {
 	AsMapKey(elem Type) MapType
 }
 
-// HelpfulTypeWrapper turns any Type into a HelpfulType.
-type HelpfulTypeWrapper struct{ Type }
+type typeWrapper struct{ coreType }
 
-// NewHelpfulTypeWrapper ensures that we're not re-wrapping a
-// wHelpfulTypeWrapper.
-func NewHelpfulTypeWrapper(t Type) HelpfulTypeWrapper {
-	if htw, ok := t.(HelpfulTypeWrapper); ok {
-		return NewHelpfulTypeWrapper(htw.Type)
+func newTypeWrapper(t coreType) typeWrapper {
+	if htw, ok := t.(typeWrapper); ok {
+		return newTypeWrapper(htw.coreType)
 	}
-	return HelpfulTypeWrapper{t}
+	return typeWrapper{t}
 }
 
-// NewHelpfulType checks if the type is already a HelpfulType and if not, wraps
-// it in a HelpfulTypeWrapper.
-func NewHelpfulType(t Type) HelpfulType {
-	if ht, ok := t.(HelpfulType); ok {
-		return ht
+func newType(ct coreType) Type {
+	if t, ok := ct.(Type); ok {
+		return t
 	}
-	return HelpfulTypeWrapper{t}
+	return typeWrapper{ct}
 }
 
-// Named returns a NameType
-func (h HelpfulTypeWrapper) Named(name string) NameType {
-	return NameType{name, h}
+func (t typeWrapper) Named(name string) NameType {
+	return NameType{name, t}
 }
 
-// Unnamed returns a NameType with an empty string as the name.
-func (h HelpfulTypeWrapper) Unnamed() NameType {
-	return NameType{"", h}
+func (t typeWrapper) Unnamed() NameType {
+	return NameType{"", t}
 }
 
-// Ptr returns a Pointer to the type.
-func (h HelpfulTypeWrapper) Ptr() PointerType {
-	return PointerTo(h.Type)
+func (t typeWrapper) Ptr() PointerType {
+	return PointerTo(t)
 }
 
-// Slice of the underlying type.
-func (h HelpfulTypeWrapper) Slice() SliceType {
-	return SliceOf(h.Type)
+func (t typeWrapper) Slice() SliceType {
+	return SliceOf(t)
 }
 
-// Array of the underlying type.
-func (h HelpfulTypeWrapper) Array(size int) ArrayType {
-	return ArrayOf(h.Type, size)
+func (t typeWrapper) Array(size int) ArrayType {
+	return ArrayOf(t, size)
 }
 
-// AsMapElem creates a Map with the underlying type as the map element and the
-// provided type as the key.
-func (h HelpfulTypeWrapper) AsMapElem(key Type) MapType {
-	return MapOf(key, h.Type)
+func (t typeWrapper) AsMapElem(key Type) MapType {
+	return MapOf(key, t)
 }
 
-// AsMapKey creates a Map with the underlying type as the map key and the
-// provided type as the element.
-func (h HelpfulTypeWrapper) AsMapKey(elem Type) MapType {
-	return MapOf(h.Type, elem)
+func (t typeWrapper) AsMapKey(elem Type) MapType {
+	return MapOf(t, elem)
 }

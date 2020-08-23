@@ -9,42 +9,40 @@ import (
 
 // SliceType extends Type with slice specific information
 type SliceType interface {
-	HelpfulType
-	SliceElem() HelpfulType
-	Elem() HelpfulType
+	Type
+	SliceElem() Type
+	Elem() Type
 }
 
 // SliceOf returns a SliceType around t.
 func SliceOf(t Type) SliceType {
-	return sliceHT{
-		HelpfulTypeWrapper{sliceT{NewHelpfulType(t)}},
+	return sliceT{
+		typeWrapper{sliceCT{newType(t)}},
 	}
 }
 
-// sliceT is the inner part of the pointer slice structure, it inheirits
+// sliceCT is the inner part of the slice nesting structure, it inheirits
 // ImportsRegistrar from the underlying type but overrides Kind, PackageRef and
-// PrefixWriteTo. It also ensures the underlying type is HelpfulType so that the
-// outerlayer doesn't have to do any conversion to return a HelpfulType. This
-// nesting structure allows using the HelpfulTypeWrapper on the inner slice
-// type, while the outer wrapper extends it with Elem and PointerElem.
+// PrefixWriteTo. This nesting structure allows using the typeWrapper on the
+// inner sliceCT, while the outer wrapper extends it with Elem and SliceElem.
 
-type sliceT struct {
-	HelpfulType
+type sliceCT struct {
+	Type
 }
 
-func (s sliceT) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
+func (s sliceCT) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	sw.WriteString("[]")
-	s.HelpfulType.PrefixWriteTo(sw, p)
+	s.Type.PrefixWriteTo(sw, p)
 	sw.Err = lerr.Wrap(sw.Err, "While writing slice")
 	return sw.Rets()
 }
-func (sliceT) Kind() Kind             { return SliceKind }
-func (sliceT) PackageRef() PackageRef { return pkgBuiltin }
+func (sliceCT) Kind() Kind             { return SliceKind }
+func (sliceCT) PackageRef() PackageRef { return pkgBuiltin }
 
-type sliceHT struct {
-	HelpfulTypeWrapper
+type sliceT struct {
+	typeWrapper
 }
 
-func (s sliceHT) Elem() HelpfulType      { return s.Type.(sliceT).HelpfulType }
-func (s sliceHT) SliceElem() HelpfulType { return s.Elem() }
+func (s sliceT) Elem() Type      { return s.coreType.(sliceCT).Type }
+func (s sliceT) SliceElem() Type { return s.Elem() }

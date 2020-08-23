@@ -12,16 +12,16 @@ import (
 // ExternalType(MustPackageRef("time"), "Time") creates a reference to the Time
 // type in the time package.
 type ExternalType interface {
-	HelpfulType
+	Type
 	ExternalPackageRef() ExternalPackageRef
 }
 
 type externalTypeWrapper struct {
-	HelpfulTypeWrapper
+	typeWrapper
 }
 
 func (e *externalTypeWrapper) ExternalPackageRef() ExternalPackageRef {
-	return e.HelpfulTypeWrapper.Type.(*externalType).ref
+	return e.coreType.(*externalType).ref
 }
 
 type externalType struct {

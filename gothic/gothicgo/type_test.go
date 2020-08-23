@@ -18,25 +18,25 @@ func TestBuiltinType(t *testing.T) {
 }
 
 func TestNewHelpfulTypeWrapper(t *testing.T) {
-	doubleWrap := HelpfulTypeWrapper{IntType}
+	doubleWrap := typeWrapper{IntType}
 
 	// confirm doubleWrap
-	_, ok := doubleWrap.Type.(HelpfulTypeWrapper)
+	_, ok := doubleWrap.coreType.(typeWrapper)
 	assert.True(t, ok)
 
-	singleWrap := NewHelpfulTypeWrapper(doubleWrap)
+	singleWrap := newTypeWrapper(doubleWrap)
 
 	// confirm singleWrap
-	_, ok = singleWrap.Type.(HelpfulTypeWrapper)
+	_, ok = singleWrap.coreType.(typeWrapper)
 	assert.False(t, ok)
 }
 
 func TestNewHelpfulType(t *testing.T) {
-	singleWrap := NewHelpfulType(IntType)
+	singleWrap := newType(IntType)
 
 	// confirm singleWrap was not re-wrapped
-	swht, ok := singleWrap.(HelpfulTypeWrapper)
+	swht, ok := singleWrap.(typeWrapper)
 	assert.True(t, ok)
-	_, ok = swht.Type.(HelpfulTypeWrapper)
+	_, ok = swht.coreType.(typeWrapper)
 	assert.False(t, ok)
 }

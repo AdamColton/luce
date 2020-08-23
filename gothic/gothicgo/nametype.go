@@ -10,7 +10,7 @@ import (
 // NameType is used for arguments and returns for function
 type NameType struct {
 	N string
-	HelpfulType
+	Type
 }
 
 // Name value
@@ -18,10 +18,10 @@ func (n NameType) Name() string { return n.N }
 
 // Unnamed takes a slice of types and returns them as a slice of NameTypes that are
 // unnamed.
-func Unnamed(ts ...HelpfulType) []NameType {
+func Unnamed(ts ...Type) []NameType {
 	nts := make([]NameType, len(ts))
 	for i, t := range ts {
-		nts[i].HelpfulType = t
+		nts[i].Type = t
 	}
 	return nts
 }
@@ -33,7 +33,7 @@ func (n NameType) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 		sw.WriteString(n.N)
 		sw.WriteRune(' ')
 	}
-	n.HelpfulType.PrefixWriteTo(sw, p)
+	n.Type.PrefixWriteTo(sw, p)
 	sw.Err = lerr.Wrap(sw.Err, "While writing NameType")
 	return sw.Rets()
 }
