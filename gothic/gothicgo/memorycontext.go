@@ -10,7 +10,7 @@ import (
 type MemoryContext struct {
 	*BaseContext
 	Files map[string]*bytes.Buffer
-	Last  *bytes.Buffer
+	last  *bytes.Buffer
 }
 
 // NewMemoryContext sets up a MemoryContext
@@ -26,7 +26,7 @@ func NewMemoryContext() *MemoryContext {
 			buf = bytes.NewBuffer(nil)
 			ctx.Files[path] = buf
 		}
-		ctx.Last = buf
+		ctx.last = buf
 		return buf, nil
 	}
 
@@ -34,4 +34,10 @@ func NewMemoryContext() *MemoryContext {
 	ctx.Abs = func(path string) (string, error) { return path, nil }
 
 	return ctx
+}
+
+// Last returns the last file created as a string. Primarily intended for
+// testing.
+func (mc *MemoryContext) Last() string {
+	return mc.last.String()
 }

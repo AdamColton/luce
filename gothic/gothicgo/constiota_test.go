@@ -7,9 +7,8 @@ import (
 )
 
 func TestConstIotaBlock(t *testing.T) {
-	ctx := NewMemoryContext()
-	pkg := ctx.MustPackage("foo")
-	file := pkg.File("foo")
+	ctx, file := newFile("foo")
+
 	c := file.MustConstIotaBlock(IntType, "apple", "bannana", "cantaloupe", "date", "elderberry")
 	c.Comment = "List of fruit"
 
@@ -18,10 +17,9 @@ func TestConstIotaBlock(t *testing.T) {
 
 	ctx.MustExport()
 
-	str := ctx.Last.String()
-	assert.Contains(t, str, "// List of fruit\nconst (")
-	assert.Contains(t, str, "apple int = iota")
-	assert.Contains(t, str, "bannana\n")
-	assert.Contains(t, str, "elderberry\n)")
-	assert.Contains(t, str, "read byte = 1 << iota")
+	assert.Contains(t, ctx.Last(), "// List of fruit\nconst (")
+	assert.Contains(t, ctx.Last(), "apple int = iota")
+	assert.Contains(t, ctx.Last(), "bannana\n")
+	assert.Contains(t, ctx.Last(), "elderberry\n)")
+	assert.Contains(t, ctx.Last(), "read byte = 1 << iota")
 }

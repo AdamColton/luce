@@ -1,6 +1,6 @@
 package gothicgo
 
-import "strings"
+import "github.com/adamcolton/luce/util/luceio"
 
 // Alias a package import. Fulfils PackageRef.
 type Alias struct {
@@ -29,7 +29,7 @@ func (a Alias) Name() string {
 // ImportSpec returns the import specification including the alias, fulfils
 // PackageRef.
 func (a Alias) ImportSpec() string {
-	return strings.Join([]string{a.alias, " \"", a.ref.ImportPath(), "\""}, "")
+	return luceio.Join(a.alias, " \"", a.ref.ImportPath(), "\"", "")
 }
 
 func (a Alias) privatePkgRef() {}

@@ -80,16 +80,13 @@ func TestFile(t *testing.T) {
 
 	ctx.MustExport()
 
-	str := ctx.Last.String()
-	assert.Contains(t, str, `var test = "testing file generation"`)
-	assert.Contains(t, str, "package foo")
+	assert.Contains(t, ctx.Last(), `var test = "testing file generation"`)
+	assert.Contains(t, ctx.Last(), "package foo")
 
 }
 
 func TestFilePrepErr(t *testing.T) {
-	ctx := NewMemoryContext()
-	pkg := ctx.MustPackage("foo")
-	file := pkg.File("bar")
+	ctx, file := newFile("foo", "bar")
 	assert.NoError(t, file.AddWriterTo(&writerPrepperNamer{prepErr: fmt.Errorf("testing file prep error")}))
 	err := ctx.Export()
 
@@ -97,9 +94,7 @@ func TestFilePrepErr(t *testing.T) {
 }
 
 func TestFileWriteToErr(t *testing.T) {
-	ctx := NewMemoryContext()
-	pkg := ctx.MustPackage("foo")
-	file := pkg.File("bar")
+	ctx, file := newFile("foo", "bar")
 	assert.NoError(t, file.AddWriterTo(&writerPrepperNamer{writeErr: fmt.Errorf("testing file write error")}))
 	err := ctx.Export()
 
@@ -129,14 +124,12 @@ func TestFileCloseErr(t *testing.T) {
 }
 
 func TestFileFormatErr(t *testing.T) {
-	ctx := NewMemoryContext()
-	pkg := ctx.MustPackage("foo")
-	file := pkg.File("bar")
+	ctx, file := newFile("foo", "bar")
 	assert.NoError(t, file.AddWriterTo(&writerPrepperNamer{str: "testing file format error"}))
 	err := ctx.Export()
 
 	assert.Equal(t, "Generate package foo: Failed to format foo/bar:: 4:1: expected declaration, found testing", err.Error())
-	assert.Contains(t, ctx.Last.String(), "testing file format error")
+	assert.Contains(t, ctx.Last(), "testing file format error")
 }
 
 func TestFileDoubleGet(t *testing.T) {

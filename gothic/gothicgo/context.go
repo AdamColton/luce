@@ -64,6 +64,7 @@ func (c CtxFactory) New() *BaseContext {
 		Abs:            filepath.Abs,
 		MkdirAll:       func(pth string) error { return os.MkdirAll(pth, 0777) },
 		defaultComment: c.DefaultComment,
+		commentWidth:   w,
 	}
 }
 

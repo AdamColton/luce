@@ -69,7 +69,7 @@ func (f *Func) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 			w = cw.CommentWidth()
 		}
 		sw.WriterTo(&Comment{
-			Comment: strings.Join([]string{f.Name(), f.Comment}, " "),
+			Comment: luceio.Join(f.Name(), f.Comment, " "),
 			Width:   w,
 		})
 	}

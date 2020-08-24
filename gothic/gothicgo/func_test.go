@@ -41,13 +41,11 @@ func TestFunc(t *testing.T) {
 
 	ctx.MustExport()
 
-	str := ctx.Last.String()
-	assert.Contains(t, str, "func Bar(a int, b string, c baz.Baz) bool {\n\treturn true\n}")
-	assert.Contains(t, str, "func BodyStringTest(a int, b string, c baz.Baz) bool {\n\treturn bodystring\n}")
-	assert.Contains(t, str, "func BodyWriterToTest(a int, b string, c baz.Baz) bool {\n\treturn bodywriterto\n}")
-	assert.Contains(t, str, "importTest")
-	assert.Contains(t, str, "// Bar is a test function")
+	assert.Contains(t, ctx.Last(), "func Bar(a int, b string, c baz.Baz) bool {\n\treturn true\n}")
+	assert.Contains(t, ctx.Last(), "func BodyStringTest(a int, b string, c baz.Baz) bool {\n\treturn bodystring\n}")
+	assert.Contains(t, ctx.Last(), "func BodyWriterToTest(a int, b string, c baz.Baz) bool {\n\treturn bodywriterto\n}")
+	assert.Contains(t, ctx.Last(), "importTest")
+	assert.Contains(t, ctx.Last(), "// Bar is a test function")
 
-	str = fn.Call(DefaultPrefixer, "x", "y", "z")
-	assert.Equal(t, "foo.Bar(x, y, z)", str)
+	assert.Equal(t, "foo.Bar(x, y, z)", fn.Call(DefaultPrefixer, "x", "y", "z"))
 }

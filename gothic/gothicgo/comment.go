@@ -25,7 +25,7 @@ type CommentWidther interface {
 func (f *File) NewComment(comment string) *Comment {
 	c := &Comment{
 		Comment: comment,
-		Width:   f.pkg.context.CommentWidth(),
+		Width:   f.CommentWidth(),
 	}
 	f.AddWriterTo(c)
 	return c

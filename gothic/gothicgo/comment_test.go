@@ -7,25 +7,23 @@ import (
 )
 
 func TestComment(t *testing.T) {
-	ctx := NewMemoryContext()
-	pkg := ctx.MustPackage("foo")
-	file := pkg.File("foo")
+	ctx, file := newFile("foo")
+	assert.Equal(t, defaultCommentWidth, file.CW)
 
 	file.NewComment("This is a test")
-	ctx.SetCommentWidth(10)
+	file.CW = 10
 	file.NewComment("The sun was shining on the sea")
 
 	assert.Equal(t, ErrCommentWidth, ctx.SetCommentWidth(0))
 
 	ctx.MustExport()
 
-	str := ctx.Last.String()
-	assert.Contains(t, str, "// This is a test")
-	assert.Contains(t, str, "// The sun")
-	assert.Contains(t, str, "// was")
-	assert.Contains(t, str, "// shining")
-	assert.Contains(t, str, "// on the")
-	assert.Contains(t, str, "// sea")
+	assert.Contains(t, ctx.Last(), "// This is a test")
+	assert.Contains(t, ctx.Last(), "// The sun")
+	assert.Contains(t, ctx.Last(), "// was")
+	assert.Contains(t, ctx.Last(), "// shining")
+	assert.Contains(t, ctx.Last(), "// on the")
+	assert.Contains(t, ctx.Last(), "// sea")
 }
 
 func TestDefaultComment(t *testing.T) {
@@ -36,5 +34,5 @@ func TestDefaultComment(t *testing.T) {
 	ctx.MustExport()
 
 	expected := "// Testing Default Comment"
-	assert.Equal(t, expected, ctx.Last.String()[:len(expected)])
+	assert.Equal(t, expected, ctx.Last()[:len(expected)])
 }

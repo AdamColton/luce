@@ -3,9 +3,9 @@ package gothicgo
 import (
 	"fmt"
 	"regexp"
-	"strings"
 
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/util/luceio"
 )
 
 // PackageRef represents a reference to a package.
@@ -54,7 +54,7 @@ func (p packageRef) Name() string {
 }
 
 func (p packageRef) ImportSpec() string {
-	return strings.Join([]string{"\"", p.path, "\""}, "")
+	return luceio.Join("\"", p.path, "\"", "")
 }
 
 func (packageRef) privatePkgRef() {}

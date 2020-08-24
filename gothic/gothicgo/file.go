@@ -24,6 +24,28 @@ type File struct {
 	CW int
 }
 
+// File creates a file within the package. The name should not include ".go"
+// which will be automatically appended.
+func (p *Package) File(name string) *File {
+	if file, exists := p.files[name]; exists {
+		return file
+	}
+	f := &File{
+		Imports: NewImports(p),
+		name:    name,
+		pkg:     p,
+		CW:      p.CommentWidth,
+	}
+	if p.DefaultComment != "" {
+		f.Comment = &Comment{
+			Comment: p.DefaultComment,
+			Width:   p.CommentWidth,
+		}
+	}
+	p.files[name] = f
+	return f
+}
+
 // Prepare runs prepare on all the generators in the file
 func (f *File) Prepare() error {
 	for _, w := range f.code {
@@ -103,27 +125,6 @@ func (f *File) Generate() (err error) {
 	}
 
 	return
-}
-
-// File creates a file within the package. The name should not include ".go"
-// which will be automatically appended.
-func (p *Package) File(name string) *File {
-	if file, exists := p.files[name]; exists {
-		return file
-	}
-	f := &File{
-		Imports: NewImports(p),
-		name:    name,
-		pkg:     p,
-	}
-	if p.DefaultComment != "" {
-		f.Comment = &Comment{
-			Comment: p.DefaultComment,
-			Width:   p.CommentWidth,
-		}
-	}
-	p.files[name] = f
-	return f
 }
 
 // Package the file is in

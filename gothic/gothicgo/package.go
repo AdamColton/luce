@@ -5,9 +5,9 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"strings"
 
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/util/luceio"
 )
 
 // Package represents a directory containing Go code. Package also fulfills the
@@ -118,7 +118,7 @@ func (p *Package) Name() string {
 // ImportSpec returns import specification as it would be used in an import
 // statement.
 func (p *Package) ImportSpec() string {
-	return strings.Join([]string{"\"", p.ImportPath(), "\""}, "")
+	return luceio.Join("\"", p.ImportPath(), "\"", "")
 }
 
 func (*Package) privatePkgRef() {}
