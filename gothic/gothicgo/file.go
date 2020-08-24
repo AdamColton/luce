@@ -15,10 +15,13 @@ import (
 // io.WriteCloser, it will write to that instead
 type File struct {
 	*Imports
-	name           string
-	code           []io.WriterTo
-	pkg            *Package
-	defaultComment Comment
+	name    string
+	code    []io.WriterTo
+	pkg     *Package
+	Comment *Comment
+	// CW is CommentWidth, that name is not used because it collides with the
+	// method name.
+	CW int
 }
 
 // Prepare runs prepare on all the generators in the file
@@ -54,8 +57,8 @@ func (f *File) Generate() (err error) {
 	buf := bytes.NewBuffer(nil)
 	sw := luceio.NewSumWriter(buf)
 
-	if f.defaultComment.Comment != "" {
-		f.defaultComment.WriteTo(sw)
+	if f.Comment != nil {
+		f.Comment.WriteTo(sw)
 	}
 	sw.WriteRune('\n')
 	sw.WriteString("package ")
@@ -109,10 +112,15 @@ func (p *Package) File(name string) *File {
 		return file
 	}
 	f := &File{
-		Imports:        NewImports(p),
-		name:           name,
-		pkg:            p,
-		defaultComment: p.defaultComment,
+		Imports: NewImports(p),
+		name:    name,
+		pkg:     p,
+	}
+	if p.DefaultComment != "" {
+		f.Comment = &Comment{
+			Comment: p.DefaultComment,
+			Width:   p.CommentWidth,
+		}
 	}
 	p.files[name] = f
 	return f
@@ -129,7 +137,8 @@ func (f *File) UpdateNamer(n Namer) error {
 	return lerr.Wrap(f.Package().UpdateNamer(n), "UpdateNamer in file %s", f.name)
 }
 
-// CommentWidth gets the comment width from the context
+// CommentWidth fulfills CommentWidther. It preserves the comment width from
+// the package at the time the File is created.
 func (f *File) CommentWidth() int {
-	return f.pkg.context.CommentWidth()
+	return f.CW
 }

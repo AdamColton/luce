@@ -2,6 +2,7 @@ package gothicgo
 
 import (
 	"bytes"
+	"io"
 	"unicode"
 	"unicode/utf8"
 
@@ -21,4 +22,15 @@ func PrefixWriteToString(w PrefixWriterTo, p Prefixer) string {
 	_, err := w.PrefixWriteTo(buf, p)
 	lerr.Panic(err)
 	return buf.String()
+}
+
+// IgnorePrefixer converts a WriterTo to a PrefixWriterTo that ignores the
+// the Prefixer
+type IgnorePrefixer struct {
+	io.WriterTo
+}
+
+// PrefixWriteTo fulfills PrefixWriterTo. The prefixer is not used.
+func (ip IgnorePrefixer) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
+	return ip.WriteTo(w)
 }

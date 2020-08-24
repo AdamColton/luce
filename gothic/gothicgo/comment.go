@@ -14,6 +14,11 @@ type Comment struct {
 	Width   int
 }
 
+// CommentWidther is anything that can specify a comment width
+type CommentWidther interface {
+	CommentWidth() int
+}
+
 // NewComment takes a string and returns a Comment. The comment width comes from
 // the files package context. If File is nil a Comment with no width is
 // returned. It does not write the comment to the file.

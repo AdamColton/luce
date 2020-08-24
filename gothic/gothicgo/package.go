@@ -13,14 +13,18 @@ import (
 // Package represents a directory containing Go code. Package also fulfills the
 // PackageRef interface.
 type Package struct {
-	name           string
-	importPath     string
-	OutputPath     string
-	context        Context
-	files          map[string]*File
-	names          map[string]Namer
-	namers         map[Namer]string
-	defaultComment Comment
+	name       string
+	importPath string
+	OutputPath string
+	context    Context
+	files      map[string]*File
+	names      map[string]Namer
+	namers     map[Namer]string
+	// CommentWidth is taken from the context when the Package is created.
+	CommentWidth int
+	// DefaultComment will be set on every File created. It is intended to be a
+	// "Generated Code - Do Not Modify" style comment.
+	DefaultComment string
 }
 
 // Namer represents a code generator that introduce a name to a package scope.
@@ -50,17 +54,15 @@ func NewPackage(ctx Context, name string) (*Package, error) {
 		return nil, ErrBadPackageName
 	}
 	pkg := &Package{
-		name:       name,
-		context:    ctx,
-		files:      make(map[string]*File),
-		importPath: ctx.ImportPath(),
-		OutputPath: ctx.OutputPath(name),
-		names:      make(map[string]Namer),
-		namers:     make(map[Namer]string),
-		defaultComment: Comment{
-			Comment: ctx.DefaultComment(),
-			Width:   ctx.CommentWidth(),
-		},
+		name:           name,
+		context:        ctx,
+		files:          make(map[string]*File),
+		importPath:     ctx.ImportPath(),
+		OutputPath:     ctx.OutputPath(name),
+		names:          make(map[string]Namer),
+		namers:         make(map[Namer]string),
+		DefaultComment: ctx.DefaultComment(),
+		CommentWidth:   ctx.CommentWidth(),
 	}
 	ctx.AddPackage(pkg)
 	return pkg, nil
