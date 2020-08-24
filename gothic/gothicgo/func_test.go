@@ -49,3 +49,21 @@ func TestFunc(t *testing.T) {
 
 	assert.Equal(t, "foo.Bar(x, y, z)", fn.Call(DefaultPrefixer, "x", "y", "z"))
 }
+
+func TestNewFuncErr(t *testing.T) {
+	_, file := newFile("foo")
+	args := []NameType{
+		IntType.Named("a"),
+		StringType.Unnamed(),
+		MustExternalPackageRef("baz").MustExternalType("Baz").Named("c"),
+	}
+	rets := []NameType{
+		BoolType.Unnamed(),
+	}
+	_, err := file.NewFunc("someFunc", args, rets, false)
+	assert.Equal(t, ErrUnnamedFuncArg, err)
+
+	rets = append(rets, StringType.Named("z"))
+	_, err = file.NewFunc("someFunc", nil, rets, false)
+	assert.Equal(t, ErrMixedParameters, err)
+}

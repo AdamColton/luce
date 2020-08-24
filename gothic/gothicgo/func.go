@@ -24,10 +24,31 @@ type FuncCaller interface {
 	Call(pre Prefixer, args ...string) string
 }
 
+// ErrUnnamedFuncArg is returned from NewFunc if an unnamed NameType is used
+// as an arg.
+const ErrUnnamedFuncArg = lerr.Str("All func args must be nammed")
+
 // NewFunc returns a new Func with File set and add the function to file's
 // generators so that when the file is generated, the func will be generated as
 // part of the file.
 func (f *File) NewFunc(name string, args, rets []NameType, variadic bool) (*Func, error) {
+	for _, arg := range args {
+		if arg.N == "" {
+			return nil, ErrUnnamedFuncArg
+		}
+	}
+	if len(rets) > 1 {
+		var validateName = expectNamed
+		if rets[0].N == "" {
+			validateName = expectUnnamed
+		}
+		for _, r := range rets[1:] {
+			if err := validateName(r.N); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	fn := &Func{
 		FuncSig: NewFuncSig(name, args, rets, variadic),
 		file:    f,
