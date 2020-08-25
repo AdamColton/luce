@@ -149,14 +149,14 @@ func TestCompactUint64(t *testing.T) {
 			assert.Equal(t, uint64(s.Idx), SizeCompactUint64(tc))
 			assert.Equal(t, tc, NewDeserializer(s.Data).CompactUint64())
 
-			// Check that CompactUint64 and PrefixSlice logic is compatable
-			b := NewDeserializer(s.Data).PrefixSlice()
+			// Check that CompactUint64 and CompactSlice logic is compatable
+			b := NewDeserializer(s.Data).CompactSlice()
 			assert.Equal(t, tc, NewDeserializer(b).Uint(byte(len(b))))
 		})
 	}
 }
 
-func TestPrefixSlice(t *testing.T) {
+func TestCompactSlice(t *testing.T) {
 	tt := [][]byte{
 		nil,
 		[]byte("A"),
@@ -185,16 +185,16 @@ func TestPrefixSlice(t *testing.T) {
 				Size: len(tc) + 3,
 			}
 			s.Make()
-			s.PrefixSlice(tc)
+			s.CompactSlice(tc)
 			assert.Equal(t, uint64(s.Idx), Size(tc))
-			assert.Equal(t, tc, NewDeserializer(s.Data).PrefixSlice())
+			assert.Equal(t, tc, NewDeserializer(s.Data).CompactSlice())
 
 			s.Data = nil
 			s.Idx = 0
 			s.Make()
 			str := string(tc)
-			s.PrefixString(str)
-			assert.Equal(t, str, NewDeserializer(s.Data).PrefixString())
+			s.CompactString(str)
+			assert.Equal(t, str, NewDeserializer(s.Data).CompactString())
 		})
 	}
 }
@@ -267,5 +267,40 @@ func TestCompactInt64(t *testing.T) {
 			assert.Equal(t, uint64(s.Idx), SizeCompactInt64(tc))
 			assert.Equal(t, tc, NewDeserializer(s.Data).CompactInt64())
 		})
+	}
+}
+
+func TestCompactSub(t *testing.T) {
+	a := make([]byte, 10)
+	b := make([]byte, 10)
+	rand.Read(a)
+	rand.Read(b)
+
+	c := make([]uint64, 10)
+	inner := &Serializer{}
+	for i := range c {
+		c[i] = rand.Uint64()
+		inner.Size += int(SizeCompactUint64(c[i]))
+	}
+	inner.Make()
+	for _, u := range c {
+		inner.CompactUint64(u)
+	}
+
+	s := &Serializer{
+		Size: int(Size(a) + Size(b) + Size(inner.Data)),
+	}
+	s.Make()
+	s.CompactSlice(a)
+	s.CompactSlice(inner.Data)
+	s.CompactSlice(b)
+
+	d := NewDeserializer(s.Data)
+
+	assert.Equal(t, a, d.CompactSlice())
+	sub := d.CompactSub()
+	assert.Equal(t, b, d.CompactSlice())
+	for i := 0; !sub.Done(); i++ {
+		assert.Equal(t, c[i], sub.CompactUint64())
 	}
 }

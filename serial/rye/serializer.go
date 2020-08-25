@@ -17,6 +17,7 @@ func (s *Serializer) Make() *Serializer {
 	return s
 }
 
+// Sub serializer of a specific length.
 func (s *Serializer) Sub(ln int) *Serializer {
 	s.Idx += ln
 	return &Serializer{
@@ -66,6 +67,11 @@ func (s *Serializer) Uint64(x uint64) {
 	s.Idx += 8
 }
 
+// Uint serializes the value little-endian. If size is >0, that number of bytes
+// will be written. If size==0, it will write the value with fewest bytes,
+// omitting leading zeros. The returned byte indicates the number of bytes
+// written. Size should be between 0 and 8, but it is not checked. This does
+// not increase the Idx.
 func (s *Serializer) Uint(size byte, value uint64) byte {
 	if size == 0 && value == 0 {
 		s.Byte(0)

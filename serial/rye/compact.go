@@ -1,22 +1,25 @@
 package rye
 
-// CompactUint64 writes x to the Serializer in the Compact Uint64 format.
+const cmpctNil = 129
+
+// CompactUint64 writes x to the Serializer in the CompactUint64 format.
 func (s *Serializer) CompactUint64(x uint64) {
 	if x < 129 {
 		s.Byte(byte(x))
 		return
 	}
 	idx := s.Idx
-	s.Byte(129)
+	s.Byte(cmpctNil)
 	s.Data[idx] += s.Uint(0, x)
 }
 
+// CompactUint64 reads a Uint64 in compact form.
 func (d *Deserializer) CompactUint64() uint64 {
 	b := d.Byte()
 	if b < 129 {
 		return uint64(b)
 	}
-	return d.Uint(b - 129)
+	return d.Uint(b - cmpctNil)
 }
 
 func int64ToUint64(x int64) uint64 {
@@ -28,10 +31,12 @@ func int64ToUint64(x int64) uint64 {
 	return uint64(x<<1) | sign
 }
 
+// CompactInt64 writes an Int64 in compact form.
 func (s *Serializer) CompactInt64(x int64) {
 	s.CompactUint64(int64ToUint64(x))
 }
 
+// CompactInt64 reads an Int64 in compact form.
 func (d *Deserializer) CompactInt64() int64 {
 	u := d.CompactUint64()
 	sign := u & 1
@@ -42,13 +47,14 @@ func (d *Deserializer) CompactInt64() int64 {
 	return x
 }
 
-func (s *Serializer) PrefixSlice(data []byte) {
+// CompactSlice writes a byte slice in compact form.
+func (s *Serializer) CompactSlice(data []byte) {
 	ln := len(data)
 	if ln == 0 {
-		s.Byte(129)
+		s.Byte(cmpctNil)
 		return
 	}
-	if ln == 1 && data[0] < 129 {
+	if ln == 1 && data[0] < cmpctNil {
 		s.Byte(data[0])
 		return
 	}
@@ -57,36 +63,40 @@ func (s *Serializer) PrefixSlice(data []byte) {
 		s.Byte(250)
 		s.Data[idx] += s.Uint(0, uint64(ln))
 	} else {
-		s.Byte(byte(ln + 129))
+		s.Byte(byte(ln + cmpctNil))
 	}
 	s.Slice(data)
 }
 
-func (d *Deserializer) PrefixSlice() []byte {
+// CompactSlice reads a byte slice in compact form.
+func (d *Deserializer) CompactSlice() []byte {
 	b := d.Byte()
-	if b == 129 {
-		return nil
-	}
-	if b < 129 {
+	if b <= cmpctNil {
+		if b == cmpctNil {
+			return nil
+		}
 		return []byte{b}
 	}
 	if b < 251 {
-		return d.Slice(int(b - 129))
+		return d.Slice(int(b - cmpctNil))
 	}
 	return d.Slice(int(d.Uint(b - 250)))
 }
 
-func (s *Serializer) PrefixString(str string) {
-	s.PrefixSlice([]byte(str))
+// CompactString writes the string as a compact byte slice.
+func (s *Serializer) CompactString(str string) {
+	s.CompactSlice([]byte(str))
 }
 
-func (d *Deserializer) PrefixString() string {
-	return string(d.PrefixSlice())
+// CompactString reads the string as a compact byte slice.
+func (d *Deserializer) CompactString() string {
+	return string(d.CompactSlice())
 }
 
+// Size of the data in compact form
 func Size(data []byte) uint64 {
 	ln := len(data)
-	if ln == 0 || (ln == 1 && data[0] < 129) {
+	if ln == 0 || (ln == 1 && data[0] < cmpctNil) {
 		return 1
 	}
 	uln := uint64(ln)
@@ -96,6 +106,8 @@ func Size(data []byte) uint64 {
 	return 1 + SizeUint(uln) + uln
 }
 
+// SizeUint is the number of bytes needed to encode x ignoring leading zero
+// bytes.
 func SizeUint(x uint64) uint64 {
 	if x == 0 {
 		return 1
@@ -107,13 +119,15 @@ func SizeUint(x uint64) uint64 {
 	return out
 }
 
+// SizeCompactUint64 of x in compact form
 func SizeCompactUint64(x uint64) uint64 {
-	if x < 129 {
+	if x < cmpctNil {
 		return 1
 	}
 	return 1 + SizeUint(x)
 }
 
+// SizeCompactInt64 of x in compact form
 func SizeCompactInt64(x int64) uint64 {
 	return SizeCompactUint64(int64ToUint64(x))
 }
