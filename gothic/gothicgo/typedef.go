@@ -36,7 +36,7 @@ type NewTypeDefiner interface {
 // NewTypeDef adds a type to a Context, the package and file for the struct is
 // automatically generated.
 func (c *BaseContext) NewTypeDef(name string, t Type) (*TypeDef, error) {
-	p, err := c.Package(name)
+	p, err := c.Package(strings.ToLower(name))
 	if err != nil {
 		return nil, err
 	}
@@ -111,9 +111,7 @@ func (td *TypeDef) PackageRef() PackageRef {
 func (td *TypeDef) File() *File {
 	return td.file
 }
-func (td *TypeDef) Kind() Kind {
-	return TypeDefKind
-}
+
 func (td *TypeDef) Name() string {
 	return td.name
 }
@@ -130,6 +128,10 @@ func (td *TypeDef) StructEmbedName() string {
 }
 
 func (td *TypeDef) Base() Type {
+	return td.Elem()
+}
+
+func (td *TypeDef) Elem() Type {
 	if td.Ptr {
 		return PointerTo(td.baseType)
 	}
@@ -244,9 +246,9 @@ func (m *Method) Receiver() NameType {
 		N: m.typeDef.ReceiverName,
 	}
 	if m.Ptr {
-		n.T = PointerTo(typeWrapper{m.typeDef})
+		n.T = m.typeDef.Pointer()
 	} else {
-		n.T = typeWrapper{m.typeDef}
+		n.T = m.typeDef
 	}
 	return n
 }

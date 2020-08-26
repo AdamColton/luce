@@ -62,7 +62,7 @@ var (
 	// Unnamed funfills Type. Returns a NameType with an empty Name.
 	{{template "sig" .}} Unnamed() NameType { return NameType{"", {{.R}}} }
 
-	// Ptr funfills Type.
+	// Pointer funfills Type.
 	{{template "sig" .}} Pointer() *PointerType { return PointerTo({{.R}}) }
 
 	// Slice funfills Type.
@@ -176,6 +176,18 @@ func main() {
 			String:      "[]int",
 			Kind:        "SliceKind",
 			Elem:        "IntType",
+		}, {
+			R:       "t",
+			Name:    "TypeDef",
+			GenKind: true,
+			Ptr:     true,
+			Constructor: `	ctx := NewMemoryContext()
+							x, err := ctx.NewTypeDef("Foo", StringType)
+							assert.NoError(t, err)`,
+			String:  "foo.Foo",
+			Kind:    "TypeDefKind",
+			Elem:    "StringType",
+			Package: `ctx.MustPackage("foo")`,
 		},
 	}
 	for _, ft := range fts {

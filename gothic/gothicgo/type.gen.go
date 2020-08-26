@@ -8,7 +8,7 @@ func (a *ArrayType) Named(name string) NameType { return NameType{name, a} }
 // Unnamed funfills Type. Returns a NameType with an empty Name.
 func (a *ArrayType) Unnamed() NameType { return NameType{"", a} }
 
-// Ptr funfills Type.
+// Pointer funfills Type.
 func (a *ArrayType) Pointer() *PointerType { return PointerTo(a) }
 
 // Slice funfills Type.
@@ -32,7 +32,7 @@ func (b builtin) Named(name string) NameType { return NameType{name, b} }
 // Unnamed funfills Type. Returns a NameType with an empty Name.
 func (b builtin) Unnamed() NameType { return NameType{"", b} }
 
-// Ptr funfills Type.
+// Pointer funfills Type.
 func (b builtin) Pointer() *PointerType { return PointerTo(b) }
 
 // Slice funfills Type.
@@ -53,7 +53,7 @@ func (e *ExternalType) Named(name string) NameType { return NameType{name, e} }
 // Unnamed funfills Type. Returns a NameType with an empty Name.
 func (e *ExternalType) Unnamed() NameType { return NameType{"", e} }
 
-// Ptr funfills Type.
+// Pointer funfills Type.
 func (e *ExternalType) Pointer() *PointerType { return PointerTo(e) }
 
 // Slice funfills Type.
@@ -77,7 +77,7 @@ func (f *FuncSig) Named(name string) NameType { return NameType{name, f} }
 // Unnamed funfills Type. Returns a NameType with an empty Name.
 func (f *FuncSig) Unnamed() NameType { return NameType{"", f} }
 
-// Ptr funfills Type.
+// Pointer funfills Type.
 func (f *FuncSig) Pointer() *PointerType { return PointerTo(f) }
 
 // Slice funfills Type.
@@ -101,7 +101,7 @@ func (m *MapType) Named(name string) NameType { return NameType{name, m} }
 // Unnamed funfills Type. Returns a NameType with an empty Name.
 func (m *MapType) Unnamed() NameType { return NameType{"", m} }
 
-// Ptr funfills Type.
+// Pointer funfills Type.
 func (m *MapType) Pointer() *PointerType { return PointerTo(m) }
 
 // Slice funfills Type.
@@ -125,7 +125,7 @@ func (p *PointerType) Named(name string) NameType { return NameType{name, p} }
 // Unnamed funfills Type. Returns a NameType with an empty Name.
 func (p *PointerType) Unnamed() NameType { return NameType{"", p} }
 
-// Ptr funfills Type.
+// Pointer funfills Type.
 func (p *PointerType) Pointer() *PointerType { return PointerTo(p) }
 
 // Slice funfills Type.
@@ -149,7 +149,7 @@ func (s *SliceType) Named(name string) NameType { return NameType{name, s} }
 // Unnamed funfills Type. Returns a NameType with an empty Name.
 func (s *SliceType) Unnamed() NameType { return NameType{"", s} }
 
-// Ptr funfills Type.
+// Pointer funfills Type.
 func (s *SliceType) Pointer() *PointerType { return PointerTo(s) }
 
 // Slice funfills Type.
@@ -166,3 +166,27 @@ func (s *SliceType) AsMapKey(elem Type) *MapType { return MapOf(s, elem) }
 
 // Kind fulfills Type. Returns SliceKind.
 func (s *SliceType) Kind() Kind { return SliceKind }
+
+// Named fulfills Type. Returns a NameType with the given name.
+func (t *TypeDef) Named(name string) NameType { return NameType{name, t} }
+
+// Unnamed funfills Type. Returns a NameType with an empty Name.
+func (t *TypeDef) Unnamed() NameType { return NameType{"", t} }
+
+// Pointer funfills Type.
+func (t *TypeDef) Pointer() *PointerType { return PointerTo(t) }
+
+// Slice funfills Type.
+func (t *TypeDef) Slice() *SliceType { return SliceOf(t) }
+
+// Array funfills Type.
+func (t *TypeDef) Array(size int) *ArrayType { return ArrayOf(t, size) }
+
+// AsMapElem funfills Type.
+func (t *TypeDef) AsMapElem(key Type) *MapType { return MapOf(key, t) }
+
+// AsMapKey funfills Type. Returns a NameType with an empty Name.
+func (t *TypeDef) AsMapKey(elem Type) *MapType { return MapOf(t, elem) }
+
+// Kind fulfills Type. Returns TypeDefKind.
+func (t *TypeDef) Kind() Kind { return TypeDefKind }

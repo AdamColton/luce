@@ -3,8 +3,9 @@
 package gothicgo
 
 import (
-	"github.com/testify/assert"
 	"testing"
+
+	"github.com/testify/assert"
 )
 
 func TestArrayTypeTypeGen(t *testing.T) {
@@ -285,4 +286,46 @@ func TestSliceTypeTypeGen(t *testing.T) {
 
 	str := PrefixWriteToString(x, DefaultPrefixer)
 	assert.Equal(t, "[]int", str)
+}
+
+func TestTypeDefTypeGen(t *testing.T) {
+	ctx := NewMemoryContext()
+	x, err := ctx.NewTypeDef("Foo", StringType)
+	assert.NoError(t, err)
+
+	assert.Equal(t, TypeDefKind, x.Kind())
+	assert.Equal(t, ctx.MustPackage("foo"), x.PackageRef())
+
+	n := x.Named("Foo")
+	assert.Equal(t, "Foo", n.Name())
+	assert.Equal(t, x, n.T)
+
+	n = x.Unnamed()
+	assert.Equal(t, "", n.Name())
+	assert.Equal(t, x, n.T)
+
+	p := x.Pointer()
+	assert.Equal(t, PointerKind, p.Kind())
+	assert.Equal(t, x, p.Elem())
+
+	s := x.Slice()
+	assert.Equal(t, SliceKind, s.Kind())
+	assert.Equal(t, x, s.Elem())
+
+	a := x.Array(13)
+	assert.Equal(t, ArrayKind, a.Kind())
+	assert.Equal(t, x, a.Elem())
+
+	mp := x.AsMapElem(IntType)
+	assert.Equal(t, MapKind, mp.Kind())
+	assert.Equal(t, x, mp.Elem())
+
+	mp = x.AsMapKey(IntType)
+	assert.Equal(t, MapKind, mp.Kind())
+	assert.Equal(t, x, mp.Key)
+
+	assert.Equal(t, StringType, x.Elem())
+
+	str := PrefixWriteToString(x, DefaultPrefixer)
+	assert.Equal(t, "foo.Foo", str)
 }
