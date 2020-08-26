@@ -18,10 +18,10 @@ func (a *ArrayType) Slice() SliceType { return SliceOf(a) }
 func (a *ArrayType) Array(size int) *ArrayType { return ArrayOf(a, size) }
 
 // AsMapElem funfills Type.
-func (a *ArrayType) AsMapElem(key Type) MapType { return MapOf(key, a) }
+func (a *ArrayType) AsMapElem(key Type) *MapType { return MapOf(key, a) }
 
 // AsMapKey funfills Type. Returns a NameType with an empty Name.
-func (a *ArrayType) AsMapKey(elem Type) MapType { return MapOf(a, elem) }
+func (a *ArrayType) AsMapKey(elem Type) *MapType { return MapOf(a, elem) }
 
 // Kind fulfills Type. Returns ArrayKind.
 func (a *ArrayType) Kind() Kind { return ArrayKind }
@@ -42,10 +42,10 @@ func (b builtin) Slice() SliceType { return SliceOf(b) }
 func (b builtin) Array(size int) *ArrayType { return ArrayOf(b, size) }
 
 // AsMapElem funfills Type.
-func (b builtin) AsMapElem(key Type) MapType { return MapOf(key, b) }
+func (b builtin) AsMapElem(key Type) *MapType { return MapOf(key, b) }
 
 // AsMapKey funfills Type. Returns a NameType with an empty Name.
-func (b builtin) AsMapKey(elem Type) MapType { return MapOf(b, elem) }
+func (b builtin) AsMapKey(elem Type) *MapType { return MapOf(b, elem) }
 
 // Named fulfills Type. Returns a NameType with the given name.
 func (e *ExternalType) Named(name string) NameType { return NameType{name, e} }
@@ -63,10 +63,10 @@ func (e *ExternalType) Slice() SliceType { return SliceOf(e) }
 func (e *ExternalType) Array(size int) *ArrayType { return ArrayOf(e, size) }
 
 // AsMapElem funfills Type.
-func (e *ExternalType) AsMapElem(key Type) MapType { return MapOf(key, e) }
+func (e *ExternalType) AsMapElem(key Type) *MapType { return MapOf(key, e) }
 
 // AsMapKey funfills Type. Returns a NameType with an empty Name.
-func (e *ExternalType) AsMapKey(elem Type) MapType { return MapOf(e, elem) }
+func (e *ExternalType) AsMapKey(elem Type) *MapType { return MapOf(e, elem) }
 
 // Kind fulfills Type. Returns TypeDefKind.
 func (e *ExternalType) Kind() Kind { return TypeDefKind }
@@ -87,10 +87,34 @@ func (f *FuncSig) Slice() SliceType { return SliceOf(f) }
 func (f *FuncSig) Array(size int) *ArrayType { return ArrayOf(f, size) }
 
 // AsMapElem funfills Type.
-func (f *FuncSig) AsMapElem(key Type) MapType { return MapOf(key, f) }
+func (f *FuncSig) AsMapElem(key Type) *MapType { return MapOf(key, f) }
 
 // AsMapKey funfills Type. Returns a NameType with an empty Name.
-func (f *FuncSig) AsMapKey(elem Type) MapType { return MapOf(f, elem) }
+func (f *FuncSig) AsMapKey(elem Type) *MapType { return MapOf(f, elem) }
 
 // Kind fulfills Type. Returns FuncKind.
 func (f *FuncSig) Kind() Kind { return FuncKind }
+
+// Named fulfills Type. Returns a NameType with the given name.
+func (m *MapType) Named(name string) NameType { return NameType{name, m} }
+
+// Unnamed funfills Type. Returns a NameType with an empty Name.
+func (m *MapType) Unnamed() NameType { return NameType{"", m} }
+
+// Ptr funfills Type.
+func (m *MapType) Ptr() PointerType { return PointerTo(m) }
+
+// Slice funfills Type.
+func (m *MapType) Slice() SliceType { return SliceOf(m) }
+
+// Array funfills Type.
+func (m *MapType) Array(size int) *ArrayType { return ArrayOf(m, size) }
+
+// AsMapElem funfills Type.
+func (m *MapType) AsMapElem(key Type) *MapType { return MapOf(key, m) }
+
+// AsMapKey funfills Type. Returns a NameType with an empty Name.
+func (m *MapType) AsMapKey(elem Type) *MapType { return MapOf(m, elem) }
+
+// Kind fulfills Type. Returns MapKind.
+func (m *MapType) Kind() Kind { return MapKind }

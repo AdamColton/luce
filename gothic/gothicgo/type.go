@@ -23,8 +23,8 @@ type Type interface {
 	Ptr() PointerType
 	Slice() SliceType
 	Array(size int) *ArrayType
-	AsMapElem(key Type) MapType
-	AsMapKey(elem Type) MapType
+	AsMapElem(key Type) *MapType
+	AsMapKey(elem Type) *MapType
 }
 
 type typeWrapper struct{ coreType }
@@ -63,10 +63,10 @@ func (t typeWrapper) Array(size int) *ArrayType {
 	return ArrayOf(t, size)
 }
 
-func (t typeWrapper) AsMapElem(key Type) MapType {
+func (t typeWrapper) AsMapElem(key Type) *MapType {
 	return MapOf(key, t)
 }
 
-func (t typeWrapper) AsMapKey(elem Type) MapType {
+func (t typeWrapper) AsMapKey(elem Type) *MapType {
 	return MapOf(t, elem)
 }

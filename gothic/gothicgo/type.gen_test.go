@@ -39,7 +39,7 @@ func TestArrayTypeTypeGen(t *testing.T) {
 
 	mp = x.AsMapKey(IntType)
 	assert.Equal(t, MapKind, mp.Kind())
-	assert.Equal(t, x, mp.MapKey())
+	assert.Equal(t, x, mp.Key)
 
 	str := PrefixWriteToString(x, DefaultPrefixer)
 	assert.Equal(t, "[5]int", str)
@@ -77,7 +77,7 @@ func TestbuiltinTypeGen(t *testing.T) {
 
 	mp = x.AsMapKey(IntType)
 	assert.Equal(t, MapKind, mp.Kind())
-	assert.Equal(t, x, mp.MapKey())
+	assert.Equal(t, x, mp.Key)
 
 	str := PrefixWriteToString(x, DefaultPrefixer)
 	assert.Equal(t, "int", str)
@@ -116,7 +116,7 @@ func TestExternalTypeTypeGen(t *testing.T) {
 
 	mp = x.AsMapKey(IntType)
 	assert.Equal(t, MapKind, mp.Kind())
-	assert.Equal(t, x, mp.MapKey())
+	assert.Equal(t, x, mp.Key)
 
 	str := PrefixWriteToString(x, DefaultPrefixer)
 	assert.Equal(t, "foo.Bar", str)
@@ -159,8 +159,46 @@ func TestFuncSigTypeGen(t *testing.T) {
 
 	mp = x.AsMapKey(IntType)
 	assert.Equal(t, MapKind, mp.Kind())
-	assert.Equal(t, x, mp.MapKey())
+	assert.Equal(t, x, mp.Key)
 
 	str := PrefixWriteToString(x, DefaultPrefixer)
 	assert.Equal(t, "func Foo(a int, b string) string", str)
+}
+
+func TestMapTypeTypeGen(t *testing.T) {
+	x := MapOf(IntType, StringType)
+
+	assert.Equal(t, MapKind, x.Kind())
+	assert.Equal(t, PkgBuiltin(), x.PackageRef())
+
+	n := x.Named("Foo")
+	assert.Equal(t, "Foo", n.Name())
+	assert.Equal(t, x, n.T)
+
+	n = x.Unnamed()
+	assert.Equal(t, "", n.Name())
+	assert.Equal(t, x, n.T)
+
+	p := x.Ptr()
+	assert.Equal(t, PointerKind, p.Kind())
+	assert.Equal(t, x, p.Elem())
+
+	s := x.Slice()
+	assert.Equal(t, SliceKind, s.Kind())
+	assert.Equal(t, x, s.Elem())
+
+	a := x.Array(13)
+	assert.Equal(t, ArrayKind, a.Kind())
+	assert.Equal(t, x, a.Elem())
+
+	mp := x.AsMapElem(IntType)
+	assert.Equal(t, MapKind, mp.Kind())
+	assert.Equal(t, x, mp.Elem())
+
+	mp = x.AsMapKey(IntType)
+	assert.Equal(t, MapKind, mp.Kind())
+	assert.Equal(t, x, mp.Key)
+
+	str := PrefixWriteToString(x, DefaultPrefixer)
+	assert.Equal(t, "map[int]string", str)
 }

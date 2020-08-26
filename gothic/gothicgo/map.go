@@ -8,56 +8,32 @@ import (
 )
 
 // MapType extends Type with map specific information
-type MapType interface {
-	Type
-	MapElem() Type
-	Elem() Type
-	MapKey() Type
+type MapType struct {
+	Key, Val Type
 }
 
 // MapOf returns a MapType around with the given key and element types.
-func MapOf(key, elem Type) MapType {
-	return mapT{
-		typeWrapper: typeWrapper{
-			mapCT{
-				key:  key,
-				elem: elem,
-			},
-		},
+func MapOf(key, val Type) *MapType {
+	return &MapType{
+		Key: key,
+		Val: val,
 	}
 }
 
-// mapCT is the inner part of the map nesting structure, it implements coreType.
-// This nesting structure allows using the typeWrapper on the inner mapCT, while
-// the outer wrapper extends it with Elem, MapElem and MapKey.
-
-type mapCT struct {
-	key, elem Type
-}
-
-func (m mapCT) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
+func (m *MapType) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	sw.WriteString("map[")
-	m.key.PrefixWriteTo(sw, p)
+	m.Key.PrefixWriteTo(sw, p)
 	sw.WriteRune(']')
-	m.elem.PrefixWriteTo(sw, p)
+	m.Val.PrefixWriteTo(sw, p)
 	sw.Err = lerr.Wrap(sw.Err, "While writing map type")
 	return sw.Rets()
 }
-func (mapCT) Kind() Kind { return MapKind }
-
-func (m mapCT) RegisterImports(i *Imports) {
-	m.elem.RegisterImports(i)
-	m.key.RegisterImports(i)
+func (m *MapType) RegisterImports(i *Imports) {
+	m.Val.RegisterImports(i)
+	m.Key.RegisterImports(i)
 }
 
-func (mapCT) PackageRef() PackageRef { return pkgBuiltin }
+func (*MapType) PackageRef() PackageRef { return pkgBuiltin }
 
-type mapT struct {
-	typeWrapper
-	size int
-}
-
-func (m mapT) MapKey() Type  { return m.coreType.(mapCT).key }
-func (m mapT) Elem() Type    { return m.coreType.(mapCT).elem }
-func (m mapT) MapElem() Type { return m.Elem() }
+func (m *MapType) Elem() Type { return m.Val }

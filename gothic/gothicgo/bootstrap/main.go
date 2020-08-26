@@ -42,7 +42,7 @@ var (
 	
 		mp = x.AsMapKey(IntType)
 		assert.Equal(t, MapKind, mp.Kind())
-		assert.Equal(t, x, mp.MapKey())
+		assert.Equal(t, x, mp.Key)
 
 		str := PrefixWriteToString(x, DefaultPrefixer)
 		assert.Equal(t, "{{.String}}", str)
@@ -69,10 +69,10 @@ var (
 	{{template "sig" .}} Array(size int) *ArrayType { return ArrayOf({{.R}}, size) }
 
 	// AsMapElem funfills Type.
-	{{template "sig" .}} AsMapElem(key Type) MapType { return MapOf(key, {{.R}}) }
+	{{template "sig" .}} AsMapElem(key Type) *MapType { return MapOf(key, {{.R}}) }
 
 	// AsMapKey funfills Type. Returns a NameType with an empty Name.
-	{{template "sig" .}} AsMapKey(elem Type) MapType { return MapOf({{.R}}, elem) }
+	{{template "sig" .}} AsMapKey(elem Type) *MapType { return MapOf({{.R}}, elem) }
 
 	{{if .GenKind -}}
 	// Kind fulfills Type. Returns {{.Kind}}.
@@ -143,6 +143,14 @@ func main() {
 								UnnamedRets(StringType)`,
 			String: "func Foo(a int, b string) string",
 			Kind:   "FuncKind",
+		}, {
+			R:           "m",
+			Name:        "MapType",
+			GenKind:     true,
+			Ptr:         true,
+			Constructor: "x := MapOf(IntType, StringType)",
+			String:      "map[int]string",
+			Kind:        "MapKind",
 		},
 	}
 	for _, ft := range fts {
