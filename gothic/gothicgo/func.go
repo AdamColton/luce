@@ -71,15 +71,6 @@ func (f *Func) WriteTo(w io.Writer) (int64, error) {
 	return f.PrefixWriteTo(w, f.file)
 }
 
-// Prepare adds all the types used in the Args and Rets to the file import.
-func (f *Func) Prepare() error {
-	f.RegisterImports(f.file.Imports)
-	if ri, ok := f.Body.(ImportsRegistrar); ok {
-		ri.RegisterImports(f.file.Imports)
-	}
-	return nil
-}
-
 // PrefixWriteTo fulfilss PrefixWriterTo. It generates the function to the
 // writer using the prefixer.
 func (f *Func) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
@@ -137,4 +128,14 @@ func (f *Func) Rename(name string) error {
 // File returns the File the function will be written to.
 func (f *Func) File() *File {
 	return f.file
+}
+
+// RegisterImports fulfills ImportsRegistrar. It registers the types from the
+// arguments and return values. If the Body implements ImportsRegistrar, it will
+// also be invoked.
+func (f *Func) RegisterImports(i *Imports) {
+	f.FuncSig.RegisterImports(i)
+	if ri, ok := f.Body.(ImportsRegistrar); ok {
+		ri.RegisterImports(i)
+	}
 }

@@ -22,7 +22,7 @@ type FuncSig interface {
 	AsType(clearName bool) FuncSig
 }
 
-type funcSigT struct {
+type funcSigCT struct {
 	name     string
 	args     []NameType
 	rets     []NameType
@@ -34,9 +34,9 @@ const ErrMixedParameters = lerr.Str("Mixed named and unnamed function parameters
 
 // NewFuncSig returns a new function signature.
 func NewFuncSig(name string, args, rets []NameType, variadic bool) FuncSig {
-	return &funcSigHT{
+	return &funcSigT{
 		typeWrapper{
-			&funcSigT{
+			&funcSigCT{
 				name:     name,
 				args:     args,
 				rets:     rets,
@@ -46,7 +46,7 @@ func NewFuncSig(name string, args, rets []NameType, variadic bool) FuncSig {
 	}
 }
 
-func (f *funcSigT) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
+func (f *funcSigCT) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	sw.WriteString("func")
 	if f.name != "" {
@@ -72,9 +72,9 @@ func (f *funcSigT) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	return sw.Rets()
 }
 
-func (f *funcSigT) Kind() Kind             { return FuncKind }
-func (f *funcSigT) PackageRef() PackageRef { return pkgBuiltin }
-func (f *funcSigT) RegisterImports(i *Imports) {
+func (f *funcSigCT) Kind() Kind             { return FuncKind }
+func (f *funcSigCT) PackageRef() PackageRef { return pkgBuiltin }
+func (f *funcSigCT) RegisterImports(i *Imports) {
 	for _, arg := range f.args {
 		arg.RegisterImports(i)
 	}
@@ -141,28 +141,28 @@ func nameTypeSliceToString(pre Prefixer, nts []NameType, variadic bool) (string,
 	return strings.Join(s, ", "), nil
 }
 
-type funcSigHT struct {
+type funcSigT struct {
 	typeWrapper
 }
 
-func (f *funcSigHT) Returns() []NameType {
-	return f.coreType.(*funcSigT).rets
+func (f *funcSigT) Returns() []NameType {
+	return f.coreType.(*funcSigCT).rets
 }
 
-func (f *funcSigHT) Args() []NameType {
-	return f.coreType.(*funcSigT).args
+func (f *funcSigT) Args() []NameType {
+	return f.coreType.(*funcSigCT).args
 }
 
-func (f *funcSigHT) Name() string {
-	return f.coreType.(*funcSigT).name
+func (f *funcSigT) Name() string {
+	return f.coreType.(*funcSigCT).name
 }
 
-func (f *funcSigHT) Variadic() bool {
-	return f.coreType.(*funcSigT).variadic
+func (f *funcSigT) Variadic() bool {
+	return f.coreType.(*funcSigCT).variadic
 }
 
-func (f *funcSigHT) AsType(clearName bool) FuncSig {
-	fs := f.coreType.(*funcSigT)
+func (f *funcSigT) AsType(clearName bool) FuncSig {
+	fs := f.coreType.(*funcSigCT)
 	args := make([]NameType, len(fs.args))
 	rets := make([]NameType, len(fs.rets))
 	for i, a := range fs.args {

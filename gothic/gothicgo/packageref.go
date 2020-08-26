@@ -1,7 +1,6 @@
 package gothicgo
 
 import (
-	"fmt"
 	"regexp"
 
 	"github.com/adamcolton/luce/lerr"
@@ -61,26 +60,6 @@ func (packageRef) privatePkgRef() {}
 
 type externalPackageRef struct {
 	packageRef
-}
-
-func (p externalPackageRef) ExternalType(name string) (ExternalType, error) {
-	if !IsExported(name) {
-		return nil, fmt.Errorf(`ExternalType "%s" in package "%s" is not exported`, name, p.Name())
-	}
-	return &externalTypeWrapper{
-		typeWrapper{
-			&externalType{
-				ref:  p,
-				name: name,
-			},
-		},
-	}, nil
-}
-
-func (p externalPackageRef) MustExternalType(name string) ExternalType {
-	et, err := p.ExternalType(name)
-	lerr.Panic(err)
-	return et
 }
 
 // TODO: this regex is only mostly right

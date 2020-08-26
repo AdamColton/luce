@@ -55,6 +55,9 @@ func (f *File) Prepare() error {
 				return lerr.Wrap(err, "While preparing file %s", f.name)
 			}
 		}
+		if r, ok := w.(ImportsRegistrar); ok {
+			r.RegisterImports(f.Imports)
+		}
 	}
 	return nil
 }
