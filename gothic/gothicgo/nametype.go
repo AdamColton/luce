@@ -7,10 +7,12 @@ import (
 	"github.com/adamcolton/luce/util/luceio"
 )
 
-// NameType is used for arguments and returns for function
+// NameType is used for arguments and returns for function. Type is specifically
+// not embedded because doing so causes unexpected results when the NameType
+// PrefixWriteTo is invoked when it's being treated as a type.
 type NameType struct {
 	N string
-	Type
+	T Type
 }
 
 // Name value
@@ -21,7 +23,17 @@ func (n NameType) Name() string { return n.N }
 func Unnamed(ts ...Type) []NameType {
 	nts := make([]NameType, len(ts))
 	for i, t := range ts {
-		nts[i].Type = t
+		nts[i].T = t
+	}
+	return nts
+}
+
+// ClearNames takes a slice of NameType and returns a matching slice with all
+// the names cleared.
+func ClearNames(ns ...NameType) []NameType {
+	nts := make([]NameType, len(ns))
+	for i, nt := range ns {
+		nts[i].T = nt.T
 	}
 	return nts
 }
@@ -33,7 +45,7 @@ func (n NameType) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 		sw.WriteString(n.N)
 		sw.WriteRune(' ')
 	}
-	n.Type.PrefixWriteTo(sw, p)
+	n.T.PrefixWriteTo(sw, p)
 	sw.Err = lerr.Wrap(sw.Err, "While writing NameType")
 	return sw.Rets()
 }

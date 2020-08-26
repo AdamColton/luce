@@ -11,75 +11,57 @@ import (
 )
 
 // FuncSig is a function signature and fulfills Type.
-type FuncSig interface {
-	Type
-	Name() string
-	Args() []NameType
-	Variadic() bool
-	Returns() []NameType
-	// AsType returns a FuncSig where the args and returns are unnamed. The
-	// clearName options controls if the name is cleared.
-	AsType(clearName bool) FuncSig
-}
-
-type funcSigCT struct {
-	name     string
-	args     []NameType
-	rets     []NameType
-	variadic bool
+type FuncSig struct {
+	Name     string
+	Args     []NameType
+	Rets     []NameType
+	Variadic bool
 }
 
 // ErrMixedParameters is returned if a
 const ErrMixedParameters = lerr.Str("Mixed named and unnamed function parameters")
 
 // NewFuncSig returns a new function signature.
-func NewFuncSig(name string, args, rets []NameType, variadic bool) FuncSig {
-	return &funcSigT{
-		typeWrapper{
-			&funcSigCT{
-				name:     name,
-				args:     args,
-				rets:     rets,
-				variadic: variadic,
-			},
-		},
+func NewFuncSig(name string, args ...NameType) *FuncSig {
+	return &FuncSig{
+		Name: name,
+		Args: args,
 	}
 }
 
-func (f *funcSigCT) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
+func (f *FuncSig) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	sw.WriteString("func")
-	if f.name != "" {
+	if f.Name != "" {
 		sw.WriteRune(' ')
-		sw.WriteString(f.name)
+		sw.WriteString(f.Name)
 	}
 	sw.WriteRune('(')
 	var str string
-	str, sw.Err = nameTypeSliceToString(pre, f.args, f.variadic)
+	str, sw.Err = nameTypeSliceToString(pre, f.Args, f.Variadic)
 	sw.WriteString(str)
 	end := ""
-	if len(f.rets) > 1 {
+	if len(f.Rets) > 1 {
 		sw.WriteString(") (")
 		end = ")"
 	} else {
 		sw.WriteString(") ")
 	}
-	str, sw.Err = nameTypeSliceToString(pre, f.rets, false)
+	str, sw.Err = nameTypeSliceToString(pre, f.Rets, false)
 	sw.WriteString(str)
 	sw.WriteString(end)
-	sw.Err = lerr.Wrap(sw.Err, "While writing function signature %s", f.name)
+	sw.Err = lerr.Wrap(sw.Err, "While writing function signature %s", f.Name)
 
 	return sw.Rets()
 }
 
-func (f *funcSigCT) Kind() Kind             { return FuncKind }
-func (f *funcSigCT) PackageRef() PackageRef { return pkgBuiltin }
-func (f *funcSigCT) RegisterImports(i *Imports) {
-	for _, arg := range f.args {
-		arg.RegisterImports(i)
+func (f *FuncSig) PackageRef() PackageRef { return pkgBuiltin }
+func (f *FuncSig) RegisterImports(i *Imports) {
+	for _, arg := range f.Args {
+		arg.T.RegisterImports(i)
 	}
-	for _, ret := range f.rets {
-		ret.RegisterImports(i)
+	for _, ret := range f.Rets {
+		ret.T.RegisterImports(i)
 	}
 }
 
@@ -111,12 +93,15 @@ func nameTypeSliceToString(pre Prefixer, nts []NameType, variadic bool) (string,
 	var prevType string
 	typeBuf := bufpool.Get()
 	defer bufpool.Put(typeBuf)
+	if str := typeBuf.String(); str != "" {
+		fmt.Println(str)
+	}
 	// working backwards makes it easier to place types
 	for i := l; i >= 0; i-- {
 		if err := validateName(nts[i].N); err != nil {
 			return "", err
 		}
-		nts[i].Type.PrefixWriteTo(typeBuf, pre)
+		nts[i].T.PrefixWriteTo(typeBuf, pre)
 		if i == l && variadic {
 			if nts[i].N == "" {
 				s[i] = fmt.Sprintf("...%s", typeBuf.String())
@@ -141,39 +126,29 @@ func nameTypeSliceToString(pre Prefixer, nts []NameType, variadic bool) (string,
 	return strings.Join(s, ", "), nil
 }
 
-type funcSigT struct {
-	typeWrapper
-}
-
-func (f *funcSigT) Returns() []NameType {
-	return f.coreType.(*funcSigCT).rets
-}
-
-func (f *funcSigT) Args() []NameType {
-	return f.coreType.(*funcSigCT).args
-}
-
-func (f *funcSigT) Name() string {
-	return f.coreType.(*funcSigCT).name
-}
-
-func (f *funcSigT) Variadic() bool {
-	return f.coreType.(*funcSigCT).variadic
-}
-
-func (f *funcSigT) AsType(clearName bool) FuncSig {
-	fs := f.coreType.(*funcSigCT)
-	args := make([]NameType, len(fs.args))
-	rets := make([]NameType, len(fs.rets))
-	for i, a := range fs.args {
-		args[i].Type = a.Type
-	}
-	for i, r := range fs.rets {
-		rets[i].Type = r.Type
-	}
+func (f *FuncSig) AsType(clearName bool) *FuncSig {
 	var name string
 	if !clearName {
-		name = fs.name
+		name = f.Name
 	}
-	return NewFuncSig(name, args, rets, fs.variadic)
+	return &FuncSig{
+		Name:     name,
+		Args:     ClearNames(f.Args...),
+		Rets:     ClearNames(f.Rets...),
+		Variadic: f.Variadic,
+	}
+}
+
+// Returns sets the return types on the function
+func (f *FuncSig) Returns(rets ...NameType) *FuncSig {
+	f.Rets = rets
+	return f
+}
+
+func (f *FuncSig) UnnamedRets(rets ...Type) *FuncSig {
+	f.Rets = make([]NameType, len(rets))
+	for i, t := range rets {
+		f.Rets[i].T = t
+	}
+	return f
 }

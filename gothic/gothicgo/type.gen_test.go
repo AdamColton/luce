@@ -15,11 +15,11 @@ func TestArrayTypeTypeGen(t *testing.T) {
 
 	n := x.Named("Foo")
 	assert.Equal(t, "Foo", n.Name())
-	assert.Equal(t, x, n.Type)
+	assert.Equal(t, x, n.T)
 
 	n = x.Unnamed()
 	assert.Equal(t, "", n.Name())
-	assert.Equal(t, x, n.Type)
+	assert.Equal(t, x, n.T)
 
 	p := x.Ptr()
 	assert.Equal(t, PointerKind, p.Kind())
@@ -53,11 +53,11 @@ func TestbuiltinTypeGen(t *testing.T) {
 
 	n := x.Named("Foo")
 	assert.Equal(t, "Foo", n.Name())
-	assert.Equal(t, x, n.Type)
+	assert.Equal(t, x, n.T)
 
 	n = x.Unnamed()
 	assert.Equal(t, "", n.Name())
-	assert.Equal(t, x, n.Type)
+	assert.Equal(t, x, n.T)
 
 	p := x.Ptr()
 	assert.Equal(t, PointerKind, p.Kind())
@@ -92,11 +92,11 @@ func TestExternalTypeTypeGen(t *testing.T) {
 
 	n := x.Named("Foo")
 	assert.Equal(t, "Foo", n.Name())
-	assert.Equal(t, x, n.Type)
+	assert.Equal(t, x, n.T)
 
 	n = x.Unnamed()
 	assert.Equal(t, "", n.Name())
-	assert.Equal(t, x, n.Type)
+	assert.Equal(t, x, n.T)
 
 	p := x.Ptr()
 	assert.Equal(t, PointerKind, p.Kind())
@@ -120,4 +120,47 @@ func TestExternalTypeTypeGen(t *testing.T) {
 
 	str := PrefixWriteToString(x, DefaultPrefixer)
 	assert.Equal(t, "foo.Bar", str)
+}
+
+func TestFuncSigTypeGen(t *testing.T) {
+	args := []NameType{
+		IntType.Named("a"),
+		StringType.Named("b"),
+	}
+	x := NewFuncSig("Foo", args...).
+		UnnamedRets(StringType)
+
+	assert.Equal(t, FuncKind, x.Kind())
+	assert.Equal(t, PkgBuiltin(), x.PackageRef())
+
+	n := x.Named("Foo")
+	assert.Equal(t, "Foo", n.Name())
+	assert.Equal(t, x, n.T)
+
+	n = x.Unnamed()
+	assert.Equal(t, "", n.Name())
+	assert.Equal(t, x, n.T)
+
+	p := x.Ptr()
+	assert.Equal(t, PointerKind, p.Kind())
+	assert.Equal(t, x, p.Elem())
+
+	s := x.Slice()
+	assert.Equal(t, SliceKind, s.Kind())
+	assert.Equal(t, x, s.Elem())
+
+	a := x.Array(13)
+	assert.Equal(t, ArrayKind, a.Kind())
+	assert.Equal(t, x, a.Elem())
+
+	mp := x.AsMapElem(IntType)
+	assert.Equal(t, MapKind, mp.Kind())
+	assert.Equal(t, x, mp.Elem())
+
+	mp = x.AsMapKey(IntType)
+	assert.Equal(t, MapKind, mp.Kind())
+	assert.Equal(t, x, mp.MapKey())
+
+	str := PrefixWriteToString(x, DefaultPrefixer)
+	assert.Equal(t, "func Foo(a int, b string) string", str)
 }

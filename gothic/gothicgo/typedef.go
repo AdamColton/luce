@@ -136,13 +136,19 @@ func (td *TypeDef) Base() Type {
 	return td.baseType
 }
 
+func (td *TypeDef) MustMethod(name string, args ...NameType) *Method {
+	m, err := td.NewMethod(name, args...)
+	lerr.Panic(err)
+	return m
+}
+
 // NewMethod on the struct
-func (td *TypeDef) NewMethod(name string, args, rets []NameType, variadic bool) (*Method, error) {
+func (td *TypeDef) NewMethod(name string, args ...NameType) (*Method, error) {
 	if name == "" {
 		return nil, lerr.Str("Cannot have unnamed method")
 	}
 	fn := &Func{
-		FuncSig: NewFuncSig(name, args, rets, variadic),
+		FuncSig: NewFuncSig(name, args...),
 		file:    td.file,
 	}
 	m := &Method{
@@ -173,7 +179,7 @@ type Method struct {
 
 // SetName of the method, also updates the method map in the struct.
 func (m *Method) SetName(name string) {
-	delete(m.typeDef.methods, m.Func.Name())
+	delete(m.typeDef.methods, m.Func.Name)
 	m.Rename(name)
 	m.typeDef.methods[name] = m
 }
@@ -190,13 +196,13 @@ func (m *Method) String() string {
 
 // WriteTo writes the Method to the writer
 func (m *Method) WriteTo(w io.Writer) (int64, error) {
-	if m.Name() == "" {
+	if m.Name == "" {
 		return 0, lerr.Str("Cannot have unnamed method")
 	}
 	sw := luceio.NewSumWriter(w)
 	if m.Comment != "" {
 		sw.WriterTo(&Comment{
-			Comment: luceio.Join(m.Name(), m.Comment, " "),
+			Comment: luceio.Join(m.Name, m.Comment, " "),
 			Width:   m.file.CommentWidth(),
 		})
 	}
@@ -207,13 +213,12 @@ func (m *Method) WriteTo(w io.Writer) (int64, error) {
 	} else {
 		sw.WriteRune(' ')
 	}
-	sw.WriteStrings(m.typeDef.Name(), ") ", m.Name(), "(")
+	sw.WriteStrings(m.typeDef.Name(), ") ", m.Name, "(")
 	var str string
-	str, sw.Err = nameTypeSliceToString(m.typeDef.file, m.Args(), m.Variadic())
+	str, sw.Err = nameTypeSliceToString(m.typeDef.file, m.Args, m.Variadic)
 	sw.WriteString(str)
 	end := " {\n\t"
-	rets := m.Returns()
-	if ln := len(rets); ln > 1 {
+	if ln := len(m.Rets); ln > 1 {
 		sw.WriteString(") (")
 		end = ") {\n\t"
 	} else {
@@ -222,14 +227,14 @@ func (m *Method) WriteTo(w io.Writer) (int64, error) {
 			sw.WriteString(" ")
 		}
 	}
-	str, sw.Err = nameTypeSliceToString(m.typeDef.file, rets, false)
+	str, sw.Err = nameTypeSliceToString(m.typeDef.file, m.Rets, false)
 	sw.WriteStrings(str, end)
 
 	if m.Func.Body != nil {
 		m.Func.Body.PrefixWriteTo(sw, m.typeDef.file)
 	}
 	sw.WriteString("\n}")
-	sw.Err = lerr.Wrap(sw.Err, "While writing method %s", m.Name())
+	sw.Err = lerr.Wrap(sw.Err, "While writing method %s", m.Name)
 
 	return sw.Rets()
 }
@@ -239,9 +244,20 @@ func (m *Method) Receiver() NameType {
 		N: m.typeDef.ReceiverName,
 	}
 	if m.Ptr {
-		n.Type = PointerTo(typeWrapper{m.typeDef})
+		n.T = PointerTo(typeWrapper{m.typeDef})
 	} else {
-		n.Type = typeWrapper{m.typeDef}
+		n.T = typeWrapper{m.typeDef}
 	}
 	return n
+}
+
+// Returns sets the return types on the function
+func (m *Method) Returns(rets ...NameType) *Method {
+	m.Func.Returns(rets...)
+	return m
+}
+
+func (m *Method) UnnamedRets(rets ...Type) *Method {
+	m.Func.UnnamedRets(rets...)
+	return m
 }

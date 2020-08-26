@@ -27,17 +27,20 @@ func TestFunc(t *testing.T) {
 		StringType.Named("b"),
 		MustExternalPackageRef("baz").MustExternalType("Baz").Named("c"),
 	}
-	rets := []NameType{
-		BoolType.Unnamed(),
-	}
-	fn := file.MustFunc("Rename", args, rets, false)
+	fn := file.MustFunc("Rename", args...).
+		UnnamedRets(BoolType)
 	fn.Body = testFuncBodyWriter("return true")
 	fn.Comment = "is a test function"
 	assert.Equal(t, file, fn.File())
 	fn.Rename("Bar")
 
-	file.MustFunc("BodyStringTest", args, rets, false).BodyString("return bodystring")
-	file.MustFunc("BodyWriterToTest", args, rets, false).BodyWriterTo(luceio.StringWriterTo("return bodywriterto"))
+	file.MustFunc("BodyStringTest", args...).
+		BodyString("return bodystring").
+		UnnamedRets(BoolType)
+
+	file.MustFunc("BodyWriterToTest", args...).
+		BodyWriterTo(luceio.StringWriterTo("return bodywriterto")).
+		UnnamedRets(BoolType)
 
 	ctx.MustExport()
 
@@ -57,13 +60,6 @@ func TestNewFuncErr(t *testing.T) {
 		StringType.Unnamed(),
 		MustExternalPackageRef("baz").MustExternalType("Baz").Named("c"),
 	}
-	rets := []NameType{
-		BoolType.Unnamed(),
-	}
-	_, err := file.NewFunc("someFunc", args, rets, false)
+	_, err := file.NewFunc("someFunc", args...)
 	assert.Equal(t, ErrUnnamedFuncArg, err)
-
-	rets = append(rets, StringType.Named("z"))
-	_, err = file.NewFunc("someFunc", nil, rets, false)
-	assert.Equal(t, ErrMixedParameters, err)
 }

@@ -159,45 +159,32 @@ func TestFuncSig(t *testing.T) {
 		IntType.Named("a"),
 		StringType.Named("b"),
 	}
-	rets := []NameType{
-		StringType.Unnamed(),
-	}
-	fs := NewFuncSig("Foo", args, rets, false)
+	fs := NewFuncSig("Foo", args...).
+		UnnamedRets(StringType)
 	str := PrefixWriteToString(fs, DefaultPrefixer)
 	assert.Equal(t, "func Foo(a int, b string) string", str)
-	assert.False(t, fs.Variadic())
 
-	rets = []NameType{
-		StringType.Named("x"),
-		StringType.Named("y"),
-	}
-	fs = NewFuncSig("Foo", args, rets, true)
+	fs = NewFuncSig("Foo", args...).
+		Returns(StringType.Named("x"), StringType.Named("y"))
+	fs.Variadic = true
 	str = PrefixWriteToString(fs, DefaultPrefixer)
 	assert.Equal(t, "func Foo(a int, b ...string) (x, y string)", str)
 
-	assert.Equal(t, FuncKind, fs.Kind())
-	assert.Equal(t, PkgBuiltin(), fs.PackageRef())
-	assert.Equal(t, "Foo", fs.Name())
-	assert.Equal(t, args, fs.Args())
-	assert.Equal(t, rets, fs.Returns())
-	assert.True(t, fs.Variadic())
-
-	str = PrefixWriteToString(fs.AsType(false), DefaultPrefixer)
+	fs = fs.AsType(false)
+	str = PrefixWriteToString(fs, DefaultPrefixer)
 	assert.Equal(t, "func Foo(int, ...string) (string, string)", str)
 
 	pkg1 := MustExternalPackageRef("pkg1")
 	pkg2 := MustExternalPackageRef("pkg2")
-	args = []NameType{
-		pkg1.MustExternalType("Foo").Unnamed(),
-	}
-	rets = []NameType{
-		pkg2.MustExternalType("Foo").Unnamed(),
-	}
-	fs = NewFuncSig("Foo2Foo", args, rets, false)
+	fs = NewFuncSig("Foo2Foo", pkg1.MustExternalType("Foo").Unnamed()).
+		UnnamedRets(pkg2.MustExternalType("Foo"))
 	i := NewImports(nil)
 	fs.RegisterImports(i)
 	str = bufpool.MustWriterToString(i)
 	assert.Contains(t, str, "pkg1")
 	assert.Contains(t, str, "pkg2")
+
+	str = PrefixWriteToString(fs, DefaultPrefixer)
+	assert.Contains(t, str, "func Foo2Foo(pkg1.Foo) pkg2.Foo")
 
 }

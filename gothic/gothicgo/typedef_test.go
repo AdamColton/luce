@@ -11,13 +11,8 @@ func TestTypeDef(t *testing.T) {
 	foo, err := ctx.NewTypeDef("Foo", StringType)
 	assert.NoError(t, err)
 
-	args := []NameType{
-		IntType.Named("a"),
-	}
-	rets := []NameType{
-		BoolType.Unnamed(),
-	}
-	m, err := foo.NewMethod("Bar", args, rets, false)
+	m := foo.MustMethod("Bar", IntType.Named("a")).
+		UnnamedRets(BoolType)
 	assert.NoError(t, err)
 	m.BodyString("return false")
 

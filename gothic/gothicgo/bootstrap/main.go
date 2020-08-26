@@ -18,11 +18,11 @@ var (
 
 		n := x.Named("Foo")
 		assert.Equal(t, "Foo", n.Name())
-		assert.Equal(t, x, n.Type)
+		assert.Equal(t, x, n.T)
 	
 		n = x.Unnamed()
 		assert.Equal(t, "", n.Name())
-		assert.Equal(t, x, n.Type)
+		assert.Equal(t, x, n.T)
 	
 		p := x.Ptr()
 		assert.Equal(t, PointerKind, p.Kind())
@@ -49,7 +49,10 @@ var (
 	}`))
 
 	typegen = template.Must(template.New("typegen").Parse(`
-	{{define "sig"}}func ({{.R}} {{if .Ptr}}*{{end}}{{.Name}}){{end}}
+	{{define "sig" -}}
+		func ({{.R}} {{if .Ptr}}*{{end}}{{.Name}})
+	{{- end -}}
+
 	// Named fulfills Type. Returns a NameType with the given name.
 	{{template "sig" .}} Named(name string) NameType { return NameType{name, {{.R}}} }
 
@@ -71,8 +74,10 @@ var (
 	// AsMapKey funfills Type. Returns a NameType with an empty Name.
 	{{template "sig" .}} AsMapKey(elem Type) MapType { return MapOf({{.R}}, elem) }
 
-	{{if .GenKind}}// Kind fulfills Type. Returns {{.Kind}}.
-	{{template "sig" .}} Kind() Kind { return {{.Kind}} }{{end}}
+	{{if .GenKind -}}
+	// Kind fulfills Type. Returns {{.Kind}}.
+	{{template "sig" .}} Kind() Kind { return {{.Kind}} }
+	{{- end}}
 `))
 )
 
@@ -125,6 +130,19 @@ func main() {
 			String:  "foo.Bar",
 			Kind:    "TypeDefKind",
 			Package: `pkg`,
+		}, {
+			R:       "f",
+			Name:    "FuncSig",
+			GenKind: true,
+			Ptr:     true,
+			Constructor: `	args := []NameType{
+								IntType.Named("a"),
+								StringType.Named("b"),
+							}
+							x := NewFuncSig("Foo", args...).
+								UnnamedRets(StringType)`,
+			String: "func Foo(a int, b string) string",
+			Kind:   "FuncKind",
 		},
 	}
 	for _, ft := range fts {

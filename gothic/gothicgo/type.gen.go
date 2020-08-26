@@ -70,3 +70,27 @@ func (e *ExternalType) AsMapKey(elem Type) MapType { return MapOf(e, elem) }
 
 // Kind fulfills Type. Returns TypeDefKind.
 func (e *ExternalType) Kind() Kind { return TypeDefKind }
+
+// Named fulfills Type. Returns a NameType with the given name.
+func (f *FuncSig) Named(name string) NameType { return NameType{name, f} }
+
+// Unnamed funfills Type. Returns a NameType with an empty Name.
+func (f *FuncSig) Unnamed() NameType { return NameType{"", f} }
+
+// Ptr funfills Type.
+func (f *FuncSig) Ptr() PointerType { return PointerTo(f) }
+
+// Slice funfills Type.
+func (f *FuncSig) Slice() SliceType { return SliceOf(f) }
+
+// Array funfills Type.
+func (f *FuncSig) Array(size int) *ArrayType { return ArrayOf(f, size) }
+
+// AsMapElem funfills Type.
+func (f *FuncSig) AsMapElem(key Type) MapType { return MapOf(key, f) }
+
+// AsMapKey funfills Type. Returns a NameType with an empty Name.
+func (f *FuncSig) AsMapKey(elem Type) MapType { return MapOf(f, elem) }
+
+// Kind fulfills Type. Returns FuncKind.
+func (f *FuncSig) Kind() Kind { return FuncKind }

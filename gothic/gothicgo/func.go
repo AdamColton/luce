@@ -11,7 +11,7 @@ import (
 
 // Func function written to a Go file
 type Func struct {
-	FuncSig
+	*FuncSig
 	Body PrefixWriterTo
 	// Comment will automatically be prefixed with the Func name.
 	Comment string
@@ -31,40 +31,29 @@ const ErrUnnamedFuncArg = lerr.Str("All func args must be nammed")
 // NewFunc returns a new Func with File set and add the function to file's
 // generators so that when the file is generated, the func will be generated as
 // part of the file.
-func (f *File) NewFunc(name string, args, rets []NameType, variadic bool) (*Func, error) {
+func (f *File) NewFunc(name string, args ...NameType) (*Func, error) {
 	for _, arg := range args {
 		if arg.N == "" {
 			return nil, ErrUnnamedFuncArg
 		}
 	}
-	if len(rets) > 1 {
-		var validateName = expectNamed
-		if rets[0].N == "" {
-			validateName = expectUnnamed
-		}
-		for _, r := range rets[1:] {
-			if err := validateName(r.N); err != nil {
-				return nil, err
-			}
-		}
-	}
 
 	fn := &Func{
-		FuncSig: NewFuncSig(name, args, rets, variadic),
+		FuncSig: NewFuncSig(name, args...),
 		file:    f,
 	}
 	return fn, lerr.Wrap(f.AddWriterTo(fn), "File.NewFunc")
 }
 
 // MustFunc calls NewFunc and panics if there is an error
-func (f *File) MustFunc(name string, args, rets []NameType, variadic bool) *Func {
-	fn, err := f.NewFunc(name, args, rets, variadic)
+func (f *File) MustFunc(name string, args ...NameType) *Func {
+	fn, err := f.NewFunc(name, args...)
 	lerr.Panic(err)
 	return fn
 }
 
 // ScopeName fulfills Namer registering the function name with the package.
-func (f *Func) ScopeName() string { return f.Name() }
+func (f *Func) ScopeName() string { return f.Name }
 
 // WriteTo fulfills io.WriterTo and generates the function
 func (f *Func) WriteTo(w io.Writer) (int64, error) {
@@ -81,7 +70,7 @@ func (f *Func) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 			w = cw.CommentWidth()
 		}
 		sw.WriterTo(&Comment{
-			Comment: luceio.Join(f.Name(), f.Comment, " "),
+			Comment: luceio.Join(f.Name, f.Comment, " "),
 			Width:   w,
 		})
 	}
@@ -91,31 +80,33 @@ func (f *Func) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 		f.Body.PrefixWriteTo(sw, pre)
 	}
 	sw.WriteString("\n}")
-	sw.Err = lerr.Wrap(sw.Err, "While writing func %s", f.Name())
+	sw.Err = lerr.Wrap(sw.Err, "While writing func %s", f.Name)
 	return sw.Rets()
 }
 
 // BodyWriterTo is a helper allowing the body to be set to a Writer that
 // ignores the prefixer.
-func (f *Func) BodyWriterTo(w io.WriterTo) {
+func (f *Func) BodyWriterTo(w io.WriterTo) *Func {
 	f.Body = IgnorePrefixer{w}
+	return f
 }
 
 // BodyString is a helper allowing the body to be set to a string that
 // ignores the prefixer.
-func (f *Func) BodyString(str string) {
+func (f *Func) BodyString(str string) *Func {
 	f.Body = IgnorePrefixer{luceio.StringWriterTo(str)}
+	return f
 }
 
 // Call produces a invocation of the function and fulfills the FuncCaller
 // interface
 func (f *Func) Call(pre Prefixer, args ...string) string {
-	return funcCall(pre, f.Name(), args, f.file.Package())
+	return funcCall(pre, f.Name, args, f.file.Package())
 }
 
 // Rename the function and update the name in the package.
 func (f *Func) Rename(name string) error {
-	f.FuncSig = NewFuncSig(name, f.Args(), f.Returns(), f.Variadic())
+	f.Name = name
 	return f.file.pkg.UpdateNamer(f)
 }
 
@@ -142,4 +133,15 @@ func funcCall(pre Prefixer, name string, args []string, pkg PackageRef) string {
 	buf.WriteString(strings.Join(args, ", "))
 	buf.WriteRune(')')
 	return bufpool.PutStr(buf)
+}
+
+// Returns sets the return types on the function
+func (f *Func) Returns(rets ...NameType) *Func {
+	f.FuncSig.Returns(rets...)
+	return f
+}
+
+func (f *Func) UnnamedRets(rets ...Type) *Func {
+	f.FuncSig.UnnamedRets(rets...)
+	return f
 }
