@@ -3,25 +3,28 @@
 package gothicgo
 
 // Named fulfills Type. Returns a NameType with the given name.
-func (a ArrayType) Named(name string) NameType { return NameType{name, a} }
+func (a *ArrayType) Named(name string) NameType { return NameType{name, a} }
 
 // Unnamed funfills Type. Returns a NameType with an empty Name.
-func (a ArrayType) Unnamed() NameType { return NameType{"", a} }
+func (a *ArrayType) Unnamed() NameType { return NameType{"", a} }
 
 // Ptr funfills Type.
-func (a ArrayType) Ptr() PointerType { return PointerTo(a) }
+func (a *ArrayType) Ptr() PointerType { return PointerTo(a) }
 
 // Slice funfills Type.
-func (a ArrayType) Slice() SliceType { return SliceOf(a) }
+func (a *ArrayType) Slice() SliceType { return SliceOf(a) }
 
 // Array funfills Type.
-func (a ArrayType) Array(size int) ArrayType { return ArrayOf(a, size) }
+func (a *ArrayType) Array(size int) *ArrayType { return ArrayOf(a, size) }
 
 // AsMapElem funfills Type.
-func (a ArrayType) AsMapElem(key Type) MapType { return MapOf(key, a) }
+func (a *ArrayType) AsMapElem(key Type) MapType { return MapOf(key, a) }
 
 // AsMapKey funfills Type. Returns a NameType with an empty Name.
-func (a ArrayType) AsMapKey(elem Type) MapType { return MapOf(a, elem) }
+func (a *ArrayType) AsMapKey(elem Type) MapType { return MapOf(a, elem) }
+
+// Kind fulfills Type. Returns ArrayKind.
+func (a *ArrayType) Kind() Kind { return ArrayKind }
 
 // Named fulfills Type. Returns a NameType with the given name.
 func (b builtin) Named(name string) NameType { return NameType{name, b} }
@@ -36,7 +39,7 @@ func (b builtin) Ptr() PointerType { return PointerTo(b) }
 func (b builtin) Slice() SliceType { return SliceOf(b) }
 
 // Array funfills Type.
-func (b builtin) Array(size int) ArrayType { return ArrayOf(b, size) }
+func (b builtin) Array(size int) *ArrayType { return ArrayOf(b, size) }
 
 // AsMapElem funfills Type.
 func (b builtin) AsMapElem(key Type) MapType { return MapOf(key, b) }
@@ -57,10 +60,13 @@ func (e *ExternalType) Ptr() PointerType { return PointerTo(e) }
 func (e *ExternalType) Slice() SliceType { return SliceOf(e) }
 
 // Array funfills Type.
-func (e *ExternalType) Array(size int) ArrayType { return ArrayOf(e, size) }
+func (e *ExternalType) Array(size int) *ArrayType { return ArrayOf(e, size) }
 
 // AsMapElem funfills Type.
 func (e *ExternalType) AsMapElem(key Type) MapType { return MapOf(key, e) }
 
 // AsMapKey funfills Type. Returns a NameType with an empty Name.
 func (e *ExternalType) AsMapKey(elem Type) MapType { return MapOf(e, elem) }
+
+// Kind fulfills Type. Returns TypeDefKind.
+func (e *ExternalType) Kind() Kind { return TypeDefKind }

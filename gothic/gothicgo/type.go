@@ -22,7 +22,7 @@ type Type interface {
 	Unnamed() NameType
 	Ptr() PointerType
 	Slice() SliceType
-	Array(size int) ArrayType
+	Array(size int) *ArrayType
 	AsMapElem(key Type) MapType
 	AsMapKey(elem Type) MapType
 }
@@ -59,7 +59,7 @@ func (t typeWrapper) Slice() SliceType {
 	return SliceOf(t)
 }
 
-func (t typeWrapper) Array(size int) ArrayType {
+func (t typeWrapper) Array(size int) *ArrayType {
 	return ArrayOf(t, size)
 }
 

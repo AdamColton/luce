@@ -14,7 +14,7 @@ var (
 		{{.Constructor}}
 
 		assert.Equal(t, {{.Kind}}, x.Kind())
-		assert.Equal(t, {{.Package}}, x.PackageRef())
+		assert.Equal(t, {{if .Package}}{{.Package}}{{else}}PkgBuiltin(){{end}}, x.PackageRef())
 
 		n := x.Named("Foo")
 		assert.Equal(t, "Foo", n.Name())
@@ -49,37 +49,39 @@ var (
 	}`))
 
 	typegen = template.Must(template.New("typegen").Parse(`
+	{{define "sig"}}func ({{.R}} {{if .Ptr}}*{{end}}{{.Name}}){{end}}
 	// Named fulfills Type. Returns a NameType with the given name.
-	func ({{.R}} {{if .Ptr}}*{{end}}{{.Name}}) Named(name string) NameType { return NameType{name, {{.R}}} }
+	{{template "sig" .}} Named(name string) NameType { return NameType{name, {{.R}}} }
 
 	// Unnamed funfills Type. Returns a NameType with an empty Name.
-	func ({{.R}} {{if .Ptr}}*{{end}}{{.Name}}) Unnamed() NameType { return NameType{"", {{.R}}} }
+	{{template "sig" .}} Unnamed() NameType { return NameType{"", {{.R}}} }
 
 	// Ptr funfills Type.
-	func ({{.R}} {{if .Ptr}}*{{end}}{{.Name}}) Ptr() PointerType { return PointerTo({{.R}}) }
+	{{template "sig" .}} Ptr() PointerType { return PointerTo({{.R}}) }
 
 	// Slice funfills Type.
-	func ({{.R}} {{if .Ptr}}*{{end}}{{.Name}}) Slice() SliceType { return SliceOf({{.R}}) }
+	{{template "sig" .}} Slice() SliceType { return SliceOf({{.R}}) }
 
 	// Array funfills Type.
-	func ({{.R}} {{if .Ptr}}*{{end}}{{.Name}}) Array(size int) ArrayType { return ArrayOf({{.R}}, size) }
+	{{template "sig" .}} Array(size int) *ArrayType { return ArrayOf({{.R}}, size) }
 
 	// AsMapElem funfills Type.
-	func ({{.R}} {{if .Ptr}}*{{end}}{{.Name}}) AsMapElem(key Type) MapType { return MapOf(key, {{.R}}) }
+	{{template "sig" .}} AsMapElem(key Type) MapType { return MapOf(key, {{.R}}) }
 
 	// AsMapKey funfills Type. Returns a NameType with an empty Name.
-	func ({{.R}} {{if .Ptr}}*{{end}}{{.Name}}) AsMapKey(elem Type) MapType { return MapOf({{.R}}, elem) }
+	{{template "sig" .}} AsMapKey(elem Type) MapType { return MapOf({{.R}}, elem) }
+
+	{{if .GenKind}}// Kind fulfills Type. Returns {{.Kind}}.
+	{{template "sig" .}} Kind() Kind { return {{.Kind}} }{{end}}
 `))
-	externalTypeConstructor = `pkg := MustExternalPackageRef("foo")
-	x := pkg.MustExternalType("Bar")`
 )
 
 type fullType struct {
-	R, Name string
-	Ptr     bool
+	R, Name, Kind string
+	GenKind, Ptr  bool
 
 	// Test values
-	Constructor, String, Kind, Package string
+	Constructor, String, Package string
 }
 
 func main() {
@@ -99,9 +101,31 @@ func main() {
 	)
 
 	fts := []fullType{
-		{"a", "ArrayType", false, "x := IntType.Array(5)", "[5]int", "ArrayKind", "PkgBuiltin()"},
-		{"b", "builtin", false, "x := IntType", "int", "IntKind", "PkgBuiltin()"},
-		{"e", "ExternalType", true, externalTypeConstructor, "foo.Bar", "TypeDefKind", `pkg`},
+		{
+			R:           "a",
+			Name:        "ArrayType",
+			GenKind:     true,
+			Ptr:         true,
+			Constructor: "x := IntType.Array(5)",
+			String:      "[5]int",
+			Kind:        "ArrayKind",
+		}, {
+			R:           "b",
+			Name:        "builtin",
+			Constructor: "x := IntType",
+			String:      "int",
+			Kind:        "IntKind",
+		}, {
+			R:       "e",
+			Name:    "ExternalType",
+			GenKind: true,
+			Ptr:     true,
+			Constructor: `pkg := MustExternalPackageRef("foo")
+						  x := pkg.MustExternalType("Bar")`,
+			String:  "foo.Bar",
+			Kind:    "TypeDefKind",
+			Package: `pkg`,
+		},
 	}
 	for _, ft := range fts {
 		typeFile.AddWriterTo(&luceio.TemplateTo{

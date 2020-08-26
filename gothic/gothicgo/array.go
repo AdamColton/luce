@@ -8,11 +8,11 @@ import (
 )
 
 // ArrayOf returns a ArrayType around t.
-func ArrayOf(t Type, size int) ArrayType {
+func ArrayOf(t Type, size int) *ArrayType {
 	if size < 0 {
 		size = 0
 	}
-	return ArrayType{
+	return &ArrayType{
 		Type: t,
 		Size: size,
 	}
@@ -25,7 +25,7 @@ type ArrayType struct {
 }
 
 // PrefixWriteTo fulfills PrefixWriterTo. Writes the array signature.
-func (a ArrayType) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
+func (a *ArrayType) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	sw.WriteString("[")
 	if a.Size > 0 {
@@ -39,11 +39,8 @@ func (a ArrayType) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	return sw.Rets()
 }
 
-// Kind fulfills Type. Returns ArrayKind.
-func (ArrayType) Kind() Kind { return ArrayKind }
-
 // PackageRef fulfills Type. Returns pkgBuiltin.
-func (ArrayType) PackageRef() PackageRef { return pkgBuiltin }
+func (*ArrayType) PackageRef() PackageRef { return pkgBuiltin }
 
 // Elem returns the underlying Type.
-func (a ArrayType) Elem() Type { return a.Type }
+func (a *ArrayType) Elem() Type { return a.Type }

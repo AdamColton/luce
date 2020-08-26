@@ -45,11 +45,6 @@ func (e *ExternalType) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 // PackageRef fulfills Type. Returns the ExternalPackageRef.
 func (e *ExternalType) PackageRef() PackageRef { return e.ExternalPackageRef }
 
-// Kind fulfills Type. Returns TypeDefKind
-func (e *ExternalType) Kind() Kind {
-	return TypeDefKind
-}
-
 // RegisterImports fulfills Type.
 func (e *ExternalType) RegisterImports(i *Imports) {
 	i.Add(e.ExternalPackageRef)
