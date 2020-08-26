@@ -82,3 +82,42 @@ func TestbuiltinTypeGen(t *testing.T) {
 	str := PrefixWriteToString(x, DefaultPrefixer)
 	assert.Equal(t, "int", str)
 }
+
+func TestExternalTypeTypeGen(t *testing.T) {
+	pkg := MustExternalPackageRef("foo")
+	x := pkg.MustExternalType("Bar")
+
+	assert.Equal(t, TypeDefKind, x.Kind())
+	assert.Equal(t, pkg, x.PackageRef())
+
+	n := x.Named("Foo")
+	assert.Equal(t, "Foo", n.Name())
+	assert.Equal(t, x, n.Type)
+
+	n = x.Unnamed()
+	assert.Equal(t, "", n.Name())
+	assert.Equal(t, x, n.Type)
+
+	p := x.Ptr()
+	assert.Equal(t, PointerKind, p.Kind())
+	assert.Equal(t, x, p.Elem())
+
+	s := x.Slice()
+	assert.Equal(t, SliceKind, s.Kind())
+	assert.Equal(t, x, s.Elem())
+
+	a := x.Array(13)
+	assert.Equal(t, ArrayKind, a.Kind())
+	assert.Equal(t, x, a.Elem())
+
+	mp := x.AsMapElem(IntType)
+	assert.Equal(t, MapKind, mp.Kind())
+	assert.Equal(t, x, mp.Elem())
+
+	mp = x.AsMapKey(IntType)
+	assert.Equal(t, MapKind, mp.Kind())
+	assert.Equal(t, x, mp.MapKey())
+
+	str := PrefixWriteToString(x, DefaultPrefixer)
+	assert.Equal(t, "foo.Bar", str)
+}

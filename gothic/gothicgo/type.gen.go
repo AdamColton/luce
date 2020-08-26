@@ -43,3 +43,24 @@ func (b builtin) AsMapElem(key Type) MapType { return MapOf(key, b) }
 
 // AsMapKey funfills Type. Returns a NameType with an empty Name.
 func (b builtin) AsMapKey(elem Type) MapType { return MapOf(b, elem) }
+
+// Named fulfills Type. Returns a NameType with the given name.
+func (e *ExternalType) Named(name string) NameType { return NameType{name, e} }
+
+// Unnamed funfills Type. Returns a NameType with an empty Name.
+func (e *ExternalType) Unnamed() NameType { return NameType{"", e} }
+
+// Ptr funfills Type.
+func (e *ExternalType) Ptr() PointerType { return PointerTo(e) }
+
+// Slice funfills Type.
+func (e *ExternalType) Slice() SliceType { return SliceOf(e) }
+
+// Array funfills Type.
+func (e *ExternalType) Array(size int) ArrayType { return ArrayOf(e, size) }
+
+// AsMapElem funfills Type.
+func (e *ExternalType) AsMapElem(key Type) MapType { return MapOf(key, e) }
+
+// AsMapKey funfills Type. Returns a NameType with an empty Name.
+func (e *ExternalType) AsMapKey(elem Type) MapType { return MapOf(e, elem) }

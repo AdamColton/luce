@@ -29,8 +29,8 @@ type ExternalPackageRef interface {
 
 	// ExternalType represents a type in an external package. The name must
 	// be exported (begin with an uppercase character).
-	ExternalType(name string) (ExternalType, error)
-	MustExternalType(name string) ExternalType
+	ExternalType(name string) (*ExternalType, error)
+	MustExternalType(name string) *ExternalType
 }
 
 var pkgBuiltin = &packageRef{}

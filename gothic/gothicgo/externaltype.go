@@ -12,61 +12,45 @@ import (
 // packages. It does not generate these but can use them. For instance
 // ExternalType(MustPackageRef("time"), "Time") creates a reference to the Time
 // type in the time package.
-type ExternalType interface {
-	Type
-	ExternalPackageRef() ExternalPackageRef
+type ExternalType struct {
+	Name string
+	ExternalPackageRef
 }
 
-func (p externalPackageRef) ExternalType(name string) (ExternalType, error) {
+func (p externalPackageRef) ExternalType(name string) (*ExternalType, error) {
 	if !IsExported(name) {
 		return nil, fmt.Errorf(`ExternalType "%s" in package "%s" is not exported`, name, p.Name())
 	}
-	return &externalTypeWrapper{
-		typeWrapper{
-			&externalType{
-				ref:  p,
-				name: name,
-			},
-		},
+	return &ExternalType{
+		Name:               name,
+		ExternalPackageRef: p,
 	}, nil
 }
 
-func (p externalPackageRef) MustExternalType(name string) ExternalType {
+func (p externalPackageRef) MustExternalType(name string) *ExternalType {
 	et, err := p.ExternalType(name)
 	lerr.Panic(err)
 	return et
 }
 
-type externalTypeWrapper struct {
-	typeWrapper
-}
-
-func (e *externalTypeWrapper) ExternalPackageRef() ExternalPackageRef {
-	return e.coreType.(*externalType).ref
-}
-
-type externalType struct {
-	ref  ExternalPackageRef
-	name string
-}
-
-// PrefixWriteTo writes the ExternalType handling prefixing
-func (e *externalType) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
+// PrefixWriteTo fulfills Type. Writes the ExternalType with prefixing.
+func (e *ExternalType) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
-	sw.WriteString(p.Prefix(e.ref))
-	sw.WriteString(e.name)
-	sw.Err = lerr.Wrap(sw.Err, "While writing external type %s", e.name)
+	sw.WriteString(p.Prefix(e.ExternalPackageRef))
+	sw.WriteString(e.Name)
+	sw.Err = lerr.Wrap(sw.Err, "While writing external type %s", e.Name)
 	return sw.Rets()
 }
 
-// PackageRef gets the PackageRef ExternalType belongs to
-func (e *externalType) PackageRef() PackageRef { return e.ref }
+// PackageRef fulfills Type. Returns the ExternalPackageRef.
+func (e *ExternalType) PackageRef() PackageRef { return e.ExternalPackageRef }
 
-// Kind of ExternalType is TypeDefKind
-func (e *externalType) Kind() Kind {
+// Kind fulfills Type. Returns TypeDefKind
+func (e *ExternalType) Kind() Kind {
 	return TypeDefKind
 }
 
-func (e *externalType) RegisterImports(i *Imports) {
-	i.Add(e.ref)
+// RegisterImports fulfills Type.
+func (e *ExternalType) RegisterImports(i *Imports) {
+	i.Add(e.ExternalPackageRef)
 }
