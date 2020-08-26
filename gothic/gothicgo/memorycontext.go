@@ -16,7 +16,7 @@ type MemoryContext struct {
 // NewMemoryContext sets up a MemoryContext
 func NewMemoryContext() *MemoryContext {
 	ctx := &MemoryContext{
-		BaseContext: CtxFactory{}.New(),
+		BaseContext: ContextFactory{}.New(),
 		Files:       make(map[string]*bytes.Buffer),
 	}
 

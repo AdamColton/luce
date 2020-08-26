@@ -110,13 +110,7 @@ func (f *Func) BodyString(str string) {
 // Call produces a invocation of the function and fulfills the FuncCaller
 // interface
 func (f *Func) Call(pre Prefixer, args ...string) string {
-	buf := bufpool.Get()
-	buf.WriteString(pre.Prefix(f.file.Package()))
-	buf.WriteString(f.Name())
-	buf.WriteRune('(')
-	buf.WriteString(strings.Join(args, ", "))
-	buf.WriteRune(')')
-	return bufpool.PutStr(buf)
+	return funcCall(pre, f.Name(), args, f.file.Package())
 }
 
 // Rename the function and update the name in the package.
@@ -138,4 +132,14 @@ func (f *Func) RegisterImports(i *Imports) {
 	if ri, ok := f.Body.(ImportsRegistrar); ok {
 		ri.RegisterImports(i)
 	}
+}
+
+func funcCall(pre Prefixer, name string, args []string, pkg PackageRef) string {
+	buf := bufpool.Get()
+	buf.WriteString(pre.Prefix(pkg))
+	buf.WriteString(name)
+	buf.WriteRune('(')
+	buf.WriteString(strings.Join(args, ", "))
+	buf.WriteRune(')')
+	return bufpool.PutStr(buf)
 }

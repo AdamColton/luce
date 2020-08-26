@@ -25,6 +25,7 @@ type Context interface {
 
 	Package(name string) (*Package, error)
 	MustPackage(name string) *Package
+	NewTypeDef(name string, t Type) (*TypeDef, error)
 
 	AddPackage(*Package) error
 	OutputPath(name string) string
@@ -41,8 +42,8 @@ type Context interface {
 	SetDefaultComment(string)
 }
 
-// CtxFactory is used to configure the construction of a BaseContext.
-type CtxFactory struct {
+// ContextFactory is used to configure the construction of a BaseContext.
+type ContextFactory struct {
 	OutputPath     string
 	ImportPath     string
 	CommentWidth   int
@@ -50,7 +51,7 @@ type CtxFactory struct {
 }
 
 // New BaseContext access the os with the Factory settings.
-func (c CtxFactory) New() *BaseContext {
+func (c ContextFactory) New() *BaseContext {
 	w := c.CommentWidth
 	if w == 0 {
 		w = defaultCommentWidth
