@@ -21,7 +21,7 @@ type Type interface {
 	Named(string) NameType
 	Unnamed() NameType
 	Pointer() *PointerType
-	Slice() SliceType
+	Slice() *SliceType
 	Array(size int) *ArrayType
 	AsMapElem(key Type) *MapType
 	AsMapKey(elem Type) *MapType
@@ -55,7 +55,7 @@ func (t typeWrapper) Pointer() *PointerType {
 	return PointerTo(t)
 }
 
-func (t typeWrapper) Slice() SliceType {
+func (t typeWrapper) Slice() *SliceType {
 	return SliceOf(t)
 }
 

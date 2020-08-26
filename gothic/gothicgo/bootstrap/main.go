@@ -66,7 +66,7 @@ var (
 	{{template "sig" .}} Pointer() *PointerType { return PointerTo({{.R}}) }
 
 	// Slice funfills Type.
-	{{template "sig" .}} Slice() SliceType { return SliceOf({{.R}}) }
+	{{template "sig" .}} Slice() *SliceType { return SliceOf({{.R}}) }
 
 	// Array funfills Type.
 	{{template "sig" .}} Array(size int) *ArrayType { return ArrayOf({{.R}}, size) }
@@ -165,6 +165,16 @@ func main() {
 			Constructor: "x := IntType.Pointer()",
 			String:      "*int",
 			Kind:        "PointerKind",
+			Elem:        "IntType",
+		},
+		{
+			R:           "s",
+			Name:        "SliceType",
+			GenKind:     true,
+			Ptr:         true,
+			Constructor: "x := IntType.Slice()",
+			String:      "[]int",
+			Kind:        "SliceKind",
 			Elem:        "IntType",
 		},
 	}
