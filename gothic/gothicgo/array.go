@@ -7,46 +7,29 @@ import (
 	"github.com/adamcolton/luce/util/luceio"
 )
 
-// ArrayType extends Type with array specific information
-type ArrayType interface {
-	Type
-	ArrayElem() Type
-	Elem() Type
-	// Size is the number of elements in the array
-	Size() int
-}
-
 // ArrayOf returns a ArrayType around t.
 func ArrayOf(t Type, size int) ArrayType {
 	if size < 0 {
 		size = 0
 	}
-	return arrayT{
-		typeWrapper{
-			arrayCT{
-				Type: t,
-				size: size,
-			},
-		},
+	return ArrayType{
+		Type: t,
+		Size: size,
 	}
 }
 
-// arrayCT is the inner part of the array nesting structure, it inheirits
-// ImportsRegistrar from the underlying type but overrides Kind, PackageRef and
-// PrefixWriteTo. This nesting structure allows using the typeWrapper on the
-// inner arrayCT, while the outer wrapper extends it with Elem, ArrayElem and
-// Size.
-
-type arrayCT struct {
+// ArrayType implements a Go array.
+type ArrayType struct {
 	Type
-	size int
+	Size int
 }
 
-func (a arrayCT) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
+// PrefixWriteTo fulfills PrefixWriterTo. Writes the array signature.
+func (a ArrayType) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	sw.WriteString("[")
-	if a.size > 0 {
-		sw.WriteInt(a.size)
+	if a.Size > 0 {
+		sw.WriteInt(a.Size)
 	} else {
 		sw.WriteString("...")
 	}
@@ -55,13 +38,12 @@ func (a arrayCT) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw.Err = lerr.Wrap(sw.Err, "While writing array")
 	return sw.Rets()
 }
-func (arrayCT) Kind() Kind             { return ArrayKind }
-func (arrayCT) PackageRef() PackageRef { return pkgBuiltin }
 
-type arrayT struct {
-	typeWrapper
-}
+// Kind fulfills Type. Returns ArrayKind.
+func (ArrayType) Kind() Kind { return ArrayKind }
 
-func (a arrayT) Elem() Type      { return a.coreType.(arrayCT).Type }
-func (a arrayT) ArrayElem() Type { return a.Elem() }
-func (a arrayT) Size() int       { return a.coreType.(arrayCT).size }
+// PackageRef fulfills Type. Returns pkgBuiltin.
+func (ArrayType) PackageRef() PackageRef { return pkgBuiltin }
+
+// Elem returns the underlying Type.
+func (a ArrayType) Elem() Type { return a.Type }
