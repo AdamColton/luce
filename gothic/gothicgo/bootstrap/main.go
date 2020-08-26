@@ -24,7 +24,7 @@ var (
 		assert.Equal(t, "", n.Name())
 		assert.Equal(t, x, n.T)
 	
-		p := x.Ptr()
+		p := x.Pointer()
 		assert.Equal(t, PointerKind, p.Kind())
 		assert.Equal(t, x, p.Elem())
 	
@@ -44,6 +44,9 @@ var (
 		assert.Equal(t, MapKind, mp.Kind())
 		assert.Equal(t, x, mp.Key)
 
+		{{if .Elem -}}
+		assert.Equal(t, {{.Elem}}, x.Elem())
+		{{end}}
 		str := PrefixWriteToString(x, DefaultPrefixer)
 		assert.Equal(t, "{{.String}}", str)
 	}`))
@@ -60,7 +63,7 @@ var (
 	{{template "sig" .}} Unnamed() NameType { return NameType{"", {{.R}}} }
 
 	// Ptr funfills Type.
-	{{template "sig" .}} Ptr() PointerType { return PointerTo({{.R}}) }
+	{{template "sig" .}} Pointer() *PointerType { return PointerTo({{.R}}) }
 
 	// Slice funfills Type.
 	{{template "sig" .}} Slice() SliceType { return SliceOf({{.R}}) }
@@ -86,7 +89,7 @@ type fullType struct {
 	GenKind, Ptr  bool
 
 	// Test values
-	Constructor, String, Package string
+	Constructor, String, Package, Elem string
 }
 
 func main() {
@@ -114,6 +117,7 @@ func main() {
 			Constructor: "x := IntType.Array(5)",
 			String:      "[5]int",
 			Kind:        "ArrayKind",
+			Elem:        "IntType",
 		}, {
 			R:           "b",
 			Name:        "builtin",
@@ -151,6 +155,17 @@ func main() {
 			Constructor: "x := MapOf(IntType, StringType)",
 			String:      "map[int]string",
 			Kind:        "MapKind",
+			Elem:        "StringType",
+		},
+		{
+			R:           "p",
+			Name:        "PointerType",
+			GenKind:     true,
+			Ptr:         true,
+			Constructor: "x := IntType.Pointer()",
+			String:      "*int",
+			Kind:        "PointerKind",
+			Elem:        "IntType",
 		},
 	}
 	for _, ft := range fts {

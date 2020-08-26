@@ -21,7 +21,7 @@ func TestArrayTypeTypeGen(t *testing.T) {
 	assert.Equal(t, "", n.Name())
 	assert.Equal(t, x, n.T)
 
-	p := x.Ptr()
+	p := x.Pointer()
 	assert.Equal(t, PointerKind, p.Kind())
 	assert.Equal(t, x, p.Elem())
 
@@ -41,6 +41,8 @@ func TestArrayTypeTypeGen(t *testing.T) {
 	assert.Equal(t, MapKind, mp.Kind())
 	assert.Equal(t, x, mp.Key)
 
+	assert.Equal(t, IntType, x.Elem())
+
 	str := PrefixWriteToString(x, DefaultPrefixer)
 	assert.Equal(t, "[5]int", str)
 }
@@ -59,7 +61,7 @@ func TestbuiltinTypeGen(t *testing.T) {
 	assert.Equal(t, "", n.Name())
 	assert.Equal(t, x, n.T)
 
-	p := x.Ptr()
+	p := x.Pointer()
 	assert.Equal(t, PointerKind, p.Kind())
 	assert.Equal(t, x, p.Elem())
 
@@ -98,7 +100,7 @@ func TestExternalTypeTypeGen(t *testing.T) {
 	assert.Equal(t, "", n.Name())
 	assert.Equal(t, x, n.T)
 
-	p := x.Ptr()
+	p := x.Pointer()
 	assert.Equal(t, PointerKind, p.Kind())
 	assert.Equal(t, x, p.Elem())
 
@@ -141,7 +143,7 @@ func TestFuncSigTypeGen(t *testing.T) {
 	assert.Equal(t, "", n.Name())
 	assert.Equal(t, x, n.T)
 
-	p := x.Ptr()
+	p := x.Pointer()
 	assert.Equal(t, PointerKind, p.Kind())
 	assert.Equal(t, x, p.Elem())
 
@@ -179,7 +181,7 @@ func TestMapTypeTypeGen(t *testing.T) {
 	assert.Equal(t, "", n.Name())
 	assert.Equal(t, x, n.T)
 
-	p := x.Ptr()
+	p := x.Pointer()
 	assert.Equal(t, PointerKind, p.Kind())
 	assert.Equal(t, x, p.Elem())
 
@@ -199,6 +201,48 @@ func TestMapTypeTypeGen(t *testing.T) {
 	assert.Equal(t, MapKind, mp.Kind())
 	assert.Equal(t, x, mp.Key)
 
+	assert.Equal(t, StringType, x.Elem())
+
 	str := PrefixWriteToString(x, DefaultPrefixer)
 	assert.Equal(t, "map[int]string", str)
+}
+
+func TestPointerTypeTypeGen(t *testing.T) {
+	x := IntType.Pointer()
+
+	assert.Equal(t, PointerKind, x.Kind())
+	assert.Equal(t, PkgBuiltin(), x.PackageRef())
+
+	n := x.Named("Foo")
+	assert.Equal(t, "Foo", n.Name())
+	assert.Equal(t, x, n.T)
+
+	n = x.Unnamed()
+	assert.Equal(t, "", n.Name())
+	assert.Equal(t, x, n.T)
+
+	p := x.Pointer()
+	assert.Equal(t, PointerKind, p.Kind())
+	assert.Equal(t, x, p.Elem())
+
+	s := x.Slice()
+	assert.Equal(t, SliceKind, s.Kind())
+	assert.Equal(t, x, s.Elem())
+
+	a := x.Array(13)
+	assert.Equal(t, ArrayKind, a.Kind())
+	assert.Equal(t, x, a.Elem())
+
+	mp := x.AsMapElem(IntType)
+	assert.Equal(t, MapKind, mp.Kind())
+	assert.Equal(t, x, mp.Elem())
+
+	mp = x.AsMapKey(IntType)
+	assert.Equal(t, MapKind, mp.Kind())
+	assert.Equal(t, x, mp.Key)
+
+	assert.Equal(t, IntType, x.Elem())
+
+	str := PrefixWriteToString(x, DefaultPrefixer)
+	assert.Equal(t, "*int", str)
 }

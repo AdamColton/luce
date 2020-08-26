@@ -20,7 +20,7 @@ type Type interface {
 	Kind() Kind
 	Named(string) NameType
 	Unnamed() NameType
-	Ptr() PointerType
+	Pointer() *PointerType
 	Slice() SliceType
 	Array(size int) *ArrayType
 	AsMapElem(key Type) *MapType
@@ -51,7 +51,7 @@ func (t typeWrapper) Unnamed() NameType {
 	return NameType{"", t}
 }
 
-func (t typeWrapper) Ptr() PointerType {
+func (t typeWrapper) Pointer() *PointerType {
 	return PointerTo(t)
 }
 
