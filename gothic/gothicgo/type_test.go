@@ -16,27 +16,3 @@ func TestBuiltinType(t *testing.T) {
 	assert.Equal(t, "foo bool", PrefixWriteToString(BoolType.Named("foo"), DefaultPrefixer))
 	assert.Equal(t, "bool", PrefixWriteToString(BoolType.Unnamed(), DefaultPrefixer))
 }
-
-func TestNewHelpfulTypeWrapper(t *testing.T) {
-	doubleWrap := typeWrapper{IntType}
-
-	// confirm doubleWrap
-	_, ok := doubleWrap.coreType.(typeWrapper)
-	assert.True(t, ok)
-
-	singleWrap := newTypeWrapper(doubleWrap)
-
-	// confirm singleWrap
-	_, ok = singleWrap.coreType.(typeWrapper)
-	assert.False(t, ok)
-}
-
-func TestNewHelpfulType(t *testing.T) {
-	singleWrap := newType(IntType)
-
-	// confirm singleWrap was not re-wrapped
-	swht, ok := singleWrap.(typeWrapper)
-	assert.True(t, ok)
-	_, ok = swht.coreType.(typeWrapper)
-	assert.False(t, ok)
-}

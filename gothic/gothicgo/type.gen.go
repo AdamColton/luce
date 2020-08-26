@@ -22,3 +22,24 @@ func (a ArrayType) AsMapElem(key Type) MapType { return MapOf(key, a) }
 
 // AsMapKey funfills Type. Returns a NameType with an empty Name.
 func (a ArrayType) AsMapKey(elem Type) MapType { return MapOf(a, elem) }
+
+// Named fulfills Type. Returns a NameType with the given name.
+func (b builtin) Named(name string) NameType { return NameType{name, b} }
+
+// Unnamed funfills Type. Returns a NameType with an empty Name.
+func (b builtin) Unnamed() NameType { return NameType{"", b} }
+
+// Ptr funfills Type.
+func (b builtin) Ptr() PointerType { return PointerTo(b) }
+
+// Slice funfills Type.
+func (b builtin) Slice() SliceType { return SliceOf(b) }
+
+// Array funfills Type.
+func (b builtin) Array(size int) ArrayType { return ArrayOf(b, size) }
+
+// AsMapElem funfills Type.
+func (b builtin) AsMapElem(key Type) MapType { return MapOf(key, b) }
+
+// AsMapKey funfills Type. Returns a NameType with an empty Name.
+func (b builtin) AsMapKey(elem Type) MapType { return MapOf(b, elem) }
