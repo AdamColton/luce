@@ -145,6 +145,12 @@ func (td *TypeDef) Elem() Type {
 	return td.baseType
 }
 
+// Ref converts TypeDef to a Type implemented as TypeRef. TypeDef is the
+// generator and TypeRef is the type.
+func (td *TypeDef) Ref() *TypeRef {
+	return NewTypeRef(td.file.pkg, td.name, td.baseType)
+}
+
 // Method on a struct
 type Method struct {
 	*FuncSig
@@ -232,10 +238,10 @@ func (m *Method) WriteTo(w io.Writer) (int64, error) {
 func (m *Method) Receiver() NameType {
 	n := NameType{
 		N: m.typeDef.ReceiverName,
-		T: m.typeDef,
+		T: m.typeDef.Ref(),
 	}
 	if m.Ptr {
-		n.T = m.typeDef.Pointer()
+		n.T = n.T.Pointer()
 	}
 	return n
 }

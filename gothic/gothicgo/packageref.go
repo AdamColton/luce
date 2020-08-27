@@ -11,6 +11,7 @@ import (
 type PackageRef interface {
 	ImportPath() string
 	Name() string
+	NewTypeRef(string, Type) *TypeRef
 
 	// ImportSpec is the specification and may include a package name or a
 	// modifier like _.
@@ -20,17 +21,6 @@ type PackageRef interface {
 	// underlying packageRef. All instances should be created with NewPackageRef
 	// to guarentee that the reference is well formed.
 	privatePkgRef()
-}
-
-// ExternalPackageRef represents an external package - one that will not be
-// generated.
-type ExternalPackageRef interface {
-	PackageRef
-
-	// ExternalType represents a type in an external package. The name must
-	// be exported (begin with an uppercase character).
-	ExternalType(name string) (*ExternalType, error)
-	MustExternalType(name string) *ExternalType
 }
 
 var pkgBuiltin = &packageRef{}
@@ -58,32 +48,33 @@ func (p packageRef) ImportSpec() string {
 
 func (packageRef) privatePkgRef() {}
 
-type externalPackageRef struct {
-	packageRef
-}
-
 // TODO: this regex is only mostly right
 var packageRefRegex = regexp.MustCompile(`^(?:[\w\-\.]+\/)*([\w\-]+)$`)
 
 // ErrBadPackageRef indicates a poorly formatted package ref string.
 const ErrBadPackageRef = lerr.Str("Bad Package Ref")
 
-// NewExternalPackageRef takes the string used to import a pacakge and returns
-// an ExternalPackageRef.
-func NewExternalPackageRef(ref string) (ExternalPackageRef, error) {
+// NewPackageRef takes the string used to import a pacakge and returns
+// an PackageRef.
+func NewPackageRef(ref string) (PackageRef, error) {
 	m := packageRefRegex.FindStringSubmatch(ref)
 	if len(m) == 0 {
 		return nil, ErrBadPackageRef
 	}
-	return externalPackageRef{packageRef{
+	return packageRef{
 		path: m[0],
 		name: m[1],
-	}}, nil
+	}, nil
 }
 
-// MustExternalPackageRef returns a new PackageRef and panics if there is an error
-func MustExternalPackageRef(ref string) ExternalPackageRef {
-	p, err := NewExternalPackageRef(ref)
+// MustPackageRef returns a new PackageRef and panics if there is an error
+func MustPackageRef(ref string) PackageRef {
+	p, err := NewPackageRef(ref)
 	lerr.Panic(err)
 	return p
+}
+
+// NewTypeRef fulfills PackageRef.
+func (p packageRef) NewTypeRef(name string, t Type) *TypeRef {
+	return NewTypeRef(p, name, t)
 }

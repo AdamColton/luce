@@ -52,8 +52,8 @@ func TestTypeDef(t *testing.T) {
 
 func TestTypeDefRegisterImports(t *testing.T) {
 	ctx := NewMemoryContext()
-	foo := ctx.MustTypeDef("Foo", MustExternalPackageRef("bar").MustExternalType("Bar"))
-	m := foo.MustMethod("ImportTest", MustExternalPackageRef("baz").MustExternalType("Baz").Named("b"))
+	foo := ctx.MustTypeDef("Foo", MustPackageRef("bar").NewTypeRef("Bar", nil))
+	m := foo.MustMethod("ImportTest", MustPackageRef("baz").NewTypeRef("Baz", nil).Named("b"))
 	m.Body = testFuncBodyWriter("importTest.SayHi()")
 
 	ctx.MustExport()

@@ -146,3 +146,8 @@ func (p *Package) UpdateNamer(n Namer) error {
 	}
 	return p.AddNamer(n)
 }
+
+// NewTypeRef fulfills PackageRef.
+func (p *Package) NewTypeRef(name string, t Type) *TypeRef {
+	return NewTypeRef(p, name, t)
+}

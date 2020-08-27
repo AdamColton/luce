@@ -85,9 +85,9 @@ func TestBUILTINTypeGen(t *testing.T) {
 	assert.Equal(t, "int", str)
 }
 
-func TestEXTERNALTYPETypeGen(t *testing.T) {
-	pkg := MustExternalPackageRef("foo")
-	x := pkg.MustExternalType("Bar")
+func TestTYPEREFTypeGen(t *testing.T) {
+	pkg := MustPackageRef("foo")
+	x := pkg.NewTypeRef("Bar", IntType)
 
 	assert.Equal(t, TypeDefKind, x.Kind())
 	assert.Equal(t, pkg, x.PackageRef())
@@ -119,6 +119,8 @@ func TestEXTERNALTYPETypeGen(t *testing.T) {
 	mp = x.AsMapKey(IntType)
 	assert.Equal(t, MapKind, mp.Kind())
 	assert.Equal(t, x, mp.Key)
+
+	assert.Equal(t, IntType, x.Elem())
 
 	str := PrefixWriteToString(x, DefaultPrefixer)
 	assert.Equal(t, "foo.Bar", str)
@@ -285,45 +287,4 @@ func TestSLICETYPETypeGen(t *testing.T) {
 
 	str := PrefixWriteToString(x, DefaultPrefixer)
 	assert.Equal(t, "[]int", str)
-}
-
-func TestTYPEDEFTypeGen(t *testing.T) {
-	ctx := NewMemoryContext()
-	x := ctx.MustTypeDef("Foo", StringType)
-
-	assert.Equal(t, TypeDefKind, x.Kind())
-	assert.Equal(t, ctx.MustPackage("foo"), x.PackageRef())
-
-	n := x.Named("Foo")
-	assert.Equal(t, "Foo", n.Name())
-	assert.Equal(t, x, n.T)
-
-	n = x.Unnamed()
-	assert.Equal(t, "", n.Name())
-	assert.Equal(t, x, n.T)
-
-	p := x.Pointer()
-	assert.Equal(t, PointerKind, p.Kind())
-	assert.Equal(t, x, p.Elem())
-
-	s := x.Slice()
-	assert.Equal(t, SliceKind, s.Kind())
-	assert.Equal(t, x, s.Elem())
-
-	a := x.Array(13)
-	assert.Equal(t, ArrayKind, a.Kind())
-	assert.Equal(t, x, a.Elem())
-
-	mp := x.AsMapElem(IntType)
-	assert.Equal(t, MapKind, mp.Kind())
-	assert.Equal(t, x, mp.Elem())
-
-	mp = x.AsMapKey(IntType)
-	assert.Equal(t, MapKind, mp.Kind())
-	assert.Equal(t, x, mp.Key)
-
-	assert.Equal(t, StringType, x.Elem())
-
-	str := PrefixWriteToString(x, DefaultPrefixer)
-	assert.Equal(t, "foo.Foo", str)
 }

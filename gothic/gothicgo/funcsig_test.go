@@ -9,7 +9,7 @@ import (
 )
 
 func TestNameTypeSliceToString(t *testing.T) {
-	pkg := MustExternalPackageRef("foo")
+	pkg := MustPackageRef("foo")
 	tt := map[string]struct {
 		nts      []NameType
 		variadic bool
@@ -66,19 +66,19 @@ func TestNameTypeSliceToString(t *testing.T) {
 		},
 		"named-double-repeat-external-type": {
 			nts: []NameType{
-				{"a", pkg.MustExternalType("Bar")},
-				{"b", pkg.MustExternalType("Bar")},
-				{"c", pkg.MustExternalType("Baz")},
-				{"d", pkg.MustExternalType("Baz")},
+				{"a", pkg.NewTypeRef("Bar", nil)},
+				{"b", pkg.NewTypeRef("Bar", nil)},
+				{"c", pkg.NewTypeRef("Baz", nil)},
+				{"d", pkg.NewTypeRef("Baz", nil)},
 			},
 			expected: "a, b foo.Bar, c, d foo.Baz",
 		},
 		"unnamed-double-repeat-external-type": {
 			nts: []NameType{
-				pkg.MustExternalType("Bar").Unnamed(),
-				pkg.MustExternalType("Bar").Unnamed(),
-				pkg.MustExternalType("Baz").Unnamed(),
-				pkg.MustExternalType("Baz").Unnamed(),
+				pkg.NewTypeRef("Bar", nil).Unnamed(),
+				pkg.NewTypeRef("Bar", nil).Unnamed(),
+				pkg.NewTypeRef("Baz", nil).Unnamed(),
+				pkg.NewTypeRef("Baz", nil).Unnamed(),
 			},
 			expected: "foo.Bar, foo.Bar, foo.Baz, foo.Baz",
 		},
@@ -174,10 +174,10 @@ func TestFuncSig(t *testing.T) {
 	str = PrefixWriteToString(fs, DefaultPrefixer)
 	assert.Equal(t, "func Foo(int, ...string) (string, string)", str)
 
-	pkg1 := MustExternalPackageRef("pkg1")
-	pkg2 := MustExternalPackageRef("pkg2")
-	fs = NewFuncSig("Foo2Foo", pkg1.MustExternalType("Foo").Unnamed()).
-		UnnamedRets(pkg2.MustExternalType("Foo"))
+	pkg1 := MustPackageRef("pkg1")
+	pkg2 := MustPackageRef("pkg2")
+	fs = NewFuncSig("Foo2Foo", pkg1.NewTypeRef("Foo", nil).Unnamed()).
+		UnnamedRets(pkg2.NewTypeRef("Foo", nil))
 	i := NewImports(nil)
 	fs.RegisterImports(i)
 	str = bufpool.MustWriterToString(i)

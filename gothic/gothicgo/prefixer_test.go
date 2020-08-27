@@ -8,7 +8,7 @@ import (
 )
 
 func TestDefaultPrefixer(t *testing.T) {
-	bar := gothicgo.MustExternalPackageRef("foo/bar")
+	bar := gothicgo.MustPackageRef("foo/bar")
 	prefix := gothicgo.DefaultPrefixer.Prefix(bar)
 	assert.Equal(t, "bar.", prefix)
 

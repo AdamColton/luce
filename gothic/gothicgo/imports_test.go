@@ -14,14 +14,14 @@ func TestImportAdd(t *testing.T) {
 	i := NewImports(nil)
 	assert.Equal(t, "", toStr(i))
 
-	i.Add(MustExternalPackageRef("foo/bar"), nil, MustExternalPackageRef("foo/baz"))
+	i.Add(MustPackageRef("foo/bar"), nil, MustPackageRef("foo/baz"))
 	assert.Equal(t, "import (\n\t\"foo/bar\"\n\t\"foo/baz\"\n)\n", toStr(i))
 }
 
 func TestImportDouble(t *testing.T) {
 	i := NewImports(nil)
-	pkg1 := MustExternalPackageRef("foo/bar")
-	pkg2 := MustExternalPackageRef("foo/bar")
+	pkg1 := MustPackageRef("foo/bar")
+	pkg2 := MustPackageRef("foo/bar")
 	i.Add(pkg1)
 	i.Add(pkg2)
 	assert.Equal(t, 1, strings.Count(toStr(i), "foo/bar"))
@@ -29,7 +29,7 @@ func TestImportDouble(t *testing.T) {
 
 func TestImportAddImports(t *testing.T) {
 	i1 := NewImports(nil)
-	i1.Add(MustExternalPackageRef("foo/bar"))
+	i1.Add(MustPackageRef("foo/bar"))
 
 	i2 := NewImports(nil)
 	i2.AddImports(i1)
@@ -39,7 +39,7 @@ func TestImportAddImports(t *testing.T) {
 
 func TestImportPrefix(t *testing.T) {
 	var i *Imports
-	bar := MustExternalPackageRef("foo/bar")
+	bar := MustPackageRef("foo/bar")
 	// i.Prefix should work even with nil *Imports
 	assert.Equal(t, "bar.", i.Prefix(bar))
 	assert.Equal(t, "", i.Prefix(PkgBuiltin()))
@@ -49,12 +49,12 @@ func TestImportPrefix(t *testing.T) {
 
 	assert.Equal(t, "bar.", i.Prefix(bar))
 
-	baz := MustExternalPackageRef("foo/baz")
+	baz := MustPackageRef("foo/baz")
 	assert.Equal(t, "baz.", i.Prefix(baz))
 }
 
 func TestImportSelf(t *testing.T) {
-	bar := MustExternalPackageRef("foo/bar")
+	bar := MustPackageRef("foo/bar")
 	i := NewImports(bar)
 	i.Add(bar) //should be safe to add self
 	assert.Equal(t, "", i.Prefix(bar))
@@ -63,8 +63,8 @@ func TestImportSelf(t *testing.T) {
 func TestImportRemove(t *testing.T) {
 	i := NewImports(nil)
 
-	bar := MustExternalPackageRef("foo/bar")
-	baz := MustExternalPackageRef("foo/baz")
+	bar := MustPackageRef("foo/bar")
+	baz := MustPackageRef("foo/baz")
 	i.Add(bar, baz)
 	i.RemoveRef(baz)
 	assert.Equal(t, "import (\n\t\"foo/bar\"\n)\n", bufpool.MustWriterToString(i))
@@ -72,7 +72,7 @@ func TestImportRemove(t *testing.T) {
 
 func TestAlias(t *testing.T) {
 	i := NewImports(nil)
-	bar := MustExternalPackageRef("foo/bar")
+	bar := MustPackageRef("foo/bar")
 	a := NewAlias(bar, "fb")
 	i.Add(a)
 	i.Add(bar) // should have no effect

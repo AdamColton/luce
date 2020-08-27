@@ -33,3 +33,8 @@ func (a Alias) ImportSpec() string {
 }
 
 func (a Alias) privatePkgRef() {}
+
+// NewTypeRef fulfills PackageRef.
+func (a Alias) NewTypeRef(name string, t Type) *TypeRef {
+	return NewTypeRef(a, name, t)
+}

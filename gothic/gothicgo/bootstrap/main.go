@@ -109,8 +109,8 @@ func main() {
 	testFile := pkg.File("type.gen_test")
 
 	testFile.Imports.Add(
-		gothicgo.MustExternalPackageRef("testing"),
-		gothicgo.MustExternalPackageRef("github.com/testify/assert"),
+		gothicgo.MustPackageRef("testing"),
+		gothicgo.MustPackageRef("github.com/testify/assert"),
 	)
 
 	fts := []fullType{
@@ -130,15 +130,16 @@ func main() {
 			String:      "int",
 			Kind:        "IntKind",
 		}, {
-			R:       "e",
-			Name:    "ExternalType",
+			R:       "t",
+			Name:    "TypeRef",
 			GenKind: true,
 			Ptr:     true,
-			Constructor: `pkg := MustExternalPackageRef("foo")
-						  x := pkg.MustExternalType("Bar")`,
+			Constructor: `pkg := MustPackageRef("foo")
+						  x := pkg.NewTypeRef("Bar", IntType)`,
 			String:  "foo.Bar",
 			Kind:    "TypeDefKind",
 			Package: `pkg`,
+			Elem:    "IntType",
 		}, {
 			R:       "f",
 			Name:    "FuncSig",
@@ -181,17 +182,6 @@ func main() {
 			String:      "[]int",
 			Kind:        "SliceKind",
 			Elem:        "IntType",
-		}, {
-			R:       "t",
-			Name:    "TypeDef",
-			GenKind: true,
-			Ptr:     true,
-			Constructor: `	ctx := NewMemoryContext()
-							x := ctx.MustTypeDef("Foo", StringType)`,
-			String:  "foo.Foo",
-			Kind:    "TypeDefKind",
-			Elem:    "StringType",
-			Package: `ctx.MustPackage("foo")`,
 		},
 	}
 

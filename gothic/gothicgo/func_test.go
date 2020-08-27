@@ -17,7 +17,7 @@ func (fw testFuncBodyWriter) PrefixWriteTo(w io.Writer, p Prefixer) (int64, erro
 }
 
 func (fw testFuncBodyWriter) RegisterImports(i *Imports) {
-	i.Add(MustExternalPackageRef("importTest"))
+	i.Add(MustPackageRef("importTest"))
 }
 
 func TestFunc(t *testing.T) {
@@ -25,7 +25,7 @@ func TestFunc(t *testing.T) {
 	args := []NameType{
 		IntType.Named("a"),
 		StringType.Named("b"),
-		MustExternalPackageRef("baz").MustExternalType("Baz").Named("c"),
+		MustPackageRef("baz").NewTypeRef("Baz", nil).Named("c"),
 	}
 	fn := file.MustFunc("Rename", args...).
 		UnnamedRets(BoolType)
@@ -58,7 +58,7 @@ func TestNewFuncErr(t *testing.T) {
 	args := []NameType{
 		IntType.Named("a"),
 		StringType.Unnamed(),
-		MustExternalPackageRef("baz").MustExternalType("Baz").Named("c"),
+		MustPackageRef("baz").NewTypeRef("Baz", nil).Named("c"),
 	}
 	_, err := file.NewFunc("someFunc", args...)
 	assert.Equal(t, ErrUnnamedFuncArg, err)
