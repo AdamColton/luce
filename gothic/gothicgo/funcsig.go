@@ -29,6 +29,7 @@ func NewFuncSig(name string, args ...NameType) *FuncSig {
 	}
 }
 
+// PrefixWriteTo fulfills Type. Writes the function signature.
 func (f *FuncSig) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	sw.WriteString("func")
@@ -55,7 +56,10 @@ func (f *FuncSig) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	return sw.Rets()
 }
 
+// PackageRef fulfills type. Returns PkgBuiltin.
 func (f *FuncSig) PackageRef() PackageRef { return pkgBuiltin }
+
+// RegisterImports fulfills type. Registers types for args and returns.
 func (f *FuncSig) RegisterImports(i *Imports) {
 	for _, arg := range f.Args {
 		arg.T.RegisterImports(i)
@@ -65,67 +69,57 @@ func (f *FuncSig) RegisterImports(i *Imports) {
 	}
 }
 
-func expectNamed(name string) error {
-	if name == "" {
-		return ErrMixedParameters
+type nameValidator string
+
+func (v nameValidator) validate(name string) error {
+	if (string(v) == "") == (name == "") {
+		return nil
 	}
-	return nil
+	return ErrMixedParameters
 }
 
-func expectUnnamed(name string) error {
-	if name != "" {
-		return ErrMixedParameters
-	}
-	return nil
-}
 func nameTypeSliceToString(pre Prefixer, nts []NameType, variadic bool) (string, error) {
 	l := len(nts)
 	if l == 0 {
 		return "", nil
 	}
-	var validateName = expectNamed
-	if nts[0].N == "" {
-		validateName = expectUnnamed
-	}
+	names := nameValidator(nts[0].N)
 
 	var s = make([]string, l)
 	l--
 	var prevType string
 	typeBuf := bufpool.Get()
 	defer bufpool.Put(typeBuf)
-	if str := typeBuf.String(); str != "" {
-		fmt.Println(str)
-	}
 	// working backwards makes it easier to place types
 	for i := l; i >= 0; i-- {
-		if err := validateName(nts[i].N); err != nil {
+		if err := names.validate(nts[i].N); err != nil {
 			return "", err
 		}
 		nts[i].T.PrefixWriteTo(typeBuf, pre)
-		if i == l && variadic {
-			if nts[i].N == "" {
-				s[i] = fmt.Sprintf("...%s", typeBuf.String())
-			} else {
-				s[i] = fmt.Sprintf("%s ...%s", nts[i].N, typeBuf.String())
-			}
-		} else if typeBuf.String() != prevType {
-			if nts[i].N == "" {
-				s[i] = fmt.Sprintf("%s", typeBuf.String())
-			} else {
-				s[i] = fmt.Sprintf("%s %s", nts[i].N, typeBuf.String())
-				bs := make([]byte, typeBuf.Len())
-				copy(bs, typeBuf.Bytes())
-				prevType = string(bs)
-			}
-		} else {
-			s[i] = nts[i].N
-		}
+		variadic = variadic && i == l
+		s[i], prevType = nextNameType(nts[i].N, typeBuf.String(), prevType, variadic)
 		typeBuf.Reset()
 	}
 
 	return strings.Join(s, ", "), nil
 }
 
+func nextNameType(name, tipe, prev string, variadic bool) (string, string) {
+	if tipe == prev && name != "" {
+		return name, tipe
+	}
+	v, p := "", tipe
+	if variadic {
+		v, p = "...", ""
+	}
+	if name == "" {
+		return fmt.Sprintf("%s%s", v, tipe), p
+	}
+	return fmt.Sprintf("%s %s%s", name, v, tipe), p
+}
+
+// AsType returns a FuncSig with all names removed along with an option to
+// clear the function name.
 func (f *FuncSig) AsType(clearName bool) *FuncSig {
 	var name string
 	if !clearName {
@@ -145,6 +139,7 @@ func (f *FuncSig) Returns(rets ...NameType) *FuncSig {
 	return f
 }
 
+// UnnamedRets sets the return types on the function.
 func (f *FuncSig) UnnamedRets(rets ...Type) *FuncSig {
 	f.Rets = make([]NameType, len(rets))
 	for i, t := range rets {

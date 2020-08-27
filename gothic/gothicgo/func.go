@@ -141,6 +141,7 @@ func (f *Func) Returns(rets ...NameType) *Func {
 	return f
 }
 
+// UnnamedRets sets the return types on the function
 func (f *Func) UnnamedRets(rets ...Type) *Func {
 	f.FuncSig.UnnamedRets(rets...)
 	return f

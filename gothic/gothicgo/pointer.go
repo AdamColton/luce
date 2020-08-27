@@ -17,6 +17,7 @@ func PointerTo(t Type) *PointerType {
 	return &PointerType{t}
 }
 
+// PrefixWriteTo fulfills Type.
 func (p *PointerType) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	sw.WriteRune('*')
@@ -25,5 +26,8 @@ func (p *PointerType) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	return sw.Rets()
 }
 
+// PackageRef fulfills Type. Return PkgBuiltin.
 func (*PointerType) PackageRef() PackageRef { return pkgBuiltin }
-func (p *PointerType) Elem() Type           { return p.Type }
+
+// Elem returns the Type pointed to.
+func (p *PointerType) Elem() Type { return p.Type }

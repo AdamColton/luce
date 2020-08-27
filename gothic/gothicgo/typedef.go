@@ -5,12 +5,12 @@ import (
 	"io"
 	"strings"
 
-	"github.com/adamcolton/luce/ds/bufpool"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/luceio"
 )
 
 const (
+	// ErrTypeDefOnIface if an InterfaceType is passed into a TypeDef constructor.
 	ErrTypeDefOnIface = lerr.Str("Cannot create TypeDef on interface")
 )
 
@@ -29,10 +29,6 @@ type TypeDef struct {
 	Comment string
 }
 
-type NewTypeDefiner interface {
-	NewTypeDef(name string, t Type) (*TypeDef, error)
-}
-
 // NewTypeDef adds a type to a Context, the package and file for the struct is
 // automatically generated.
 func (c *BaseContext) NewTypeDef(name string, t Type) (*TypeDef, error) {
@@ -41,6 +37,13 @@ func (c *BaseContext) NewTypeDef(name string, t Type) (*TypeDef, error) {
 		return nil, err
 	}
 	return p.NewTypeDef(name, t)
+}
+
+// MustTypeDef calls NewTypeDef and panics if there is an error
+func (c *BaseContext) MustTypeDef(name string, t Type) *TypeDef {
+	td, err := c.NewTypeDef(name, t)
+	lerr.Panic(err)
+	return td
 }
 
 // NewTypeDef adds a type to a Package, the file for the struct is automatically
@@ -53,6 +56,13 @@ func (p *Package) NewTypeDef(name string, t Type) (*TypeDef, error) {
 		return nil, ErrTypeDefOnIface
 	}
 	return p.File(name+".gothic").NewTypeDef(name, t)
+}
+
+// MustTypeDef calls NewTypeDef and panics if there is an error.
+func (p *Package) MustTypeDef(name string, t Type) *TypeDef {
+	td, err := p.NewTypeDef(name, t)
+	lerr.Panic(err)
+	return td
 }
 
 // NewTypeDef adds a type to a file
@@ -74,16 +84,24 @@ func (f *File) NewTypeDef(name string, t Type) (*TypeDef, error) {
 	return td, f.AddWriterTo(td)
 }
 
-func (td *TypeDef) Prepare() error {
-	td.baseType.RegisterImports(td.File().Imports)
-	return nil
+// MustTypeDef calls NewTypeDef and panics if there is an error.
+func (f *File) MustTypeDef(name string, t Type) *TypeDef {
+	td, err := f.NewTypeDef(name, t)
+	lerr.Panic(err)
+	return td
 }
 
+// RegisterImports from the base Type.
+func (td *TypeDef) RegisterImports(i *Imports) {
+	td.baseType.RegisterImports(td.File().Imports)
+}
+
+// WriteTo writes the TypeDef.
 func (td *TypeDef) WriteTo(w io.Writer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	if td.Comment != "" {
 		sw.WriterTo(&Comment{
-			Comment: luceio.Join(td.Name(), td.Comment, " "),
+			Comment: luceio.Join(td.name, td.Comment, " "),
 			Width:   td.file.CommentWidth(),
 		})
 	}
@@ -95,6 +113,7 @@ func (td *TypeDef) WriteTo(w io.Writer) (int64, error) {
 	return sw.Rets()
 }
 
+// PrefixWriteTo fulfills type.
 func (td *TypeDef) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	if td.Ptr {
@@ -105,39 +124,37 @@ func (td *TypeDef) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw.Err = lerr.Wrap(sw.Err, "While writing type %s", td.name)
 	return sw.Rets()
 }
+
+// PackageRef fulfills Type.
 func (td *TypeDef) PackageRef() PackageRef {
 	return td.file.Package()
 }
+
+// File TypeDef will be written to.
 func (td *TypeDef) File() *File {
 	return td.file
 }
 
-func (td *TypeDef) Name() string {
-	return td.name
-}
+// ScopeName fulfills Namer.
 func (td *TypeDef) ScopeName() string {
 	return td.name
 }
 
-func (td *TypeDef) RegisterImports(i *Imports) {
-	i.Add(td.file.Package())
-}
-
-func (td *TypeDef) StructEmbedName() string {
-	return td.name
-}
-
-func (td *TypeDef) Base() Type {
-	return td.Elem()
-}
-
+// Elem returns the base type.
 func (td *TypeDef) Elem() Type {
-	if td.Ptr {
-		return PointerTo(td.baseType)
-	}
 	return td.baseType
 }
 
+// Method on a struct
+type Method struct {
+	*FuncSig
+	Comment string
+	Body    PrefixWriterTo
+	Ptr     bool
+	typeDef *TypeDef
+}
+
+// MustMethod calls NewMethod and panics if there is an error.
 func (td *TypeDef) MustMethod(name string, args ...NameType) *Method {
 	m, err := td.NewMethod(name, args...)
 	lerr.Panic(err)
@@ -149,14 +166,10 @@ func (td *TypeDef) NewMethod(name string, args ...NameType) (*Method, error) {
 	if name == "" {
 		return nil, lerr.Str("Cannot have unnamed method")
 	}
-	fn := &Func{
-		FuncSig: NewFuncSig(name, args...),
-		file:    td.file,
-	}
 	m := &Method{
 		typeDef: td,
 		Ptr:     td.Ptr,
-		Func:    fn,
+		FuncSig: NewFuncSig(name, args...),
 	}
 	err := td.File().AddWriterTo(m)
 	if err != nil {
@@ -172,55 +185,29 @@ func (td *TypeDef) Method(name string) (*Method, bool) {
 	return m, ok
 }
 
-// Method on a struct
-type Method struct {
-	*Func
-	Ptr     bool
-	typeDef *TypeDef
-}
-
-// SetName of the method, also updates the method map in the struct.
-func (m *Method) SetName(name string) {
-	delete(m.typeDef.methods, m.Func.Name)
-	m.Rename(name)
-	m.typeDef.methods[name] = m
-}
-
-// ScopeName overrides ScopeName on Func, not the best solution.
-func (m *Method) ScopeName() string { return "" }
-
-// String outputs the entire function as a string
-func (m *Method) String() string {
-	buf := bufpool.Get()
-	m.WriteTo(buf)
-	return bufpool.PutStr(buf)
-}
+// ErrUnnamedMethod is returned if a Method is created or set to an empty name.
+const ErrUnnamedMethod = lerr.Str("Cannot have unnamed method")
 
 // WriteTo writes the Method to the writer
 func (m *Method) WriteTo(w io.Writer) (int64, error) {
 	if m.Name == "" {
-		return 0, lerr.Str("Cannot have unnamed method")
+		return 0, ErrUnnamedMethod
 	}
 	sw := luceio.NewSumWriter(w)
 	if m.Comment != "" {
 		sw.WriterTo(&Comment{
 			Comment: luceio.Join(m.Name, m.Comment, " "),
-			Width:   m.file.CommentWidth(),
+			Width:   m.typeDef.file.CommentWidth(),
 		})
 	}
-
-	sw.WriteStrings("func (", m.typeDef.ReceiverName)
-	if m.Ptr {
-		sw.WriteString(" *")
-	} else {
-		sw.WriteRune(' ')
-	}
-	sw.WriteStrings(m.typeDef.Name(), ") ", m.Name, "(")
+	sw.WriteStrings("func (")
+	m.Receiver().PrefixWriteTo(sw, m.typeDef.file)
+	sw.WriteStrings(") ", m.Name, "(")
 	var str string
 	str, sw.Err = nameTypeSliceToString(m.typeDef.file, m.Args, m.Variadic)
 	sw.WriteString(str)
 	end := " {\n\t"
-	if ln := len(m.Rets); ln > 1 {
+	if ln := len(m.Rets); ln > 1 || (len(m.Rets) > 0 && m.Rets[0].N != "") {
 		sw.WriteString(") (")
 		end = ") {\n\t"
 	} else {
@@ -232,8 +219,8 @@ func (m *Method) WriteTo(w io.Writer) (int64, error) {
 	str, sw.Err = nameTypeSliceToString(m.typeDef.file, m.Rets, false)
 	sw.WriteStrings(str, end)
 
-	if m.Func.Body != nil {
-		m.Func.Body.PrefixWriteTo(sw, m.typeDef.file)
+	if m.Body != nil {
+		m.Body.PrefixWriteTo(sw, m.typeDef.file)
 	}
 	sw.WriteString("\n}")
 	sw.Err = lerr.Wrap(sw.Err, "While writing method %s", m.Name)
@@ -241,25 +228,66 @@ func (m *Method) WriteTo(w io.Writer) (int64, error) {
 	return sw.Rets()
 }
 
+// Receiver returns the NameType of the method receiver.
 func (m *Method) Receiver() NameType {
 	n := NameType{
 		N: m.typeDef.ReceiverName,
+		T: m.typeDef,
 	}
 	if m.Ptr {
 		n.T = m.typeDef.Pointer()
-	} else {
-		n.T = m.typeDef
 	}
 	return n
 }
 
 // Returns sets the return types on the function
 func (m *Method) Returns(rets ...NameType) *Method {
-	m.Func.Returns(rets...)
+	m.FuncSig.Returns(rets...)
 	return m
 }
 
+// UnnamedRets sets the return types on the function.
 func (m *Method) UnnamedRets(rets ...Type) *Method {
-	m.Func.UnnamedRets(rets...)
+	m.FuncSig.UnnamedRets(rets...)
 	return m
+}
+
+// BodyWriterTo is a helper allowing the body to be set to a Writer that
+// ignores the prefixer.
+func (m *Method) BodyWriterTo(w io.WriterTo) *Method {
+	m.Body = IgnorePrefixer{w}
+	return m
+}
+
+// BodyString is a helper allowing the body to be set to a string that
+// ignores the prefixer.
+func (m *Method) BodyString(str string) *Method {
+	m.Body = IgnorePrefixer{luceio.StringWriterTo(str)}
+	return m
+}
+
+// ErrMethodAlreadyExists is return if a method name is redeclared on a TypeDef.
+const ErrMethodAlreadyExists = lerr.Str("Method already exists")
+
+// Rename checks for collision, changes the name and updates the name index.
+func (m *Method) Rename(name string) error {
+	if name == "" {
+		return ErrUnnamedMethod
+	}
+	if _, found := m.typeDef.methods[name]; found {
+		return ErrMethodAlreadyExists
+	}
+	delete(m.typeDef.methods, m.FuncSig.Name)
+	m.FuncSig.Name = name
+	m.typeDef.methods[name] = m
+	return nil
+}
+
+// RegisterImports from the function signature and checks if the body is an
+// ImportsRegistrar.
+func (m *Method) RegisterImports(i *Imports) {
+	m.FuncSig.RegisterImports(i)
+	if r, ok := m.Body.(ImportsRegistrar); ok {
+		r.RegisterImports(i)
+	}
 }

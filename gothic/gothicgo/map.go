@@ -20,6 +20,7 @@ func MapOf(key, val Type) *MapType {
 	}
 }
 
+// PrefixWriteTo fulfills Type.
 func (m *MapType) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	sw.WriteString("map[")
@@ -29,11 +30,15 @@ func (m *MapType) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw.Err = lerr.Wrap(sw.Err, "While writing map type")
 	return sw.Rets()
 }
+
+// RegisterImports for the Key and Val types.
 func (m *MapType) RegisterImports(i *Imports) {
 	m.Val.RegisterImports(i)
 	m.Key.RegisterImports(i)
 }
 
+// PackageRef fulfills Type, Returns PkgBuiltin.
 func (*MapType) PackageRef() PackageRef { return pkgBuiltin }
 
+// Elem returns the Val type.
 func (m *MapType) Elem() Type { return m.Val }

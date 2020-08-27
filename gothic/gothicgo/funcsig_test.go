@@ -187,4 +187,15 @@ func TestFuncSig(t *testing.T) {
 	str = PrefixWriteToString(fs, DefaultPrefixer)
 	assert.Contains(t, str, "func Foo2Foo(pkg1.Foo) pkg2.Foo")
 
+	args = []NameType{
+		IntType.Named("a"),
+		StringType.Named("b"),
+		IntType.Named("c"),
+		StringType.Named("d"),
+	}
+	fs = NewFuncSig("Foo", args...).
+		UnnamedRets(StringType)
+	str = PrefixWriteToString(fs, DefaultPrefixer)
+	assert.Equal(t, "func Foo(a int, b string, c int, d string) string", str)
+
 }

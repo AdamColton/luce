@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"text/template"
 
 	"github.com/adamcolton/luce/util/luceio"
@@ -10,7 +11,7 @@ import (
 )
 
 var (
-	test = template.Must(template.New("test").Parse(`func Test{{.Name}}TypeGen(t *testing.T){
+	test = template.Must(template.New("test").Parse(`func Test{{.Title}}TypeGen(t *testing.T){
 		{{.Constructor}}
 
 		assert.Equal(t, {{.Kind}}, x.Kind())
@@ -90,6 +91,10 @@ type fullType struct {
 
 	// Test values
 	Constructor, String, Package, Elem string
+}
+
+func (ft fullType) Title() string {
+	return strings.ToTitle(ft.Name)
 }
 
 func main() {
@@ -182,14 +187,14 @@ func main() {
 			GenKind: true,
 			Ptr:     true,
 			Constructor: `	ctx := NewMemoryContext()
-							x, err := ctx.NewTypeDef("Foo", StringType)
-							assert.NoError(t, err)`,
+							x := ctx.MustTypeDef("Foo", StringType)`,
 			String:  "foo.Foo",
 			Kind:    "TypeDefKind",
 			Elem:    "StringType",
 			Package: `ctx.MustPackage("foo")`,
 		},
 	}
+
 	for _, ft := range fts {
 		typeFile.AddWriterTo(&luceio.TemplateTo{
 			TemplateExecutor: typegen,

@@ -3,12 +3,11 @@
 package gothicgo
 
 import (
-	"testing"
-
 	"github.com/testify/assert"
+	"testing"
 )
 
-func TestArrayTypeTypeGen(t *testing.T) {
+func TestARRAYTYPETypeGen(t *testing.T) {
 	x := IntType.Array(5)
 
 	assert.Equal(t, ArrayKind, x.Kind())
@@ -48,7 +47,7 @@ func TestArrayTypeTypeGen(t *testing.T) {
 	assert.Equal(t, "[5]int", str)
 }
 
-func TestbuiltinTypeGen(t *testing.T) {
+func TestBUILTINTypeGen(t *testing.T) {
 	x := IntType
 
 	assert.Equal(t, IntKind, x.Kind())
@@ -86,7 +85,7 @@ func TestbuiltinTypeGen(t *testing.T) {
 	assert.Equal(t, "int", str)
 }
 
-func TestExternalTypeTypeGen(t *testing.T) {
+func TestEXTERNALTYPETypeGen(t *testing.T) {
 	pkg := MustExternalPackageRef("foo")
 	x := pkg.MustExternalType("Bar")
 
@@ -125,7 +124,7 @@ func TestExternalTypeTypeGen(t *testing.T) {
 	assert.Equal(t, "foo.Bar", str)
 }
 
-func TestFuncSigTypeGen(t *testing.T) {
+func TestFUNCSIGTypeGen(t *testing.T) {
 	args := []NameType{
 		IntType.Named("a"),
 		StringType.Named("b"),
@@ -168,7 +167,7 @@ func TestFuncSigTypeGen(t *testing.T) {
 	assert.Equal(t, "func Foo(a int, b string) string", str)
 }
 
-func TestMapTypeTypeGen(t *testing.T) {
+func TestMAPTYPETypeGen(t *testing.T) {
 	x := MapOf(IntType, StringType)
 
 	assert.Equal(t, MapKind, x.Kind())
@@ -208,7 +207,7 @@ func TestMapTypeTypeGen(t *testing.T) {
 	assert.Equal(t, "map[int]string", str)
 }
 
-func TestPointerTypeTypeGen(t *testing.T) {
+func TestPOINTERTYPETypeGen(t *testing.T) {
 	x := IntType.Pointer()
 
 	assert.Equal(t, PointerKind, x.Kind())
@@ -248,7 +247,7 @@ func TestPointerTypeTypeGen(t *testing.T) {
 	assert.Equal(t, "*int", str)
 }
 
-func TestSliceTypeTypeGen(t *testing.T) {
+func TestSLICETYPETypeGen(t *testing.T) {
 	x := IntType.Slice()
 
 	assert.Equal(t, SliceKind, x.Kind())
@@ -288,10 +287,9 @@ func TestSliceTypeTypeGen(t *testing.T) {
 	assert.Equal(t, "[]int", str)
 }
 
-func TestTypeDefTypeGen(t *testing.T) {
+func TestTYPEDEFTypeGen(t *testing.T) {
 	ctx := NewMemoryContext()
-	x, err := ctx.NewTypeDef("Foo", StringType)
-	assert.NoError(t, err)
+	x := ctx.MustTypeDef("Foo", StringType)
 
 	assert.Equal(t, TypeDefKind, x.Kind())
 	assert.Equal(t, ctx.MustPackage("foo"), x.PackageRef())

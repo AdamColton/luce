@@ -17,6 +17,7 @@ func SliceOf(t Type) *SliceType {
 	return &SliceType{t}
 }
 
+// PrefixWriteTo fulfills Type.
 func (s *SliceType) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	sw.WriteString("[]")
@@ -24,6 +25,9 @@ func (s *SliceType) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw.Err = lerr.Wrap(sw.Err, "While writing slice")
 	return sw.Rets()
 }
+
+// PackageRef fulfills Type. Returns PkgBuiltin.
 func (*SliceType) PackageRef() PackageRef { return pkgBuiltin }
 
+// Elem returns the Type underlying the slice.
 func (s *SliceType) Elem() Type { return s.Type }
