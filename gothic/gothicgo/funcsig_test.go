@@ -162,17 +162,22 @@ func TestFuncSig(t *testing.T) {
 	fs := NewFuncSig("Foo", args...).
 		UnnamedRets(StringType)
 	str := PrefixWriteToString(fs, DefaultPrefixer)
-	assert.Equal(t, "func Foo(a int, b string) string", str)
+	assert.Equal(t, "Foo(a int, b string) string", str)
 
 	fs = NewFuncSig("Foo", args...).
 		Returns(StringType.Named("x"), StringType.Named("y"))
 	fs.Variadic = true
 	str = PrefixWriteToString(fs, DefaultPrefixer)
-	assert.Equal(t, "func Foo(a int, b ...string) (x, y string)", str)
+	assert.Equal(t, "Foo(a int, b ...string) (x, y string)", str)
 
 	fs = fs.AsType(false)
 	str = PrefixWriteToString(fs, DefaultPrefixer)
-	assert.Equal(t, "func Foo(int, ...string) (string, string)", str)
+	assert.Equal(t, "Foo(int, ...string) (string, string)", str)
+
+	fs = NewFuncSig("Foo", args...).
+		Returns(StringType.Named("x"))
+	str = PrefixWriteToString(fs, DefaultPrefixer)
+	assert.Equal(t, "Foo(a int, b string) (x string)", str)
 
 	pkg1 := MustPackageRef("pkg1")
 	pkg2 := MustPackageRef("pkg2")
@@ -185,7 +190,7 @@ func TestFuncSig(t *testing.T) {
 	assert.Contains(t, str, "pkg2")
 
 	str = PrefixWriteToString(fs, DefaultPrefixer)
-	assert.Contains(t, str, "func Foo2Foo(pkg1.Foo) pkg2.Foo")
+	assert.Contains(t, str, "Foo2Foo(pkg1.Foo) pkg2.Foo")
 
 	args = []NameType{
 		IntType.Named("a"),
@@ -196,6 +201,6 @@ func TestFuncSig(t *testing.T) {
 	fs = NewFuncSig("Foo", args...).
 		UnnamedRets(StringType)
 	str = PrefixWriteToString(fs, DefaultPrefixer)
-	assert.Equal(t, "func Foo(a int, b string, c int, d string) string", str)
+	assert.Equal(t, "Foo(a int, b string, c int, d string) string", str)
 
 }

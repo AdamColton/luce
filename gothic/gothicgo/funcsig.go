@@ -10,7 +10,8 @@ import (
 	"github.com/adamcolton/luce/util/luceio"
 )
 
-// FuncSig is a function signature and fulfills Type.
+// FuncSig is a function signature. Used to compose the function name, arguments
+// and returns. A function signature is the string present in an Interface.
 type FuncSig struct {
 	Name     string
 	Args     []NameType
@@ -32,9 +33,7 @@ func NewFuncSig(name string, args ...NameType) *FuncSig {
 // PrefixWriteTo fulfills Type. Writes the function signature.
 func (f *FuncSig) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
-	sw.WriteString("func")
 	if f.Name != "" {
-		sw.WriteRune(' ')
 		sw.WriteString(f.Name)
 	}
 	sw.WriteRune('(')
@@ -42,11 +41,13 @@ func (f *FuncSig) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	str, sw.Err = nameTypeSliceToString(pre, f.Args, f.Variadic)
 	sw.WriteString(str)
 	end := ""
-	if len(f.Rets) > 1 {
+	if ln := len(f.Rets); ln > 1 || (ln == 1 && f.Rets[0].N != "") {
 		sw.WriteString(") (")
 		end = ")"
-	} else {
+	} else if ln == 1 {
 		sw.WriteString(") ")
+	} else {
+		sw.WriteRune(')')
 	}
 	str, sw.Err = nameTypeSliceToString(pre, f.Rets, false)
 	sw.WriteString(str)

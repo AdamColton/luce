@@ -44,6 +44,7 @@ func TestTypeDef(t *testing.T) {
 		BodyWriterTo(luceio.StringWriterTo(`return "hi", false`))
 
 	ctx.MustExport()
+
 	assert.Contains(t, ctx.Last(), "// Foo testing TypeDef comment\ntype Foo string")
 	assert.Contains(t, ctx.Last(), "// Bar testing method comment\nfunc (f Foo) Bar(a int) (isOne bool) {\n\tisOne = a == 1\n\treturn\n}")
 	assert.Contains(t, ctx.Last(), "func (f Foo) MultiReturn() (string, bool) {\n\treturn \"hi\", false\n}")
@@ -60,5 +61,4 @@ func TestTypeDefRegisterImports(t *testing.T) {
 	assert.Contains(t, ctx.Last(), `"bar"`)
 	assert.Contains(t, ctx.Last(), `"baz"`)
 	assert.Contains(t, ctx.Last(), `"importTest"`)
-
 }

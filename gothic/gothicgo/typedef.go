@@ -192,22 +192,9 @@ func (m *Method) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	WriteComment(sw, pre, m.Name, m.Comment)
 	sw.WriteStrings("func (")
 	m.Receiver().PrefixWriteTo(sw, m.typeDef.file)
-	sw.WriteStrings(") ", m.Name, "(")
-	var str string
-	str, sw.Err = nameTypeSliceToString(m.typeDef.file, m.Args, m.Variadic)
-	sw.WriteString(str)
-	end := " {\n\t"
-	if ln := len(m.Rets); ln > 1 || (len(m.Rets) > 0 && m.Rets[0].N != "") {
-		sw.WriteString(") (")
-		end = ") {\n\t"
-	} else {
-		sw.WriteString(")")
-		if ln == 1 {
-			sw.WriteString(" ")
-		}
-	}
-	str, sw.Err = nameTypeSliceToString(m.typeDef.file, m.Rets, false)
-	sw.WriteStrings(str, end)
+	sw.WriteStrings(") ")
+	sumPrefixWriteTo(sw, pre, m.FuncSig)
+	sw.WriteRune('{')
 
 	if m.Body != nil {
 		m.Body.PrefixWriteTo(sw, m.typeDef.file)

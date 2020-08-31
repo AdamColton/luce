@@ -11,7 +11,7 @@ import (
 
 // Func function written to a Go file
 type Func struct {
-	*FuncSig
+	*FuncType
 	Body PrefixWriterTo
 	// Comment will automatically be prefixed with the Func name.
 	Comment string
@@ -39,8 +39,8 @@ func (f *File) NewFunc(name string, args ...NameType) (*Func, error) {
 	}
 
 	fn := &Func{
-		FuncSig: NewFuncSig(name, args...),
-		file:    f,
+		FuncType: NewFuncType(name, args...),
+		file:     f,
 	}
 	return fn, lerr.Wrap(f.AddGenerator(fn), "File.NewFunc")
 }
@@ -60,7 +60,7 @@ func (f *Func) ScopeName() string { return f.Name }
 func (f *Func) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	WriteComment(sw, pre, f.Name, f.Comment)
-	f.FuncSig.PrefixWriteTo(w, pre)
+	f.FuncType.PrefixWriteTo(w, pre)
 	sw.WriteString(" {\n")
 	if f.Body != nil {
 		f.Body.PrefixWriteTo(sw, pre)
@@ -105,7 +105,7 @@ func (f *Func) File() *File {
 // arguments and return values. If the Body implements ImportsRegistrar, it will
 // also be invoked.
 func (f *Func) RegisterImports(i *Imports) {
-	f.FuncSig.RegisterImports(i)
+	f.FuncType.RegisterImports(i)
 	if ri, ok := f.Body.(ImportsRegistrar); ok {
 		ri.RegisterImports(i)
 	}
@@ -136,7 +136,7 @@ func (f *Func) UnnamedRets(rets ...Type) *Func {
 // Ref returns a FuncRef, allowing the function to be used as a Type.
 func (f *Func) Ref() *FuncRef {
 	return &FuncRef{
-		FuncSig: f.FuncSig,
-		Pkg:     f.file.pkg,
+		FuncType: f.FuncType,
+		Pkg:      f.file.pkg,
 	}
 }

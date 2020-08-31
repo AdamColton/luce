@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestARRAYTYPETypeGen(t *testing.T) {
+func TestArrayTypeTypeGen(t *testing.T) {
 	x := IntType.Array(5)
 
 	assert.Equal(t, ArrayKind, x.Kind())
@@ -47,7 +47,7 @@ func TestARRAYTYPETypeGen(t *testing.T) {
 	assert.Equal(t, "[5]int", str)
 }
 
-func TestBUILTINTypeGen(t *testing.T) {
+func TestBuiltinTypeGen(t *testing.T) {
 	x := IntType
 
 	assert.Equal(t, IntKind, x.Kind())
@@ -85,7 +85,7 @@ func TestBUILTINTypeGen(t *testing.T) {
 	assert.Equal(t, "int", str)
 }
 
-func TestTYPEREFTypeGen(t *testing.T) {
+func TestTypeRefTypeGen(t *testing.T) {
 	pkg := MustPackageRef("foo")
 	x := pkg.NewTypeRef("Bar", IntType)
 
@@ -126,12 +126,12 @@ func TestTYPEREFTypeGen(t *testing.T) {
 	assert.Equal(t, "foo.Bar", str)
 }
 
-func TestFUNCSIGTypeGen(t *testing.T) {
+func TestFuncTypeTypeGen(t *testing.T) {
 	args := []NameType{
 		IntType.Named("a"),
 		StringType.Named("b"),
 	}
-	x := NewFuncSig("Foo", args...).
+	x := NewFuncType("Foo", args...).
 		UnnamedRets(StringType)
 
 	assert.Equal(t, FuncKind, x.Kind())
@@ -169,7 +169,7 @@ func TestFUNCSIGTypeGen(t *testing.T) {
 	assert.Equal(t, "func Foo(a int, b string) string", str)
 }
 
-func TestMAPTYPETypeGen(t *testing.T) {
+func TestMapTypeTypeGen(t *testing.T) {
 	x := MapOf(IntType, StringType)
 
 	assert.Equal(t, MapKind, x.Kind())
@@ -209,7 +209,7 @@ func TestMAPTYPETypeGen(t *testing.T) {
 	assert.Equal(t, "map[int]string", str)
 }
 
-func TestPOINTERTYPETypeGen(t *testing.T) {
+func TestPointerTypeTypeGen(t *testing.T) {
 	x := IntType.Pointer()
 
 	assert.Equal(t, PointerKind, x.Kind())
@@ -249,7 +249,7 @@ func TestPOINTERTYPETypeGen(t *testing.T) {
 	assert.Equal(t, "*int", str)
 }
 
-func TestSLICETYPETypeGen(t *testing.T) {
+func TestSliceTypeTypeGen(t *testing.T) {
 	x := IntType.Slice()
 
 	assert.Equal(t, SliceKind, x.Kind())
@@ -287,4 +287,43 @@ func TestSLICETYPETypeGen(t *testing.T) {
 
 	str := PrefixWriteToString(x, DefaultPrefixer)
 	assert.Equal(t, "[]int", str)
+}
+
+func TestInterfaceTypeTypeGen(t *testing.T) {
+	x := NewInterfaceType()
+	x.AddMethod(NewFuncSig("Foo", IntType.Unnamed()))
+
+	assert.Equal(t, InterfaceKind, x.Kind())
+	assert.Equal(t, PkgBuiltin(), x.PackageRef())
+
+	n := x.Named("Foo")
+	assert.Equal(t, "Foo", n.Name())
+	assert.Equal(t, x, n.T)
+
+	n = x.Unnamed()
+	assert.Equal(t, "", n.Name())
+	assert.Equal(t, x, n.T)
+
+	p := x.Pointer()
+	assert.Equal(t, PointerKind, p.Kind())
+	assert.Equal(t, x, p.Elem())
+
+	s := x.Slice()
+	assert.Equal(t, SliceKind, s.Kind())
+	assert.Equal(t, x, s.Elem())
+
+	a := x.Array(13)
+	assert.Equal(t, ArrayKind, a.Kind())
+	assert.Equal(t, x, a.Elem())
+
+	mp := x.AsMapElem(IntType)
+	assert.Equal(t, MapKind, mp.Kind())
+	assert.Equal(t, x, mp.Elem())
+
+	mp = x.AsMapKey(IntType)
+	assert.Equal(t, MapKind, mp.Kind())
+	assert.Equal(t, x, mp.Key)
+
+	str := PrefixWriteToString(x, DefaultPrefixer)
+	assert.Equal(t, "interface {\n\tFoo(int)\n}", str)
 }

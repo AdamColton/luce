@@ -72,28 +72,28 @@ func (t *TypeRef) AsMapKey(elem Type) *MapType { return MapOf(t, elem) }
 func (t *TypeRef) Kind() Kind { return TypeDefKind }
 
 // Named fulfills Type. Returns a NameType with the given name.
-func (f *FuncSig) Named(name string) NameType { return NameType{name, f} }
+func (f *FuncType) Named(name string) NameType { return NameType{name, f} }
 
 // Unnamed funfills Type. Returns a NameType with an empty Name.
-func (f *FuncSig) Unnamed() NameType { return NameType{"", f} }
+func (f *FuncType) Unnamed() NameType { return NameType{"", f} }
 
 // Pointer funfills Type.
-func (f *FuncSig) Pointer() *PointerType { return PointerTo(f) }
+func (f *FuncType) Pointer() *PointerType { return PointerTo(f) }
 
 // Slice funfills Type.
-func (f *FuncSig) Slice() *SliceType { return SliceOf(f) }
+func (f *FuncType) Slice() *SliceType { return SliceOf(f) }
 
 // Array funfills Type.
-func (f *FuncSig) Array(size int) *ArrayType { return ArrayOf(f, size) }
+func (f *FuncType) Array(size int) *ArrayType { return ArrayOf(f, size) }
 
 // AsMapElem funfills Type.
-func (f *FuncSig) AsMapElem(key Type) *MapType { return MapOf(key, f) }
+func (f *FuncType) AsMapElem(key Type) *MapType { return MapOf(key, f) }
 
 // AsMapKey funfills Type. Returns a NameType with an empty Name.
-func (f *FuncSig) AsMapKey(elem Type) *MapType { return MapOf(f, elem) }
+func (f *FuncType) AsMapKey(elem Type) *MapType { return MapOf(f, elem) }
 
 // Kind fulfills Type. Returns FuncKind.
-func (f *FuncSig) Kind() Kind { return FuncKind }
+func (f *FuncType) Kind() Kind { return FuncKind }
 
 // Named fulfills Type. Returns a NameType with the given name.
 func (m *MapType) Named(name string) NameType { return NameType{name, m} }
@@ -166,3 +166,27 @@ func (s *SliceType) AsMapKey(elem Type) *MapType { return MapOf(s, elem) }
 
 // Kind fulfills Type. Returns SliceKind.
 func (s *SliceType) Kind() Kind { return SliceKind }
+
+// Named fulfills Type. Returns a NameType with the given name.
+func (i *InterfaceType) Named(name string) NameType { return NameType{name, i} }
+
+// Unnamed funfills Type. Returns a NameType with an empty Name.
+func (i *InterfaceType) Unnamed() NameType { return NameType{"", i} }
+
+// Pointer funfills Type.
+func (i *InterfaceType) Pointer() *PointerType { return PointerTo(i) }
+
+// Slice funfills Type.
+func (i *InterfaceType) Slice() *SliceType { return SliceOf(i) }
+
+// Array funfills Type.
+func (i *InterfaceType) Array(size int) *ArrayType { return ArrayOf(i, size) }
+
+// AsMapElem funfills Type.
+func (i *InterfaceType) AsMapElem(key Type) *MapType { return MapOf(key, i) }
+
+// AsMapKey funfills Type. Returns a NameType with an empty Name.
+func (i *InterfaceType) AsMapKey(elem Type) *MapType { return MapOf(i, elem) }
+
+// Kind fulfills Type. Returns InterfaceKind.
+func (i *InterfaceType) Kind() Kind { return InterfaceKind }
