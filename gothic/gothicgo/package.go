@@ -151,3 +151,8 @@ func (p *Package) UpdateNamer(n Namer) error {
 func (p *Package) NewTypeRef(name string, t Type) *TypeRef {
 	return NewTypeRef(p, name, t)
 }
+
+// NewFuncRef creates a FuncRef in this Package.
+func (p *Package) NewFuncRef(name string, args ...NameType) *FuncRef {
+	return NewFuncRef(p, name, args...)
+}

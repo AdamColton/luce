@@ -38,3 +38,8 @@ func (a Alias) privatePkgRef() {}
 func (a Alias) NewTypeRef(name string, t Type) *TypeRef {
 	return NewTypeRef(a, name, t)
 }
+
+// NewFuncRef creates a FuncRef in this Package.
+func (a Alias) NewFuncRef(name string, args ...NameType) *FuncRef {
+	return NewFuncRef(a, name, args...)
+}
