@@ -57,9 +57,6 @@ func (f *FuncSig) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	return sw.Rets()
 }
 
-// PackageRef fulfills type. Returns PkgBuiltin.
-func (f *FuncSig) PackageRef() PackageRef { return pkgBuiltin }
-
 // RegisterImports fulfills type. Registers types for args and returns.
 func (f *FuncSig) RegisterImports(i *Imports) {
 	for _, arg := range f.Args {
@@ -149,6 +146,7 @@ func (f *FuncSig) UnnamedRets(rets ...Type) *FuncSig {
 	return f
 }
 
+// InterfaceEmbed fulfills InterfaceEmbeddable.
 func (f *FuncSig) InterfaceEmbed(w io.Writer, pre Prefixer) (int64, error) {
 	return f.PrefixWriteTo(w, pre)
 }

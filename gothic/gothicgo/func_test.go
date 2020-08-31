@@ -44,7 +44,7 @@ func TestFunc(t *testing.T) {
 
 	ctx.MustExport()
 
-	assert.Equal(t, "func Bar(a int, b string, c baz.Baz) bool", PrefixWriteToString(fn.Ref(), DefaultPrefixer))
+	assert.Equal(t, "foo.Bar", PrefixWriteToString(fn.Ref(), DefaultPrefixer))
 
 	assert.Contains(t, ctx.Last(), "func Bar(a int, b string, c baz.Baz) bool {\n\treturn true\n}")
 	assert.Contains(t, ctx.Last(), "func BodyStringTest(a int, b string, c baz.Baz) bool {\n\treturn bodystring\n}")

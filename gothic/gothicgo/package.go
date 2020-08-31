@@ -157,6 +157,7 @@ func (p *Package) NewFuncRef(name string, args ...NameType) *FuncRef {
 	return NewFuncRef(p, name, args...)
 }
 
+// NewInterfaceRef creates a reference to an interface defined in this package.
 func (p *Package) NewInterfaceRef(name string) *InterfaceRef {
 	return NewInterfaceRef(p, name)
 }

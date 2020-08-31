@@ -11,8 +11,8 @@ import (
 
 // Func function written to a Go file
 type Func struct {
-	*FuncType
-	Body PrefixWriterTo
+	FuncType *FuncType
+	Body     PrefixWriterTo
 	// Comment will automatically be prefixed with the Func name.
 	Comment string
 	file    *File
@@ -53,20 +53,20 @@ func (f *File) MustFunc(name string, args ...NameType) *Func {
 }
 
 // ScopeName fulfills Namer registering the function name with the package.
-func (f *Func) ScopeName() string { return f.Name }
+func (f *Func) ScopeName() string { return f.FuncType.FuncSig.Name }
 
 // PrefixWriteTo fulfilss PrefixWriterTo. It generates the function to the
 // writer using the prefixer.
 func (f *Func) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
-	WriteComment(sw, pre, f.Name, f.Comment)
+	WriteComment(sw, pre, f.FuncType.FuncSig.Name, f.Comment)
 	f.FuncType.PrefixWriteTo(w, pre)
 	sw.WriteString(" {\n")
 	if f.Body != nil {
 		f.Body.PrefixWriteTo(sw, pre)
 	}
 	sw.WriteString("\n}")
-	sw.Err = lerr.Wrap(sw.Err, "While writing func %s", f.Name)
+	sw.Err = lerr.Wrap(sw.Err, "While writing func %s", f.FuncType.FuncSig.Name)
 	return sw.Rets()
 }
 
@@ -87,12 +87,12 @@ func (f *Func) BodyString(str string) *Func {
 // Call produces a invocation of the function and fulfills the FuncCaller
 // interface
 func (f *Func) Call(pre Prefixer, args ...string) string {
-	return funcCall(pre, f.Name, args, f.file.Package())
+	return funcCall(pre, f.FuncType.FuncSig.Name, args, f.file.Package())
 }
 
 // Rename the function and update the name in the package.
 func (f *Func) Rename(name string) error {
-	f.Name = name
+	f.FuncType.FuncSig.Name = name
 	return f.file.pkg.UpdateNamer(f)
 }
 
@@ -105,7 +105,7 @@ func (f *Func) File() *File {
 // arguments and return values. If the Body implements ImportsRegistrar, it will
 // also be invoked.
 func (f *Func) RegisterImports(i *Imports) {
-	f.FuncType.RegisterImports(i)
+	f.FuncType.FuncSig.RegisterImports(i)
 	if ri, ok := f.Body.(ImportsRegistrar); ok {
 		ri.RegisterImports(i)
 	}
@@ -123,13 +123,13 @@ func funcCall(pre Prefixer, name string, args []string, pkg PackageRef) string {
 
 // Returns sets the return types on the function
 func (f *Func) Returns(rets ...NameType) *Func {
-	f.FuncSig.Returns(rets...)
+	f.FuncType.FuncSig.Returns(rets...)
 	return f
 }
 
 // UnnamedRets sets the return types on the function
 func (f *Func) UnnamedRets(rets ...Type) *Func {
-	f.FuncSig.UnnamedRets(rets...)
+	f.FuncType.FuncSig.UnnamedRets(rets...)
 	return f
 }
 

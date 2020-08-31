@@ -9,7 +9,7 @@ import (
 // FuncType represents a function as a type. It is the function signature
 // prefixed with the "func" literal.
 type FuncType struct {
-	*FuncSig
+	FuncSig *FuncSig
 }
 
 // NewFuncType returns a FuncType.
@@ -21,7 +21,7 @@ func NewFuncType(name string, args ...NameType) *FuncType {
 func (f *FuncType) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	sw.WriteString("func")
-	if f.Name != "" {
+	if f.FuncSig.Name != "" {
 		sw.WriteRune(' ')
 	}
 	sumPrefixWriteTo(sw, pre, f.FuncSig)
@@ -39,4 +39,13 @@ func (f *FuncType) UnnamedRets(rets ...Type) *FuncType {
 	f.FuncSig.UnnamedRets(rets...)
 	return f
 
+}
+
+// PackageRef fulfills type. Returns PkgBuiltin.
+func (f *FuncType) PackageRef() PackageRef { return pkgBuiltin }
+
+// RegisterImports fulfills ImportsRegistrar. Registers imports for the argument
+// and return types.
+func (f *FuncType) RegisterImports(i *Imports) {
+	f.FuncSig.RegisterImports(i)
 }

@@ -44,6 +44,7 @@ func (a Alias) NewFuncRef(name string, args ...NameType) *FuncRef {
 	return NewFuncRef(a, name, args...)
 }
 
+// NewInterfaceRef creates a Reference to an Interface in the Pacakge.
 func (a Alias) NewInterfaceRef(name string) *InterfaceRef {
 	return NewInterfaceRef(a, name)
 }
