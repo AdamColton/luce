@@ -94,7 +94,7 @@ type fullType struct {
 }
 
 func (ft fullType) Title() string {
-	return strings.ToTitle(ft.Name)
+	return strings.Title(ft.Name)
 }
 
 func main() {
@@ -142,14 +142,14 @@ func main() {
 			Elem:    "IntType",
 		}, {
 			R:       "f",
-			Name:    "FuncSig",
+			Name:    "FuncType",
 			GenKind: true,
 			Ptr:     true,
 			Constructor: `	args := []NameType{
 								IntType.Named("a"),
 								StringType.Named("b"),
 							}
-							x := NewFuncSig("Foo", args...).
+							x := NewFuncType("Foo", args...).
 								UnnamedRets(StringType)`,
 			String: "func Foo(a int, b string) string",
 			Kind:   "FuncKind",
@@ -162,8 +162,7 @@ func main() {
 			String:      "map[int]string",
 			Kind:        "MapKind",
 			Elem:        "StringType",
-		},
-		{
+		}, {
 			R:           "p",
 			Name:        "PointerType",
 			GenKind:     true,
@@ -172,8 +171,7 @@ func main() {
 			String:      "*int",
 			Kind:        "PointerKind",
 			Elem:        "IntType",
-		},
-		{
+		}, {
 			R:           "s",
 			Name:        "SliceType",
 			GenKind:     true,
@@ -182,18 +180,38 @@ func main() {
 			String:      "[]int",
 			Kind:        "SliceKind",
 			Elem:        "IntType",
+		}, {
+			R:       "i",
+			Name:    "InterfaceType",
+			GenKind: true,
+			Ptr:     true,
+			Constructor: `	x := NewInterfaceType(NewFuncSig("Foo", IntType.Unnamed()))`,
+			String: `interface {\n\tFoo(int)\n}`,
+			Kind:   "InterfaceKind",
+		}, {
+			R:       "i",
+			Name:    "InterfaceRef",
+			GenKind: true,
+			Ptr:     true,
+			Constructor: `	pkg := MustPackageRef("foo")
+							x := pkg.
+								NewInterfaceRef("Foo")`,
+			String:  `foo.Foo`,
+			Kind:    "InterfaceKind",
+			Package: `pkg`,
+			Elem:    `x.Interface`,
 		},
 	}
 
 	for _, ft := range fts {
-		typeFile.AddWriterTo(&luceio.TemplateTo{
+		typeFile.AddGenerator(gothicgo.IgnorePrefixer{&luceio.TemplateTo{
 			TemplateExecutor: typegen,
 			Data:             ft,
-		})
-		testFile.AddWriterTo(&luceio.TemplateTo{
+		}})
+		testFile.AddGenerator(gothicgo.IgnorePrefixer{&luceio.TemplateTo{
 			TemplateExecutor: test,
 			Data:             ft,
-		})
+		}})
 	}
 
 	ctx.MustExport()

@@ -43,3 +43,7 @@ func (a Alias) NewTypeRef(name string, t Type) *TypeRef {
 func (a Alias) NewFuncRef(name string, args ...NameType) *FuncRef {
 	return NewFuncRef(a, name, args...)
 }
+
+func (a Alias) NewInterfaceRef(name string) *InterfaceRef {
+	return NewInterfaceRef(a, name)
+}

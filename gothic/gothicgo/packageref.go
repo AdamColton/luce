@@ -13,6 +13,7 @@ type PackageRef interface {
 	Name() string
 	NewTypeRef(string, Type) *TypeRef
 	NewFuncRef(name string, args ...NameType) *FuncRef
+	NewInterfaceRef(name string) *InterfaceRef
 
 	// ImportSpec is the specification and may include a package name or a
 	// modifier like _.
@@ -83,4 +84,8 @@ func (p packageRef) NewTypeRef(name string, t Type) *TypeRef {
 // NewFuncRef creates a FuncRef in this Package.
 func (p packageRef) NewFuncRef(name string, args ...NameType) *FuncRef {
 	return NewFuncRef(p, name, args...)
+}
+
+func (p packageRef) NewInterfaceRef(name string) *InterfaceRef {
+	return NewInterfaceRef(p, name)
 }

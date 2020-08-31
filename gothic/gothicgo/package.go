@@ -156,3 +156,7 @@ func (p *Package) NewTypeRef(name string, t Type) *TypeRef {
 func (p *Package) NewFuncRef(name string, args ...NameType) *FuncRef {
 	return NewFuncRef(p, name, args...)
 }
+
+func (p *Package) NewInterfaceRef(name string) *InterfaceRef {
+	return NewInterfaceRef(p, name)
+}

@@ -190,3 +190,27 @@ func (i *InterfaceType) AsMapKey(elem Type) *MapType { return MapOf(i, elem) }
 
 // Kind fulfills Type. Returns InterfaceKind.
 func (i *InterfaceType) Kind() Kind { return InterfaceKind }
+
+// Named fulfills Type. Returns a NameType with the given name.
+func (i *InterfaceRef) Named(name string) NameType { return NameType{name, i} }
+
+// Unnamed funfills Type. Returns a NameType with an empty Name.
+func (i *InterfaceRef) Unnamed() NameType { return NameType{"", i} }
+
+// Pointer funfills Type.
+func (i *InterfaceRef) Pointer() *PointerType { return PointerTo(i) }
+
+// Slice funfills Type.
+func (i *InterfaceRef) Slice() *SliceType { return SliceOf(i) }
+
+// Array funfills Type.
+func (i *InterfaceRef) Array(size int) *ArrayType { return ArrayOf(i, size) }
+
+// AsMapElem funfills Type.
+func (i *InterfaceRef) AsMapElem(key Type) *MapType { return MapOf(key, i) }
+
+// AsMapKey funfills Type. Returns a NameType with an empty Name.
+func (i *InterfaceRef) AsMapKey(elem Type) *MapType { return MapOf(i, elem) }
+
+// Kind fulfills Type. Returns InterfaceKind.
+func (i *InterfaceRef) Kind() Kind { return InterfaceKind }

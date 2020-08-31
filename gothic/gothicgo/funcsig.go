@@ -148,3 +148,7 @@ func (f *FuncSig) UnnamedRets(rets ...Type) *FuncSig {
 	}
 	return f
 }
+
+func (f *FuncSig) InterfaceEmbed(w io.Writer, pre Prefixer) (int64, error) {
+	return f.PrefixWriteTo(w, pre)
+}

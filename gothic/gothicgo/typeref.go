@@ -27,23 +27,23 @@ func NewTypeRef(p PackageRef, name string, t Type) *TypeRef {
 }
 
 // PrefixWriteTo fulfills Type. Writes the TypeRef with prefixing.
-func (e *TypeRef) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
+func (t *TypeRef) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
-	sw.WriteString(p.Prefix(e.Pkg))
-	sw.WriteString(e.Name)
-	sw.Err = lerr.Wrap(sw.Err, "While writing external type %s", e.Name)
+	sw.WriteString(p.Prefix(t.Pkg))
+	sw.WriteString(t.Name)
+	sw.Err = lerr.Wrap(sw.Err, "While writing TypeRef %s", t.Name)
 	return sw.Rets()
 }
 
 // PackageRef fulfills Type. Returns the ExternalPackageRef.
-func (e *TypeRef) PackageRef() PackageRef { return e.Pkg }
+func (t *TypeRef) PackageRef() PackageRef { return t.Pkg }
 
 // RegisterImports fulfills Type.
-func (e *TypeRef) RegisterImports(i *Imports) {
-	i.Add(e.Pkg)
+func (t *TypeRef) RegisterImports(i *Imports) {
+	i.Add(t.Pkg)
 }
 
 // Elem returns the underlying Type. This may be nil.
-func (e *TypeRef) Elem() Type {
-	return e.T
+func (t *TypeRef) Elem() Type {
+	return t.T
 }
