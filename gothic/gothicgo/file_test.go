@@ -17,7 +17,7 @@ type writerPrepperNamer struct {
 	name     string
 }
 
-func (wp *writerPrepperNamer) WriteTo(w io.Writer) (int64, error) {
+func (wp *writerPrepperNamer) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	b := []byte(wp.str)
 	w.Write(b)
 	return int64(len(b)), wp.writeErr
@@ -73,7 +73,7 @@ func TestFile(t *testing.T) {
 		str:  `var test = "testing file generation"`,
 		name: "test",
 	}
-	assert.NoError(t, file.AddWriterTo(wp))
+	assert.NoError(t, file.AddGenerator(wp))
 
 	assert.Equal(t, pkg, file.Package())
 	assert.Equal(t, "bar", file.Name())
@@ -87,7 +87,7 @@ func TestFile(t *testing.T) {
 
 func TestFilePrepErr(t *testing.T) {
 	ctx, file := newFile("foo", "bar")
-	assert.NoError(t, file.AddWriterTo(&writerPrepperNamer{prepErr: fmt.Errorf("testing file prep error")}))
+	assert.NoError(t, file.AddGenerator(&writerPrepperNamer{prepErr: fmt.Errorf("testing file prep error")}))
 	err := ctx.Export()
 
 	assert.Equal(t, "Prepare package foo: While preparing file bar: testing file prep error", err.Error())
@@ -95,10 +95,10 @@ func TestFilePrepErr(t *testing.T) {
 
 func TestFileWriteToErr(t *testing.T) {
 	ctx, file := newFile("foo", "bar")
-	assert.NoError(t, file.AddWriterTo(&writerPrepperNamer{writeErr: fmt.Errorf("testing file write error")}))
+	assert.NoError(t, file.AddGenerator(&writerPrepperNamer{writeErr: fmt.Errorf("testing file write error")}))
 	err := ctx.Export()
 
-	assert.Equal(t, "Generate package foo: WriteTo Error in Generate file foo/bar: testing file write error", err.Error())
+	assert.Equal(t, "Generate package foo: Writer Error in Generate file foo/bar: testing file write error", err.Error())
 }
 
 func TestFileCloseErr(t *testing.T) {
@@ -117,7 +117,7 @@ func TestFileCloseErr(t *testing.T) {
 	pkg := ctx.MustPackage("foo")
 	file := pkg.File("bar")
 	wp := &writerPrepperNamer{str: `var test = "testing file close error"`}
-	assert.NoError(t, file.AddWriterTo(wp))
+	assert.NoError(t, file.AddGenerator(wp))
 
 	err := ctx.Export()
 	assert.Equal(t, "Generate package foo: Closing writer for file foo/bar: Close Error", err.Error())
@@ -125,7 +125,7 @@ func TestFileCloseErr(t *testing.T) {
 
 func TestFileFormatErr(t *testing.T) {
 	ctx, file := newFile("foo", "bar")
-	assert.NoError(t, file.AddWriterTo(&writerPrepperNamer{str: "testing file format error"}))
+	assert.NoError(t, file.AddGenerator(&writerPrepperNamer{str: "testing file format error"}))
 	err := ctx.Export()
 
 	assert.Equal(t, "Generate package foo: Failed to format foo/bar:: 4:1: expected declaration, found testing", err.Error())
@@ -150,14 +150,14 @@ func TestNamerCollision(t *testing.T) {
 		str:  `var test = "testing name collision 1"`,
 		name: "test",
 	}
-	assert.NoError(t, bar.AddWriterTo(barWP))
+	assert.NoError(t, bar.AddGenerator(barWP))
 
 	baz := pkg.File("baz")
 	bazWP := &writerPrepperNamer{
 		str:  `var test = "testing name collision 2"`,
 		name: "test",
 	}
-	err := baz.AddWriterTo(bazWP)
+	err := baz.AddGenerator(bazWP)
 	assert.Equal(t, "File.AddWriterTo: Name 'test' already exists in package 'foo'", err.Error())
 }
 
@@ -170,7 +170,7 @@ func TestNamerRename(t *testing.T) {
 		str:  `var test = "testing update namer 1"`,
 		name: "test",
 	}
-	assert.NoError(t, bar.AddWriterTo(barWP))
+	assert.NoError(t, bar.AddGenerator(barWP))
 	barWP.name = "rename"
 	barWP.str = `var rename = "testing update namer 1.1"`
 	assert.NoError(t, bar.UpdateNamer(barWP))
@@ -180,7 +180,7 @@ func TestNamerRename(t *testing.T) {
 		str:  `var test = "testing update namer 2"`,
 		name: "test",
 	}
-	assert.NoError(t, baz.AddWriterTo(bazWP))
+	assert.NoError(t, baz.AddGenerator(bazWP))
 }
 
 func TestNamerRenameCausesCollision(t *testing.T) {
@@ -192,14 +192,14 @@ func TestNamerRenameCausesCollision(t *testing.T) {
 		str:  `var ok = "testing name collision 1"`,
 		name: "ok",
 	}
-	assert.NoError(t, bar.AddWriterTo(barWP))
+	assert.NoError(t, bar.AddGenerator(barWP))
 
 	baz := pkg.File("baz")
 	bazWP := &writerPrepperNamer{
 		str:  `var test = "testing name collision 2"`,
 		name: "test",
 	}
-	assert.NoError(t, baz.AddWriterTo(bazWP))
+	assert.NoError(t, baz.AddGenerator(bazWP))
 
 	barWP.name = "test"
 	barWP.str = `var test = "testing name collision 1.1"`

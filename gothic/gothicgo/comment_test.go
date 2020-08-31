@@ -11,7 +11,6 @@ func TestComment(t *testing.T) {
 	assert.Equal(t, defaultCommentWidth, file.CW)
 
 	file.NewComment("This is a test")
-	file.CW = 10
 	file.NewComment("The sun was shining on the sea")
 
 	assert.Equal(t, ErrCommentWidth, ctx.SetCommentWidth(0))
@@ -19,11 +18,7 @@ func TestComment(t *testing.T) {
 	ctx.MustExport()
 
 	assert.Contains(t, ctx.Last(), "// This is a test")
-	assert.Contains(t, ctx.Last(), "// The sun")
-	assert.Contains(t, ctx.Last(), "// was")
-	assert.Contains(t, ctx.Last(), "// shining")
-	assert.Contains(t, ctx.Last(), "// on the")
-	assert.Contains(t, ctx.Last(), "// sea")
+	assert.Contains(t, ctx.Last(), "// The sun was shining on the sea")
 }
 
 func TestDefaultComment(t *testing.T) {

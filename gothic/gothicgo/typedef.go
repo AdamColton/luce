@@ -81,7 +81,7 @@ func (f *File) NewTypeDef(name string, t Type) (*TypeDef, error) {
 		ReceiverName: strings.ToLower(string([]rune(name)[0])),
 		Ptr:          t.Kind() == StructKind,
 	}
-	return td, f.AddWriterTo(td)
+	return td, f.AddGenerator(td)
 }
 
 // MustTypeDef calls NewTypeDef and panics if there is an error.
@@ -96,33 +96,17 @@ func (td *TypeDef) RegisterImports(i *Imports) {
 	td.baseType.RegisterImports(td.File().Imports)
 }
 
-// WriteTo writes the TypeDef.
-func (td *TypeDef) WriteTo(w io.Writer) (int64, error) {
+// PrefixWriteTo writes the TypeDef.
+func (td *TypeDef) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
-	if td.Comment != "" {
-		sw.WriterTo(&Comment{
-			Comment: luceio.Join(td.name, td.Comment, " "),
-			Width:   td.file.CommentWidth(),
-		})
-	}
+	WriteComment(sw, p, td.name, td.Comment)
 	sw.WriteString("type ")
 	sw.WriteString(td.name)
 	sw.WriteRune(' ')
 	td.baseType.PrefixWriteTo(sw, td.file)
 	sw.Err = lerr.Wrap(sw.Err, "While writing type %s", td.name)
 	return sw.Rets()
-}
 
-// PrefixWriteTo fulfills type.
-func (td *TypeDef) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
-	sw := luceio.NewSumWriter(w)
-	if td.Ptr {
-		sw.WriteRune('*')
-	}
-	sw.WriteString(p.Prefix(td.file.Package()))
-	sw.WriteString(td.name)
-	sw.Err = lerr.Wrap(sw.Err, "While writing type %s", td.name)
-	return sw.Rets()
 }
 
 // PackageRef fulfills Type.
@@ -146,9 +130,14 @@ func (td *TypeDef) Elem() Type {
 }
 
 // Ref converts TypeDef to a Type implemented as TypeRef. TypeDef is the
-// generator and TypeRef is the type.
-func (td *TypeDef) Ref() *TypeRef {
-	return NewTypeRef(td.file.pkg, td.name, td.baseType)
+// generator and TypeRef is the type. If the TypeDef is set to use a Pointer
+// receiver then the type returned will be a pointer type.
+func (td *TypeDef) Ref() Type {
+	tr := NewTypeRef(td.file.pkg, td.name, td.baseType)
+	if td.Ptr {
+		return tr.Pointer()
+	}
+	return tr
 }
 
 // Method on a struct
@@ -177,7 +166,7 @@ func (td *TypeDef) NewMethod(name string, args ...NameType) (*Method, error) {
 		Ptr:     td.Ptr,
 		FuncSig: NewFuncSig(name, args...),
 	}
-	err := td.File().AddWriterTo(m)
+	err := td.File().AddGenerator(m)
 	if err != nil {
 		return nil, err
 	}
@@ -194,18 +183,13 @@ func (td *TypeDef) Method(name string) (*Method, bool) {
 // ErrUnnamedMethod is returned if a Method is created or set to an empty name.
 const ErrUnnamedMethod = lerr.Str("Cannot have unnamed method")
 
-// WriteTo writes the Method to the writer
-func (m *Method) WriteTo(w io.Writer) (int64, error) {
+// PrefixWriteTo writes the Method to the writer
+func (m *Method) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	if m.Name == "" {
 		return 0, ErrUnnamedMethod
 	}
 	sw := luceio.NewSumWriter(w)
-	if m.Comment != "" {
-		sw.WriterTo(&Comment{
-			Comment: luceio.Join(m.Name, m.Comment, " "),
-			Width:   m.typeDef.file.CommentWidth(),
-		})
-	}
+	WriteComment(sw, pre, m.Name, m.Comment)
 	sw.WriteStrings("func (")
 	m.Receiver().PrefixWriteTo(sw, m.typeDef.file)
 	sw.WriteStrings(") ", m.Name, "(")

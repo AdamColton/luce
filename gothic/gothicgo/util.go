@@ -7,6 +7,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/util/luceio"
 )
 
 // IsExported checks if the first character of name is upper case.
@@ -33,4 +34,11 @@ type IgnorePrefixer struct {
 // PrefixWriteTo fulfills PrefixWriterTo. The prefixer is not used.
 func (ip IgnorePrefixer) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	return ip.WriteTo(w)
+}
+
+func sumPrefixWriteTo(sw *luceio.SumWriter, pre Prefixer, wt PrefixWriterTo) {
+	_, err := wt.PrefixWriteTo(sw, pre)
+	if err != nil && sw.Err == nil {
+		sw.Err = err
+	}
 }

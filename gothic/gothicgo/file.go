@@ -16,9 +16,9 @@ import (
 type File struct {
 	*Imports
 	name    string
-	code    []io.WriterTo
+	code    []PrefixWriterTo
 	pkg     *Package
-	Comment *Comment
+	Comment string
 	// CW is CommentWidth, that name is not used because it collides with the
 	// method name.
 	CW int
@@ -37,10 +37,7 @@ func (p *Package) File(name string) *File {
 		CW:      p.CommentWidth,
 	}
 	if p.DefaultComment != "" {
-		f.Comment = &Comment{
-			Comment: p.DefaultComment,
-			Width:   p.CommentWidth,
-		}
+		f.Comment = p.DefaultComment
 	}
 	p.files[name] = f
 	return f
@@ -62,13 +59,14 @@ func (f *File) Prepare() error {
 	return nil
 }
 
-// AddWriterTo adds a WriterTo that will be invoked when the file is written. If
-// the WriterTo fulfils gothic.Prepper then it's Prepare method will be called
-// while File.Prepare is called. If the WriterTo fulfills Namer, it's ScopeName
-// will be added to the package.
-func (f *File) AddWriterTo(writerTo io.WriterTo) error {
-	f.code = append(f.code, writerTo)
-	n, isNamer := writerTo.(Namer)
+// AddGenerator adds a generator that will be invoked when the file is written.
+// If the WriterTo fulfils gothic.Prepper then it's Prepare method will be
+// called while File.Prepare is called. If the WriterTo fulfills Namer, it's
+// ScopeName will be added to the package. If it fulfills ImportsRegistrar,
+// that will be called.
+func (f *File) AddGenerator(generator PrefixWriterTo) error {
+	f.code = append(f.code, generator)
+	n, isNamer := generator.(Namer)
 	if !isNamer {
 		return nil
 	}
@@ -82,23 +80,21 @@ func (f *File) Generate() (err error) {
 	buf := bytes.NewBuffer(nil)
 	sw := luceio.NewSumWriter(buf)
 
-	if f.Comment != nil {
-		f.Comment.WriteTo(sw)
-	}
+	WriteComment(sw, f, f.Comment)
 	sw.WriteRune('\n')
 	sw.WriteString("package ")
 	sw.WriteString(f.pkg.name)
 	sw.WriteString("\n\n")
-	_, err = f.Imports.WriteTo(sw)
-	if err != nil {
-		return lerr.Wrap(err, "WriteTo Error in Generate file %s/%s", f.pkg.name, f.name)
+	sw.WriterTo(f.Imports)
+	if len(f.code) > 0 {
+		sumPrefixWriteTo(sw, f, f.code[0])
+		for _, code := range f.code[1:] {
+			sw.WriteString("\n\n")
+			sumPrefixWriteTo(sw, f, code)
+		}
 	}
-	_, err = luceio.MultiWrite(sw, f.code, "\n\n")
 	if sw.Err != nil {
 		return lerr.Wrap(sw.Err, "Writer Error in Generate file %s/%s", f.pkg.name, f.name)
-	}
-	if err != nil {
-		return lerr.Wrap(err, "WriteTo Error in Generate file %s/%s", f.pkg.name, f.name)
 	}
 
 	code := buf.Bytes()

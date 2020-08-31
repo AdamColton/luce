@@ -32,7 +32,7 @@ func TestTypeDef(t *testing.T) {
 
 	k := foo.File().MustTypeDef("Klaatu", IntType)
 	k.Ptr = true
-	str := PrefixWriteToString(k, DefaultPrefixer)
+	str := PrefixWriteToString(k.Ref(), DefaultPrefixer)
 	assert.Equal(t, "*baz.Klaatu", str)
 
 	foo.MustMethod("SingleReturn").

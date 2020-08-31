@@ -15,7 +15,6 @@ type ConstIotaBlock struct {
 	Comment string
 	Iota    string
 	file    interface {
-		AddWriterTo(io.WriterTo) error
 		Package() *Package
 		Prefixer
 		CommentWidth() int
@@ -38,8 +37,8 @@ func (c constRow) ScopeName() string {
 	return string(c)
 }
 
-// WriteTo renders the ConstIotaBlock to a writer
-func (cib *ConstIotaBlock) WriteTo(w io.Writer) (int64, error) {
+// PrefixWriteTo renders the ConstIotaBlock to a writer
+func (cib *ConstIotaBlock) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	if len(cib.rows) == 0 {
 		return 0, ErrEmptyConstIotaBlock
 	}
@@ -47,12 +46,7 @@ func (cib *ConstIotaBlock) WriteTo(w io.Writer) (int64, error) {
 		return 0, ErrConstIotaBlockType
 	}
 	sw := luceio.NewSumWriter(w)
-	if cib.Comment != "" {
-		(&Comment{
-			Comment: cib.Comment,
-			Width:   cib.file.CommentWidth(),
-		}).WriteTo(sw)
-	}
+	WriteComment(sw, pre, cib.Comment)
 	sw.WriteString("const (\n\t")
 	sw.WriteString(cib.rows[0])
 	sw.WriteRune(' ')
@@ -102,7 +96,7 @@ func (f *File) NewConstIotaBlock(t Type, rows ...string) (*ConstIotaBlock, error
 		return nil, lerr.Wrap(err, "New")
 	}
 
-	return cib, lerr.Wrap(f.AddWriterTo(cib), "NewConstIotaBlock")
+	return cib, lerr.Wrap(f.AddGenerator(cib), "NewConstIotaBlock")
 }
 
 // MustConstIotaBlock creates a new ConstIotaBlock and panics if there is an

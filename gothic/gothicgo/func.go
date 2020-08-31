@@ -42,7 +42,7 @@ func (f *File) NewFunc(name string, args ...NameType) (*Func, error) {
 		FuncSig: NewFuncSig(name, args...),
 		file:    f,
 	}
-	return fn, lerr.Wrap(f.AddWriterTo(fn), "File.NewFunc")
+	return fn, lerr.Wrap(f.AddGenerator(fn), "File.NewFunc")
 }
 
 // MustFunc calls NewFunc and panics if there is an error
@@ -55,25 +55,11 @@ func (f *File) MustFunc(name string, args ...NameType) *Func {
 // ScopeName fulfills Namer registering the function name with the package.
 func (f *Func) ScopeName() string { return f.Name }
 
-// WriteTo fulfills io.WriterTo and generates the function
-func (f *Func) WriteTo(w io.Writer) (int64, error) {
-	return f.PrefixWriteTo(w, f.file)
-}
-
 // PrefixWriteTo fulfilss PrefixWriterTo. It generates the function to the
 // writer using the prefixer.
 func (f *Func) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
-	if f.Comment != "" {
-		w := defaultCommentWidth
-		if cw, ok := pre.(CommentWidther); ok {
-			w = cw.CommentWidth()
-		}
-		sw.WriterTo(&Comment{
-			Comment: luceio.Join(f.Name, f.Comment, " "),
-			Width:   w,
-		})
-	}
+	WriteComment(sw, pre, f.Name, f.Comment)
 	f.FuncSig.PrefixWriteTo(w, pre)
 	sw.WriteString(" {\n")
 	if f.Body != nil {
