@@ -43,9 +43,21 @@ func (n NameType) PrefixWriteTo(w io.Writer, p Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	if n.N != "" {
 		sw.WriteString(n.N)
+	}
+	if n.N != "" && n.T != nil {
 		sw.WriteRune(' ')
 	}
-	n.T.PrefixWriteTo(sw, p)
+	if n.T != nil {
+		n.T.PrefixWriteTo(sw, p)
+	}
 	sw.Err = lerr.Wrap(sw.Err, "While writing NameType")
 	return sw.Rets()
+}
+
+// RegisterImports fulfills ImportsRegistrar. Calls RegisterImports on the Type
+// if it is not nil.
+func (n NameType) RegisterImports(i *Imports) {
+	if n.T != nil {
+		n.T.RegisterImports(i)
+	}
 }

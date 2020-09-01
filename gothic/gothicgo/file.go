@@ -65,12 +65,15 @@ func (f *File) Prepare() error {
 // ScopeName will be added to the package. If it fulfills ImportsRegistrar,
 // that will be called.
 func (f *File) AddGenerator(generator PrefixWriterTo) error {
-	f.code = append(f.code, generator)
 	n, isNamer := generator.(Namer)
-	if !isNamer {
-		return nil
+	if isNamer {
+		err := lerr.Wrap(f.pkg.AddNamer(n), "File.AddGenerator")
+		if err != nil {
+			return err
+		}
 	}
-	return lerr.Wrap(f.pkg.AddNamer(n), "File.AddWriterTo")
+	f.code = append(f.code, generator)
+	return nil
 }
 
 // Generate the file

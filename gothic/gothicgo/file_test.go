@@ -158,7 +158,7 @@ func TestNamerCollision(t *testing.T) {
 		name: "test",
 	}
 	err := baz.AddGenerator(bazWP)
-	assert.Equal(t, "File.AddWriterTo: Name 'test' already exists in package 'foo'", err.Error())
+	assert.Equal(t, "File.AddGenerator: Name 'test' already exists in package 'foo'", err.Error())
 }
 
 func TestNamerRename(t *testing.T) {
