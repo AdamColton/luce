@@ -32,3 +32,17 @@ func (f *FuncRef) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	sw.WriteStrings(pre.Prefix(f.Pkg), f.FuncType.FuncSig.Name)
 	return sw.Rets()
 }
+
+// RegisterImports fulfills ImportsRegistrar. It calls RegisterImports on the
+// Type and the Value if it implements ImportsRegistrar.
+func (f *FuncRef) RegisterImports(i *Imports) {
+	i.Add(f.Pkg)
+}
+
+// Caller returns a FuncCall to this function.
+func (f *FuncRef) Caller(args ...string) *FuncCall {
+	return &FuncCall{
+		Args:   args,
+		Caller: f,
+	}
+}

@@ -20,7 +20,10 @@ func TestPackageVar(t *testing.T) {
 	assert.NoError(t, err)
 
 	pv, err = file.NewPackageVar("B", nil)
-	pv.Value = testFuncBodyWriter(`"this is a test"`)
+	pv.Value = MustPackageRef("importtest").
+		NewFuncRef("FuncCall", StringType.Unnamed()).
+		Caller(`"test"`)
+
 	assert.NoError(t, err)
 
 	assert.Equal(t, file.pkg, pv.PackageRef())
@@ -33,9 +36,9 @@ func TestPackageVar(t *testing.T) {
 
 	assert.Contains(t, ctx.Last(), "var Bar bar.Bar")
 	assert.Contains(t, ctx.Last(), `"bar"`)
-	assert.Contains(t, ctx.Last(), `"importTest"`)
+	assert.Contains(t, ctx.Last(), `"importtest"`)
 	assert.Contains(t, ctx.Last(), "var A string = \"this is a test\"")
-	assert.Contains(t, ctx.Last(), "var B = \"this is a test\"")
+	assert.Contains(t, ctx.Last(), `var B = importtest.FuncCall("test")`)
 
 	r := pv.Ref()
 	str := PrefixWriteToString(r, DefaultPrefixer)
