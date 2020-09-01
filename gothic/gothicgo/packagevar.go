@@ -63,3 +63,11 @@ func (pv *PackageVar) RegisterImports(i *Imports) {
 		r.RegisterImports(i)
 	}
 }
+
+// Ref returns a PackageVarRef referencing this PackageVar.
+func (pv *PackageVar) Ref() *PackageVarRef {
+	return &PackageVarRef{
+		NT:  pv.NT,
+		Pkg: pv.file.pkg,
+	}
+}

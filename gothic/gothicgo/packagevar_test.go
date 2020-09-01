@@ -3,6 +3,8 @@ package gothicgo
 import (
 	"testing"
 
+	"github.com/adamcolton/luce/ds/bufpool"
+
 	"github.com/adamcolton/luce/util/luceio"
 	"github.com/testify/assert"
 )
@@ -34,4 +36,14 @@ func TestPackageVar(t *testing.T) {
 	assert.Contains(t, ctx.Last(), `"importTest"`)
 	assert.Contains(t, ctx.Last(), "var A string = \"this is a test\"")
 	assert.Contains(t, ctx.Last(), "var B = \"this is a test\"")
+
+	r := pv.Ref()
+	str := PrefixWriteToString(r, DefaultPrefixer)
+	assert.Equal(t, "foo.B", str)
+
+	i := NewImports(nil)
+	r.RegisterImports(i)
+	str = bufpool.MustWriterToString(i)
+	assert.Contains(t, str, `"foo"`)
+	assert.Equal(t, file.Package(), r.PackageRef())
 }
