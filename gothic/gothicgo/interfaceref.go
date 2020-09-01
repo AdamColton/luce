@@ -48,3 +48,9 @@ func (i *InterfaceRef) Elem() Type {
 func (i *InterfaceRef) InterfaceEmbed(w io.Writer, pre Prefixer) (int64, error) {
 	return i.PrefixWriteTo(w, pre)
 }
+
+// StructEmbedName fulfills StructEmbeddable allowin a TypeRef to be embedded in
+// a Struct.
+func (i *InterfaceRef) StructEmbedName() string {
+	return i.Name
+}

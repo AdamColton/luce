@@ -13,7 +13,7 @@ type Type interface {
 	Kind() Kind
 	Named(string) NameType
 	Unnamed() NameType
-	Pointer() *PointerType
+	Pointer() PointerType
 	Slice() *SliceType
 	Array(size int) *ArrayType
 	AsMapElem(key Type) *MapType

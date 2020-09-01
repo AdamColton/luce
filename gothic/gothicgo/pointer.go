@@ -8,17 +8,27 @@ import (
 )
 
 // PointerType extends the Type interface with pointer specific information
-type PointerType struct {
+type PointerType interface {
+	Type
+	Elem() Type
+	PointerElem() Type
+}
+
+type pointer struct {
 	Type
 }
 
 // PointerTo returns a PointerType to the underlying type.
-func PointerTo(t Type) *PointerType {
-	return &PointerType{t}
+func PointerTo(t Type) PointerType {
+	p := &pointer{t}
+	if _, ok := t.(StructEmbeddable); ok {
+		return embeddablePointerWrapper{p}
+	}
+	return p
 }
 
 // PrefixWriteTo fulfills Type.
-func (p *PointerType) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
+func (p *pointer) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	sw.WriteRune('*')
 	p.Type.PrefixWriteTo(sw, pre)
@@ -27,7 +37,15 @@ func (p *PointerType) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 }
 
 // PackageRef fulfills Type. Return PkgBuiltin.
-func (*PointerType) PackageRef() PackageRef { return pkgBuiltin }
+func (*pointer) PackageRef() PackageRef { return pkgBuiltin }
 
 // Elem returns the Type pointed to.
-func (p *PointerType) Elem() Type { return p.Type }
+func (p *pointer) Elem() Type { return p.Type }
+
+func (p *pointer) PointerElem() Type { return p.Type }
+
+type embeddablePointerWrapper struct{ *pointer }
+
+func (e embeddablePointerWrapper) StructEmbedName() string {
+	return e.Type.(StructEmbeddable).StructEmbedName()
+}

@@ -64,7 +64,7 @@ var (
 	{{template "sig" .}} Unnamed() NameType { return NameType{"", {{.R}}} }
 
 	// Pointer funfills Type.
-	{{template "sig" .}} Pointer() *PointerType { return PointerTo({{.R}}) }
+	{{template "sig" .}} Pointer() PointerType { return PointerTo({{.R}}) }
 
 	// Slice funfills Type.
 	{{template "sig" .}} Slice() *SliceType { return SliceOf({{.R}}) }
@@ -164,7 +164,7 @@ func main() {
 			Elem:        "StringType",
 		}, {
 			R:           "p",
-			Name:        "PointerType",
+			Name:        "Pointer",
 			GenKind:     true,
 			Ptr:         true,
 			Constructor: "x := IntType.Pointer()",
@@ -200,6 +200,14 @@ func main() {
 			Kind:    "InterfaceKind",
 			Package: `pkg`,
 			Elem:    `x.Interface`,
+		}, {
+			R:       "s",
+			Name:    "StructType",
+			GenKind: true,
+			Ptr:     true,
+			Constructor: `	x := MustStructType(StringType.Named("Name"))`,
+			String: `struct {\n\tName string\n}`,
+			Kind:   "StructKind",
 		},
 	}
 

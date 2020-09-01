@@ -47,3 +47,9 @@ func (t *TypeRef) RegisterImports(i *Imports) {
 func (t *TypeRef) Elem() Type {
 	return t.T
 }
+
+// StructEmbedName fulfills StructEmbeddable allowin a TypeRef to be embedded in
+// a Struct.
+func (t *TypeRef) StructEmbedName() string {
+	return t.Name
+}
