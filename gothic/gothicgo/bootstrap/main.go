@@ -151,7 +151,7 @@ func main() {
 							}
 							x := NewFuncType("Foo", args...).
 								UnnamedRets(StringType)`,
-			String: "func Foo(a int, b string) string",
+			String: "func(int, string) string",
 			Kind:   "FuncKind",
 		}, {
 			R:           "m",
@@ -164,7 +164,7 @@ func main() {
 			Elem:        "StringType",
 		}, {
 			R:           "p",
-			Name:        "Pointer",
+			Name:        "pointer",
 			GenKind:     true,
 			Ptr:         true,
 			Constructor: "x := IntType.Pointer()",

@@ -166,7 +166,7 @@ func TestFuncTypeTypeGen(t *testing.T) {
 	assert.Equal(t, x, mp.Key)
 
 	str := PrefixWriteToString(x, DefaultPrefixer)
-	assert.Equal(t, "func Foo(a int, b string) string", str)
+	assert.Equal(t, "func(int, string) string", str)
 }
 
 func TestMapTypeTypeGen(t *testing.T) {

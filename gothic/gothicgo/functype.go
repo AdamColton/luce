@@ -21,10 +21,7 @@ func NewFuncType(name string, args ...NameType) *FuncType {
 func (f *FuncType) PrefixWriteTo(w io.Writer, pre Prefixer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
 	sw.WriteString("func")
-	if f.FuncSig.Name != "" {
-		sw.WriteRune(' ')
-	}
-	sumPrefixWriteTo(sw, pre, f.FuncSig)
+	sumPrefixWriteTo(sw, pre, f.FuncSig.AsType(true))
 	return sw.Rets()
 }
 
