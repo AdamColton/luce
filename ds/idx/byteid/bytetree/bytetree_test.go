@@ -8,4 +8,5 @@ import (
 
 func TestInsert(t *testing.T) {
 	testsuite.TestBasicInsertGet(t, New)
+	testsuite.TestDeleteRecycle(t, New)
 }

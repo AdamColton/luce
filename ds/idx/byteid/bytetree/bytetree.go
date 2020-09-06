@@ -6,9 +6,10 @@ import (
 )
 
 type node struct {
-	children [256]*node
-	rest     []byte
-	idx      int
+	children   [256]*node
+	childCount byte
+	rest       []byte
+	idx        int
 }
 type byteIdxByteTree struct {
 	root *node
@@ -26,7 +27,7 @@ func New(sliceLen int) byteid.Index {
 }
 
 func (bt *byteIdxByteTree) Insert(id []byte) (int, bool) {
-	sr := bt.seek(id)
+	sr := bt.seek(id, false)
 	if sr.found {
 		return sr.idx, false
 	}
@@ -36,13 +37,21 @@ func (bt *byteIdxByteTree) Insert(id []byte) (int, bool) {
 }
 
 func (bt *byteIdxByteTree) Get(id []byte) (int, bool) {
-	sr := bt.seek(id)
+	sr := bt.seek(id, false)
 	return sr.idx, sr.found
 }
 
 func (bt *byteIdxByteTree) Delete(id []byte) (int, bool) {
-	return 0, false
+	sr := bt.seek(id, true)
+	if !sr.found {
+		return -1, false
+	}
+	idx := sr.idx
+	sr.del(id)
+	bt.si.Recycle(idx)
+	return idx, true
 }
+
 func (bt *byteIdxByteTree) SliceLen() int {
 	return bt.si.SliceLen
 }

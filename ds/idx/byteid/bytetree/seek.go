@@ -6,9 +6,10 @@ type seekResult struct {
 	*node
 	idIdx int
 	found bool
+	stack []*node
 }
 
-func (bt *byteIdxByteTree) seek(id []byte) *seekResult {
+func (bt *byteIdxByteTree) seek(id []byte, stack bool) *seekResult {
 	sr := &seekResult{
 		node: bt.root,
 	}
@@ -16,6 +17,9 @@ func (bt *byteIdxByteTree) seek(id []byte) *seekResult {
 		child := sr.children[b]
 		if child == nil {
 			return sr
+		}
+		if stack {
+			sr.stack = append(sr.stack, sr.node)
 		}
 		sr.node = child
 		sr.idIdx++
@@ -39,6 +43,7 @@ func (sr *seekResult) insert(id []byte, idx int) {
 		child := sr.children[b]
 		if child == nil {
 			sr.children[b] = newNode(idx, id[sr.idIdx+1:])
+			sr.childCount++
 			return
 		}
 		sr.node = child
@@ -61,6 +66,21 @@ func newNode(idx int, rest []byte) *node {
 
 func (n *node) bump() {
 	n.children[n.rest[0]] = newNode(n.idx, n.rest[1:])
+	n.childCount++
 	n.idx = -1
 	n.rest = nil
+}
+
+func (sr *seekResult) del(id []byte) {
+	sr.idx = -1
+	sr.rest = nil
+	// prune tree
+	ln := len(sr.stack)
+	for sr.idx == -1 && sr.childCount == 0 && ln > 0 {
+		parent := sr.stack[ln-1]
+		sr.idIdx--
+		parent.children[id[sr.idIdx]] = nil
+		ln--
+		sr.node = parent
+	}
 }
