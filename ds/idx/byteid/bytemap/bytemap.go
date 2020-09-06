@@ -5,31 +5,30 @@ import (
 	"encoding/base64"
 
 	"github.com/adamcolton/luce/ds/idx/byteid"
+	"github.com/adamcolton/luce/ds/idx/byteid/sliceidx"
 )
 
 type byteIdxMap struct {
-	m        map[string]int
-	sliceLen int
-	maxIdx   int
-	recycle  []int
+	m  map[string]int
+	si sliceidx.SliceIdx
 }
 
+// New fulfills byteid.Factory. It returns an instance of byteid. Index that is
+// backed by using a map to map the id to an int. The key is formed by
+// converting the id to base64 encoded string.
 func New(sliceLen int) byteid.Index {
 	return &byteIdxMap{
-		m:        make(map[string]int, sliceLen),
-		sliceLen: sliceLen,
-		maxIdx:   0,
+		m:  make(map[string]int, sliceLen),
+		si: sliceidx.New(sliceLen),
 	}
 }
 
 func (m *byteIdxMap) SliceLen() int {
-	return m.sliceLen
+	return m.si.SliceLen
 }
 
 func (m *byteIdxMap) SetSliceLen(newlen int) {
-	if newlen > m.sliceLen {
-		m.sliceLen = newlen
-	}
+	m.si.SetSliceLen(newlen)
 }
 
 func (m *byteIdxMap) Insert(id []byte) (int, bool) {
@@ -38,18 +37,7 @@ func (m *byteIdxMap) Insert(id []byte) (int, bool) {
 	if ok {
 		return idx, false
 	}
-	app := false
-	if ln := len(m.recycle); ln > 0 {
-		idx = m.recycle[ln-1]
-		m.recycle = m.recycle[:ln-1]
-	} else {
-		idx = m.maxIdx
-		m.maxIdx++
-		app = m.maxIdx > m.sliceLen
-		if app {
-			m.sliceLen = m.maxIdx
-		}
-	}
+	idx, app := m.si.NextIdx()
 	m.m[key] = idx
 	return idx, app
 }
@@ -70,7 +58,7 @@ func (m *byteIdxMap) Delete(id []byte) (int, bool) {
 		return -1, false
 	}
 	delete(m.m, key)
-	m.recycle = append(m.recycle, idx)
+	m.si.Recycle(idx)
 	return idx, true
 }
 

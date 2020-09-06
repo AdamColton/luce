@@ -7,5 +7,5 @@ import (
 )
 
 func TestSuiteBasicInsert(t *testing.T) {
-	testsuite.TestAll(t, Factory)
+	testsuite.TestAll(t, New)
 }

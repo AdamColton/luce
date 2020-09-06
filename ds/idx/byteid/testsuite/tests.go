@@ -8,12 +8,12 @@ import (
 )
 
 func TestAll(t *testing.T, factory byteid.IndexFactory) {
-	TestBasicInsert(t, factory)
-	TestDelete(t, factory)
+	TestBasicInsertGet(t, factory)
+	TestDeleteRecycle(t, factory)
 	TestNext(t, factory)
 }
 
-func TestBasicInsert(t *testing.T, factory byteid.IndexFactory) {
+func TestBasicInsertGet(t *testing.T, factory byteid.IndexFactory) {
 	tr := factory(2)
 
 	idx, app := tr.Insert([]byte{1, 2, 3})
@@ -65,9 +65,18 @@ func TestBasicInsert(t *testing.T, factory byteid.IndexFactory) {
 	idx, app = tr.Insert([]byte{10, 2, 3, 4, 5, 6, 7, 8, 9})
 	assert.Equal(t, 3, idx)
 	assert.False(t, app)
+
+	idx, app = tr.Insert([]byte{10, 2, 3, 4, 5, 6})
+	assert.Equal(t, 5, idx)
+	assert.True(t, app)
+
+	idx, found = tr.Get([]byte{10, 2, 3, 4, 5, 6})
+	assert.Equal(t, 5, idx)
+	assert.True(t, found)
+
 }
 
-func TestDelete(t *testing.T, factory byteid.IndexFactory) {
+func TestDeleteRecycle(t *testing.T, factory byteid.IndexFactory) {
 	tr := factory(2)
 
 	idx, app := tr.Insert([]byte{20, 2, 3, 4, 5, 6, 7, 8, 9, 10})
