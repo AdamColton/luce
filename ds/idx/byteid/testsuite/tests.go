@@ -134,6 +134,9 @@ func TestNext(t *testing.T, factory byteid.IndexFactory) {
 	expIdx := []int{1, 0, 2}
 	i := 0
 	for id, idx := tr.Next(nil); id != nil; id, idx = tr.Next(id) {
+		if !assert.True(t, i < len(expIds)) {
+			break
+		}
 		assert.Equal(t, expIdx[i], idx)
 		assert.Equal(t, expIds[i], id)
 		i++

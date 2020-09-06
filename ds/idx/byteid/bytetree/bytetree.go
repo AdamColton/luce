@@ -59,5 +59,13 @@ func (bt *byteIdxByteTree) SetSliceLen(newLen int) {
 	bt.si.SetSliceLen(newLen)
 }
 func (bt *byteIdxByteTree) Next(id []byte) ([]byte, int) {
-	return nil, 0
+	sr := bt.seek(id, true)
+	if id != nil && !sr.rightThenUp(sr.idInt(id)) {
+		return nil, sr.idx
+	}
+	sr.downAndLeft()
+	if sr.idx == -1 {
+		return nil, sr.idx
+	}
+	return sr.value(), sr.idx
 }
