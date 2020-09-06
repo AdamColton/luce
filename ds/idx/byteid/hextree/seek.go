@@ -73,3 +73,23 @@ func (l *low) bump() {
 	l.idx = -1
 	l.rest = nil
 }
+
+func (sr *seekResult) del(id []byte) {
+	sr.l.idx = -1
+	sr.l.rest = nil
+	// prune tree
+	ln := len(sr.stack)
+	for sr.l.idx == -1 && sr.l.count == 0 && ln > 0 {
+		sf := sr.stack[ln-1]
+		sr.idIdx--
+		b := id[sr.idIdx]
+
+		sf.h.removeChild(b)
+		if sf.h.count > 0 {
+			break
+		}
+		sf.l.removeChild(b)
+		sr.l = sf.l
+		ln--
+	}
+}

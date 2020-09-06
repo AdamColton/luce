@@ -17,6 +17,16 @@ func (l *low) child(b byte) *high {
 	return l.children[b>>4]
 }
 
+func (l *low) removeChild(b byte) {
+	l.children[b>>4] = nil
+	l.count--
+}
+
+func (h *high) removeChild(b byte) {
+	h.children[b&15] = nil
+	h.count--
+}
+
 func (h *high) child(b byte) *low {
 	if h == nil {
 		return nil

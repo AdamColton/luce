@@ -35,7 +35,14 @@ func (ht *hexTree) Get(id []byte) (int, bool) {
 	return sr.l.idx, sr.found
 }
 func (ht *hexTree) Delete(id []byte) (int, bool) {
-	return -1, false
+	sr := ht.seek(id, true)
+	if !sr.found {
+		return -1, false
+	}
+	idx := sr.l.idx
+	sr.del(id)
+	ht.si.Recycle(idx)
+	return idx, true
 }
 func (ht *hexTree) SliceLen() int {
 	return ht.si.SliceLen
