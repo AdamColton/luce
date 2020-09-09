@@ -1,6 +1,7 @@
 package luceio
 
 import (
+	"fmt"
 	"io"
 	"strconv"
 )
@@ -71,4 +72,9 @@ func (s *SumWriter) WriterTo(w io.WriterTo) (int64, error) {
 		s.Err = err
 	}
 	return i, err
+}
+
+// Fprint wraps a call to Sprintf.
+func (s *SumWriter) Fprint(format string, args ...interface{}) (int, error) {
+	return s.WriteString(fmt.Sprintf(format, args...))
 }
