@@ -6,11 +6,10 @@ type high struct {
 }
 
 type low struct {
-	children   [16]*high
-	count      byte
-	rest       []byte
-	idx        int
-	prev, next *low
+	children [16]*high
+	count    byte
+	rest     []byte
+	idx      int
 }
 
 func (l *low) child(b byte) *high {

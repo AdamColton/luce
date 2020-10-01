@@ -93,3 +93,73 @@ func (sr *seekResult) del(id []byte) {
 		ln--
 	}
 }
+
+// rightThenUp searches for a non-nil child proceeding right across each
+// set of children, then if none are found moving up to the parent and trying
+// again.
+func (sr *seekResult) rightThenUp() bool {
+	l := sr.l
+	for i := len(sr.stack) - 1; i >= 0; i-- {
+		b := sr.stack[i].b
+		for j := (b >> 4) + 1; j < 16; j++ {
+			if l.children[j] != nil {
+				sr.downThenLeft(j, l.children[j])
+				return true
+			}
+		}
+		h := sr.stack[i].h
+		l = sr.stack[i].l
+		sr.stack = sr.stack[:i]
+		for j := (b & 15) + 1; j < 16; j++ {
+			if h.children[j] != nil {
+				sr.stack = append(sr.stack, stackFrame{
+					b: (b & 240) | j,
+					h: h,
+					l: l,
+				})
+				sr.l = h.children[j]
+				sr.downThenLeft(0, nil)
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (sr *seekResult) downThenLeft(b byte, h *high) {
+outer:
+	for {
+		if h != nil {
+			for i := byte(0); i < 16; i++ {
+				if h.children[i] != nil {
+					sr.stack = append(sr.stack, stackFrame{
+						b: (b << 4) | i,
+						h: h,
+						l: sr.l,
+					})
+					sr.l = h.children[i]
+					h = nil
+					continue outer
+				}
+			}
+			panic("something has gone terribly wrong")
+		}
+		for i := byte(0); i < 16; i++ {
+			if sr.l.children[i] != nil {
+				h = sr.l.children[i]
+				b = i
+				continue outer
+			}
+		}
+		return
+	}
+}
+
+func (sr *seekResult) value() []byte {
+	out := make([]byte, len(sr.stack)+len(sr.l.rest))
+	for i, sf := range sr.stack {
+		out[i] = sf.b
+	}
+	copy(out[len(sr.stack):], sr.l.rest)
+	return out
+}

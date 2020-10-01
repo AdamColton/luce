@@ -6,9 +6,8 @@ import (
 )
 
 type hexTree struct {
-	root        *low
-	first, last *low
-	si          sliceidx.SliceIdx
+	root *low
+	si   sliceidx.SliceIdx
 }
 
 func New(slicelen int) byteid.Index {
@@ -51,5 +50,13 @@ func (ht *hexTree) SetSliceLen(newLen int) {
 	ht.si.SetSliceLen(newLen)
 }
 func (ht *hexTree) Next(id []byte) ([]byte, int) {
+	sr := ht.seek(id, true)
+	if id == nil {
+		sr.downThenLeft(0, nil)
+		return sr.value(), sr.l.idx
+	}
+	if sr.rightThenUp() {
+		return sr.value(), sr.l.idx
+	}
 	return nil, -1
 }
