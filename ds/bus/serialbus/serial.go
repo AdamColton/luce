@@ -148,3 +148,15 @@ func NewListener(in <-chan []byte, d serial.TypeDeserializer, r serial.TypeRegis
 	}
 	return bus.NewListener(rc, lm, errHandler, handlers...)
 }
+
+// String converts []byte to string on a channel.
+func String(in <-chan []byte) <-chan string {
+	out := make(chan string, len(in))
+	go func() {
+		for b := range in {
+			out <- string(b)
+		}
+		close(out)
+	}()
+	return out
+}

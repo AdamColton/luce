@@ -251,3 +251,19 @@ func TestRegisterHandlers(t *testing.T) {
 	case <-done:
 	}
 }
+
+func TestString(t *testing.T) {
+	bCh := make(chan []byte)
+	sCh := serialbus.String(bCh)
+
+	expect := []string{"Apple", "Banana", "Cantaloupe"}
+	go func() {
+		for _, s := range expect {
+			bCh <- []byte(s)
+		}
+	}()
+
+	for _, s := range expect {
+		assert.Equal(t, s, <-sCh)
+	}
+}
