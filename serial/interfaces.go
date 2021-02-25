@@ -64,3 +64,14 @@ type Deserializer interface {
 type InterfaceDeserializer interface {
 	Deserialize(interface{}, []byte) error
 }
+
+// RegisterTypes is a helper to register multiple types in one call.
+func RegisterTypes(typeRegistrar TypeRegistrar, zeroValues ...interface{}) error {
+	for _, z := range zeroValues {
+		err := typeRegistrar.RegisterType(z)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
