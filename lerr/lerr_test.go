@@ -73,3 +73,46 @@ func ExampleWrap() {
 	// <nil>
 	// Should Err 1 time: TestError
 }
+
+func TestMany(t *testing.T) {
+	var m lerr.Many
+	assert.NoError(t, m.Cast())
+	m = m.Add(lerr.Str("Error 1"))
+	m = m.Add(nil)
+	m = m.Add(lerr.Str("Error 2"))
+
+	assert.Equal(t, "Error 1\nError 2", m.Cast().Error())
+
+	m = m[:0]
+	assert.NoError(t, m.Cast())
+}
+
+func ExampleMany() {
+	var err error
+
+	// nil error not added to Many
+	m := lerr.NewMany(err)
+	// <nil>
+	fmt.Println(m.Cast())
+
+	fmt.Println("---")
+
+	// when many contains a single error, only that is returned from cast
+	err = lerr.Str("first error")
+	m = m.Add(err)
+	fmt.Println(m.Cast())
+
+	fmt.Println("---")
+
+	err = lerr.Str("second error")
+	m = m.Add(err)
+	fmt.Println(m.Cast())
+
+	// Output:
+	// <nil>
+	// ---
+	// first error
+	// ---
+	// first error
+	// second error
+}
