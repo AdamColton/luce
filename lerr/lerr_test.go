@@ -31,3 +31,12 @@ func TestCtx(t *testing.T) {
 	assert.Error(t, ctx)
 	assert.Equal(t, "Should Err 1 time: TestError", ctx.Error())
 }
+
+func TestMany(t *testing.T) {
+	var m Many
+	m = m.Add(Str("Error 1"))
+	m = m.Add(nil)
+	m = m.Add(Str("Error 2"))
+
+	assert.Equal(t, "Error 1\nError 2", m.Error())
+}
