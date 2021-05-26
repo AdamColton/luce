@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/ds/idx/byteid"
-	"github.com/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestID(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestByteHasher(t *testing.T) {

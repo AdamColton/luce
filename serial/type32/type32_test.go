@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/serial/wrap/json"
-	"github.com/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 type person struct {

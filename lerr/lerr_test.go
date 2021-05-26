@@ -3,7 +3,7 @@ package lerr
 import (
 	"testing"
 
-	"github.com/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 const testErr = Str("TestError")

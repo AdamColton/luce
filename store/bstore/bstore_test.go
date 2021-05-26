@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/store/testsuite"
-	"github.com/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBasic(t *testing.T) {

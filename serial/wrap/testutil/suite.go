@@ -5,7 +5,7 @@ import (
 
 	"github.com/adamcolton/luce/serial"
 	"github.com/adamcolton/luce/serial/type32"
-	"github.com/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 type person struct {

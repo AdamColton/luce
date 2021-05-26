@@ -8,7 +8,7 @@ import (
 
 	"github.com/adamcolton/luce/lerr"
 
-	"github.com/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 type person struct {

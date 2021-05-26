@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/store"
-	"github.com/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAll(t *testing.T, factory store.Factory) {
