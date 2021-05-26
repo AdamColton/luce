@@ -13,10 +13,9 @@ require (
 	golang.org/x/exp v0.0.0-20240409090435-93d18d7e34b8
 )
 
-require (
-	github.com/fogleman/gg v1.3.0
-	github.com/gorilla/mux v1.8.1
-)
+require github.com/fogleman/gg v1.3.0
+
+require golang.org/x/crypto v0.22.0
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
