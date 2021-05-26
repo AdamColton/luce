@@ -5,16 +5,16 @@ import (
 	"io"
 )
 
-// BusReaderConfig sets operational details for a BusReader.
-type BusReaderConfig struct {
+// ReaderConfig sets operational details for a Reader.
+type ReaderConfig struct {
 	CloseOnEOF bool
 	BufSize    int
 }
 
-// BusReader will read chunks up to size BufSize from io.Reader and write them
+// Reader will read chunks up to size BufSize from io.Reader and write them
 // to the In channel
-type BusReader struct {
-	BusReaderConfig
+type Reader struct {
+	ReaderConfig
 	In    <-chan []byte
 	Err   <-chan error
 	in    chan []byte
@@ -22,21 +22,22 @@ type BusReader struct {
 }
 
 // BufSize is the default buffer size that will be used if BufSize is not
-// explicitly set on a BusReader.
+// explicitly set on a Reader.
 var BufSize uint = 512
 
-// NewBusReader creates a default BusReader from the provided io.Reader.
-func NewBusReader(r io.Reader) *BusReader {
-	return BusReaderConfig{
+// NewReader creates a default Reader from the provided io.Reader.
+func NewReader(r io.Reader) *Reader {
+	return ReaderConfig{
 		BufSize: int(BufSize),
 	}.New(r)
 }
 
-// New creates a BusReader from the provided io.Reader.
-func (brc BusReaderConfig) New(r io.Reader) *BusReader {
-	br := &BusReader{
-		in:    make(chan []byte),
-		errCh: make(chan error, 1),
+// New creates a Reader from the provided io.Reader.
+func (brc ReaderConfig) New(r io.Reader) *Reader {
+	br := &Reader{
+		in:           make(chan []byte),
+		errCh:        make(chan error, 1),
+		ReaderConfig: brc,
 	}
 	br.In = br.in
 	br.Err = br.errCh
@@ -45,7 +46,8 @@ func (brc BusReaderConfig) New(r io.Reader) *BusReader {
 	return br
 }
 
-func (br *BusReader) run(r io.Reader) {
+func (br *Reader) run(r io.Reader) {
+
 	bufSize := br.BufSize
 	if bufSize < 1 {
 		bufSize = int(BufSize)
@@ -69,7 +71,7 @@ func (br *BusReader) run(r io.Reader) {
 	}
 }
 
-func (br *BusReader) check(err error) (send, exit bool) {
+func (br *Reader) check(err error) (send, exit bool) {
 	if err == nil {
 		return true, false
 	}
@@ -80,39 +82,39 @@ func (br *BusReader) check(err error) (send, exit bool) {
 	return false, true
 }
 
-// NewBusWriter will write anything sent to the returned channel to the provided
+// NewWriter will write anything sent to the returned channel to the provided
 // writer.
-func NewBusWriter(w io.Writer) (chan<- []byte, <-chan error) {
+func NewWriter(w io.Writer) (chan<- []byte, <-chan error) {
 	out := make(chan []byte)
 	errCh := make(chan error)
 
-	go BusWriter(w, out, errCh)
+	go Writer(w, out, errCh)
 	return out, errCh
 }
 
-// BusWriter reads from a channel and writes anything received to the Writer.
-func BusWriter(w io.Writer, ch <-chan []byte, errCh chan<- error) {
+// Writer reads from a channel and writes anything received to the Writer.
+func Writer(w io.Writer, ch <-chan []byte, errCh chan<- error) {
 	for b := range ch {
 		_, err := w.Write(b)
-		if err != nil {
+		if err != nil && errCh != nil {
 			errCh <- err
 		}
 	}
 }
 
-// BusReadWriter runs both a BusReader and a BusWriter on an io.ReaderWriter.
-type BusReadWriter struct {
-	*BusReader
+// ReadWriter runs both a Reader and a BusWriter on an io.ReaderWriter.
+type ReadWriter struct {
+	*Reader
 	Out chan<- []byte
 }
 
-// NewBusReadWriter runs both a BusReader and a BusWriter on an io.ReaderWriter.
-func NewBusReadWriter(rw io.ReadWriter) *BusReadWriter {
-	br := NewBusReader(rw)
+// NewReadWriter runs both a Reader and a BusWriter on an io.ReaderWriter.
+func NewReadWriter(rw io.ReadWriter) *ReadWriter {
+	br := NewReader(rw)
 	out := make(chan []byte)
-	go BusWriter(rw, out, br.errCh)
-	return &BusReadWriter{
-		BusReader: br,
-		Out:       out,
+	go Writer(rw, out, br.errCh)
+	return &ReadWriter{
+		Reader: br,
+		Out:    out,
 	}
 }

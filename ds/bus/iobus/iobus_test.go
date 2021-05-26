@@ -42,7 +42,7 @@ func TestBasic(t *testing.T) {
 	buf := &bufMux{
 		Buffer: bytes.NewBuffer(nil),
 	}
-	rw := iobus.NewBusReadWriter(buf)
+	rw := iobus.NewReadWriter(buf)
 
 	done := make(chan bool, 1)
 
@@ -97,7 +97,7 @@ func TestReadError(t *testing.T) {
 	buf := &bufMux{
 		Buffer: bytes.NewBuffer(nil),
 	}
-	rw := iobus.NewBusReadWriter(buf)
+	rw := iobus.NewReadWriter(buf)
 	err := fmt.Errorf("this is an error")
 	buf.err = err
 
@@ -108,7 +108,7 @@ func TestWriteError(t *testing.T) {
 	buf := &bufMux{
 		Buffer: bytes.NewBuffer(nil),
 	}
-	w, errCh := iobus.NewBusWriter(buf)
+	w, errCh := iobus.NewWriter(buf)
 	err := fmt.Errorf("this is an error")
 	buf.err = err
 
