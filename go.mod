@@ -34,6 +34,12 @@ require (
 require golang.org/x/crypto v0.32.0
 
 require (
+	github.com/gorilla/securecookie v1.1.1 // indirect
+	github.com/gorilla/sessions v1.2.1
+	github.com/quasoft/memstore v0.0.0-20191010062613-2bce066d2b0b
+)
+
+require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d // indirect
