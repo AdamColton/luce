@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>User Grid</title>
+    </head>
+    <body>
+        <form method="POST" action="/user/grid">
+            <table>
+                <tr>
+                    <td>&nbsp;</td>
+                    {{- range $idx, $group := .Groups}}
+                        <td>{{$group}}</td>
+                    {{- end}}
+                </tr>
+                {{$groups := .Groups}}
+                {{range $idx, $user := .Users}}
+                    <tr>
+                        <td>{{$user.Name}}</td>
+                        {{- range $idx, $inGroup := $user.Groups}}
+                            <td><input type="checkbox" name="{{$user.Name}}" value="{{index $groups $idx}}" {{if $inGroup}}checked="checked"{{end}} /></td>
+                        {{- end}}
+                    </tr>
+                {{end}}
+            </table>
+            <button>Save</button>
+        </form>
+    </body>
+</html>
