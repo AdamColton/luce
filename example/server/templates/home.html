@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Home</title>
+    </head>
+    <body>
+        <p>Test Server</p>
+        {{if $}}
+            <div>Hello, {{.Name}}</div>
+            <p><a href="/logout">Logout</a></p>
+        {{else}}
+            <p><a href="/login">Login</a></p>
+        {{end}}
+        <p><a href="/websocket">Websocket</a></p>
+    </body>
+</html>
