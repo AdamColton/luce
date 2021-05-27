@@ -62,7 +62,7 @@ func (s *Server) initUsers() {
 }
 
 func (s *Server) loadTemplates() {
-	s.Tmpls = template.Must(template.ParseGlob("*.html"))
+	s.Tmpls = template.Must(template.ParseGlob("templates/*.html"))
 }
 
 type Server struct {
