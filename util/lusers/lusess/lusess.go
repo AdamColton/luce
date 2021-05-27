@@ -6,7 +6,6 @@ import (
 
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/lusers"
-	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 )
 
@@ -22,10 +21,10 @@ const (
 type Store struct {
 	sessions.Store
 	*lusers.UserStore
-	Router  *mux.Router
 	Decoder interface {
 		Decode(interface{}, map[string][]string) error
 	}
+	FieldName string
 }
 
 type Session struct {
@@ -59,10 +58,6 @@ func (s *Store) HandlerFunc(fn HandlerFunc) http.HandlerFunc {
 		}
 		fn(w, r, sess)
 	}
-}
-
-func (s *Store) HandleSession(path string, fn HandlerFunc) *mux.Route {
-	return s.Router.HandleFunc(path, s.HandlerFunc(fn))
 }
 
 func (s *Store) Login(w http.ResponseWriter, r *http.Request) (*Session, error) {
