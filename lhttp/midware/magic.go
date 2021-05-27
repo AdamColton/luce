@@ -20,7 +20,7 @@ type Initilizer interface {
 }
 
 type DataInserter interface {
-	Insert(dst reflect.Value, r *http.Request) error
+	Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) error
 }
 
 func (m *Magic) Handle(fn interface{}) http.HandlerFunc {
@@ -49,7 +49,7 @@ func (m *Magic) Handle(fn interface{}) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		dst := reflect.New(dstType)
 		for _, di := range dis {
-			di.Insert(dst, r)
+			di.Insert(w, r, dst)
 		}
 
 		if useElem {

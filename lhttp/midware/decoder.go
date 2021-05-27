@@ -78,7 +78,7 @@ func (d Decoder) Initilize(t reflect.Type) DataInserter {
 	return di
 }
 
-func (di *decoderInserter) Insert(dst reflect.Value, r *http.Request) error {
+func (di *decoderInserter) Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) error {
 	v := reflect.New(di.t)
 	err := di.Decode(v.Interface(), r)
 	if err != nil {
