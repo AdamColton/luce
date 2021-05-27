@@ -20,17 +20,17 @@ func (u Url) Initilize(t reflect.Type) DataInserter {
 	if u.FieldName == "" {
 		panic("Url.FieldName cannot be blank")
 	}
-	decField, hasDec := t.FieldByName(u.FieldName)
-	if !hasDec {
+	urlField, hasUrl := t.FieldByName(u.FieldName)
+	if !hasUrl {
 		return nil
 	}
 	return &urlInserter{
-		idx: decField.Index,
+		idx: urlField.Index,
 		v:   u.Var,
 	}
 }
 
-func (ui *urlInserter) Insert(dst reflect.Value, r *http.Request) error {
+func (ui *urlInserter) Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) error {
 	v := reflect.ValueOf(mux.Vars(r)[ui.v])
 	dst.Elem().FieldByIndex(ui.idx).Set(v)
 	return nil
