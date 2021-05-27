@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Login</title>
+    </head>
+    <body>
+        <div>{{.Message}}</div>
+        <form method="POST" action="/login">
+            <div>
+                Username <input type="text" name="username" />
+            </div>
+            <div>
+                Password <input type="password" name="password" />
+            </div>
+            <div>
+                <button>Login</button>
+            </div>
+        </form>
+    </body>
+</html>

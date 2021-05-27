@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Web Socket</title>
+    </head>
+    <body>
+
+        <div id="main">
+            Connecting WebSocket...
+        </div>
+
+        <div id="login" style="display: none;">
+            <div>
+                Username <input type="text" id="username" />
+            </div>
+            <div>
+                Password <input type="password" id="password" />
+            </div>
+            <div>
+                <button onclick="login()">Login</button>
+            </div>
+        </div>
+
+        <div id="LoginSuccess">
+            <div>Login Successful</div>
+            <a href="/">Home</a>
+        </div>
+
+        <script>
+            function $(elId){return document.getElementById(elId);}
+
+            var handlers = {
+                loginSuccess: function(token){
+                    var req =  new XMLHttpRequest();
+                    req.open("POST","/token",true);
+                    req.onreadystatechange = function(){
+                        if (req.readyState == XMLHttpRequest.DONE && req.status == 200){
+                            $("main").innerHTML = templates["LoginSuccess"];
+                        }
+                    };
+                    req.send(token);
+                }
+            };
+
+            var conn = new WebSocket(document.URL.replace("http","ws")+"/connect");
+            conn.onmessage = function(msg){
+                console.log(msg);
+                var split = msg.data.indexOf(" ");
+                var kind = msg.data.substring(0,split);
+                var data = msg.data.substring(split+1);
+                handlers[kind](data);
+            }
+            conn.onopen = function(){
+                // setInterval(function(){
+                // count++
+                // conn.send('client to server: '+count);
+                // },1000)
+
+                $("main").innerHTML = templates["login"];
+            }
+            function Sender(type, data){
+                conn.send(type + " "+JSON.stringify(data));
+            }
+
+            var templates = {};
+            var main;
+
+            function addTemplate(id){
+                var elem = $(id);
+                templates[id] = elem.innerHTML;
+                elem.remove();
+            }
+
+            document.addEventListener("DOMContentLoaded", function(){
+                addTemplate("login");
+                addTemplate("LoginSuccess");
+
+                main = $("main");
+            });
+
+            function login(){
+                Sender("login",{
+                    "Username":$("username").value,
+                    "Password":$("password").value,
+                });
+            }
+        </script>
+    </body>
+</html>
