@@ -10,6 +10,7 @@
         </div>
 
         <div id="login" style="display: none;">
+            <div id="status"></div>
             <div>
                 Username <input type="text" id="username" />
             </div>
@@ -30,7 +31,11 @@
             function $(elId){return document.getElementById(elId);}
 
             var handlers = {
-                loginSuccess: function(token){
+                loginStatus: function(loginStatus){
+                    if (!loginStatus.Success){
+                        $("status").innerHTML = "Login Failed";
+                        return;
+                    }
                     var req =  new XMLHttpRequest();
                     req.open("POST","/token",true);
                     req.onreadystatechange = function(){
@@ -38,7 +43,7 @@
                             $("main").innerHTML = templates["LoginSuccess"];
                         }
                     };
-                    req.send(token);
+                    req.send(loginStatus.Token);
                 }
             };
 
@@ -48,7 +53,8 @@
                 var split = msg.data.indexOf(" ");
                 var kind = msg.data.substring(0,split);
                 var data = msg.data.substring(split+1);
-                handlers[kind](data);
+                
+                handlers[kind](JSON.parse(data));
             }
             conn.onopen = function(){
                 // setInterval(function(){
@@ -59,7 +65,7 @@
                 $("main").innerHTML = templates["login"];
             }
             function Sender(type, data){
-                conn.send(type + " "+JSON.stringify(data));
+                conn.send(type + " " + JSON.stringify(data));
             }
 
             var templates = {};
@@ -77,6 +83,8 @@
 
                 main = $("main");
             });
+
+            const loginType = 5;
 
             function login(){
                 Sender("login",{
