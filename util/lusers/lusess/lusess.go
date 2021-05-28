@@ -97,9 +97,12 @@ type Login struct {
 	Username, Password string
 }
 
+// Login authenticates l against s.Store's UserStore and, on success, sets
+// the resulting User on the session. It returns ErrLoginFailed if the user
+// does not exist or the password is wrong.
 func (s *Session) Login(l *Login) (*lusers.User, error) {
-	u, err := s.Store.GetByName(l.Username)
-	if err != nil || u == nil || u.CheckPassword(l.Password) != nil {
+	u, err := s.Store.UserStore.Login(l.Username, l.Password)
+	if err != nil || u == nil {
 		return nil, ErrLoginFailed
 	}
 
