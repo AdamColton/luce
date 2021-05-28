@@ -23,6 +23,7 @@ func (s *Server) RunSocket() {
 				Usage: "the server (and client)",
 				Action: func(ctx *unixsocket.Context) {
 					ctx.WriteString("Closing Server. Goodbye\n")
+					s.server.Close()
 					ctx.Socket.Close()
 				},
 			}, {

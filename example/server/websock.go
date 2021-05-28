@@ -1,67 +1,75 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
+	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/serial/typestring"
+	"github.com/adamcolton/luce/serial/wrap/json"
+
+	"github.com/adamcolton/luce/ds/bus"
+	"github.com/adamcolton/luce/ds/bus/serialbus"
 	"github.com/adamcolton/luce/util/lusers"
 	"github.com/adamcolton/luce/util/lusers/lusess"
 )
 
 type wsInstance struct {
-	to chan<- []byte
-	s  *Server
-	u  *lusers.User
+	send *serialbus.Sender
+	s    *Server
+	u    *lusers.User
 }
 
 func (s *Server) WebSocket(to chan<- []byte, from <-chan []byte, r *http.Request) {
-	stop := make(chan bool)
+	tm := typestring.NewTypeMap(
+		(*login)(nil),
+		(*loginStatus)(nil),
+	)
 
-	go func() {
-		for {
-			select {
-			case <-stop:
-				fmt.Println("User closed connection")
-				return
-			}
-		}
-	}()
-
-	wsi := wsInstance{
-		to: to,
-		s:  s,
+	wsi := &wsInstance{
+		send: &serialbus.Sender{
+			TypeSerializer: tm.WriterSerializer(json.Serialize),
+			Chan:           to,
+		},
+		s: s,
 	}
 
-	for msg := range from {
-		split := bytes.Index(msg, []byte{byte(' ')})
-		if split == -1 {
-			fmt.Println("Error: ", string(msg))
-			continue
-		}
-		kind := string(msg[:split])
-		data := msg[split+1:]
+	l, err := bus.NewListener(&serialbus.Receiver{
+		In:               from,
+		TypeDeserializer: tm.ReaderDeserializer(json.Deserialize),
+		TypeRegistrar:    tm,
+	}, nil, nil)
+	lerr.Panic(err)
+	bus.RegisterHandlerType(l, wsi)
 
-		switch kind {
-		case "login":
-			wsi.login(data)
-		default:
-			fmt.Println("Unknown: ", kind, string(data))
-		}
-	}
-	stop <- true
+	l.Run()
+	close(to)
 }
 
-func (wsi *wsInstance) login(data []byte) {
-	var l struct {
-		Username, Password string
-	}
-	json.Unmarshal(data, &l)
+type login struct {
+	Username, Password string
+}
 
-	u, err := wsi.s.Users.GetByName(l.Username)
-	if err != nil || u == nil || u.CheckPassword(l.Password) != nil {
-		wsi.to <- []byte("loginFailed")
+func (*login) TypeIDString() string {
+	return "login"
+}
+
+type loginStatus struct {
+	Success bool
+	Token   string
+}
+
+func (*loginStatus) TypeIDString() string {
+	return "loginStatus"
+}
+
+func (wsi *wsInstance) HandleLogin(l *login) {
+	ls := &loginStatus{}
+
+	u, err := wsi.s.Users.UserStore.Login(l.Username, l.Password)
+	ls.Success = err == nil
+	if !ls.Success {
+		wsi.send.Send(ls)
 		return
 	}
 
@@ -72,8 +80,8 @@ func (wsi *wsInstance) login(data []byte) {
 		sess.Save()
 	}
 	h := wsi.s.Users.HandlerFunc(fn)
-	token, _ := wsi.s.tokens.Register(h)
-	fmt.Println("Sending token", token)
+	ls.Token, _ = wsi.s.tokens.Register(h)
+	fmt.Println("Sending token", ls.Token)
 
-	wsi.to <- []byte(fmt.Sprintf(`loginSuccess %s`, token))
+	wsi.send.Send(ls)
 }
