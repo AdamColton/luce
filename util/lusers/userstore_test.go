@@ -84,6 +84,38 @@ func TestCreateErrors(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestLoginErrors(t *testing.T) {
+	us := lerr.Must(NewUserStore(quicknested.New(10)))
+	_, err := us.Create("user1", "password")
+	assert.NoError(t, err)
+
+	_, err = us.Login("no-such-user", "password")
+	assert.Equal(t, ErrUserNotFound, err)
+
+	_, err = us.Login("user1", "wrong-password")
+	assert.Error(t, err)
+}
+
+func TestLoadGroupsError(t *testing.T) {
+	us := lerr.Must(NewUserStore(failFactory{
+		NestedFactory: quicknested.New(10),
+		wrapOn:        groups,
+		wrap: func(s store.NestedStore) store.NestedStore {
+			return errNestStore{s}
+		},
+	}))
+	_, err := us.Create("user1", "password")
+	assert.NoError(t, err)
+
+	// put a group name key straight into groups so loadGroups walks it and
+	// hits the wrapped store's NestedStore error via us.Group.
+	err = us.groups.Put([]byte("admin"), nil)
+	assert.NoError(t, err)
+
+	_, err = us.Login("user1", "password")
+	assert.Error(t, err)
+}
+
 func TestGroupError(t *testing.T) {
 	us := lerr.Must(NewUserStore(failFactory{
 		NestedFactory: quicknested.New(10),
