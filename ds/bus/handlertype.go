@@ -8,7 +8,7 @@ import (
 )
 
 // RegisterMuxHandlerType is a bit of reflection magic. It takes a object and
-// iterates over it's methods. Any methods that start with "Handler" will be
+// iterates over it's methods. Any methods that start with "Handle" will be
 // registered with the ListenerMuxer. If there is a method named "ErrHandler"
 // and the ListenerMuxer's ErrHandler field is nil, the field will be set to the
 // method. A slice containing the arugments types of the handlers is returned.
