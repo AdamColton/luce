@@ -78,12 +78,12 @@ func (d Decoder) Initilize(t reflect.Type) DataInserter {
 	return di
 }
 
-func (di *decoderInserter) Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) error {
+func (di *decoderInserter) Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) (error, func()) {
 	v := reflect.New(di.t)
 	err := di.Decode(v.Interface(), r)
 	if err != nil {
-		return err
+		return err, nil
 	}
 	dst.Elem().FieldByIndex(di.idx).Set(v)
-	return nil
+	return nil, nil
 }
