@@ -26,11 +26,13 @@ func (s *Store) Initilize(t reflect.Type) midware.DataInserter {
 	}
 }
 
-func (mi midwareInserter) Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) error {
+func (mi midwareInserter) Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) (error, func()) {
 	s, err := mi.s.Session(w, r)
 	if err != nil {
-		return err
+		return err, nil
 	}
 	dst.Elem().FieldByIndex(mi.idx).Set(reflect.ValueOf(s))
-	return nil
+	return nil, func() {
+		s.Save()
+	}
 }
