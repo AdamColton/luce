@@ -24,13 +24,13 @@ type Server struct {
 	}
 	tokens map[string]http.HandlerFunc
 	toq    *toq.TimeoutQueue
-	UserTemplates
+	TemplateNames
 	server *http.Server
 }
 
 var TimeoutDuration = time.Second * 5
 
-func New(ses sessions.Store, fac store.Factory, t *template.Template, ut UserTemplates) (*Server, error) {
+func New(ses sessions.Store, fac store.Factory, t *template.Template, n TemplateNames) (*Server, error) {
 	us, err := lusers.NewUserStore(fac)
 	if err != nil {
 		return nil, err
@@ -42,11 +42,12 @@ func New(ses sessions.Store, fac store.Factory, t *template.Template, ut UserTem
 			Store:     ses,
 			UserStore: us,
 			Decoder:   schema.NewDecoder(),
+			FieldName: "Session",
 		},
 		Templates:     t,
 		tokens:        make(map[string]http.HandlerFunc),
 		toq:           toq.New(TimeoutDuration, 10),
-		UserTemplates: ut,
+		TemplateNames: n,
 		server:        &http.Server{},
 	}
 
