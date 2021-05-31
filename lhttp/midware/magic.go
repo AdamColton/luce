@@ -20,7 +20,7 @@ type Initilizer interface {
 }
 
 type DataInserter interface {
-	Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) error
+	Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) (error, func())
 }
 
 func (m *Magic) Handle(fn interface{}) http.HandlerFunc {
@@ -48,8 +48,12 @@ func (m *Magic) Handle(fn interface{}) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		dst := reflect.New(dstType)
+		var callbacks []func()
 		for _, di := range dis {
-			di.Insert(w, r, dst)
+			_, callback := di.Insert(w, r, dst)
+			if callback != nil {
+				callbacks = append(callbacks, callback)
+			}
 		}
 
 		if useElem {
@@ -60,5 +64,9 @@ func (m *Magic) Handle(fn interface{}) http.HandlerFunc {
 			reflect.ValueOf(r),
 			dst,
 		})
+
+		for _, callback := range callbacks {
+			callback()
+		}
 	}
 }
