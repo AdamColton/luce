@@ -1,6 +1,7 @@
 package lusess
 
 import (
+	"encoding/gob"
 	"log"
 	"net/http"
 
@@ -17,6 +18,11 @@ var (
 const (
 	ErrLoginFailed = lerr.Str("Login failed")
 )
+
+func init() {
+	gob.Register((*lusers.User)(nil))
+	gob.Register((*lusers.Group)(nil))
+}
 
 type Store struct {
 	sessions.Store
