@@ -14,6 +14,11 @@ func main() {
 		StartMessage: "Welcome to the socket demo\nenter 'help' for more\n",
 		Commands: []unixsocket.Command{
 			{
+				Name: "",
+				Action: func(ctx *unixsocket.Context) {
+					ctx.WriteString("Unrecognized Command\nEnter 'help' to see commands\n")
+				},
+			}, {
 				Name:  "help",
 				Usage: "show this menu",
 				Action: func(ctx *unixsocket.Context) {

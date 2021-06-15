@@ -10,18 +10,18 @@ type Socket struct {
 	Addr    string
 	Handler func(conn net.Conn)
 	stop    chan bool
-	sync.Mutex
+	mux     sync.Mutex
 }
 
 // Close a running socket.
 func (s *Socket) Close() {
-	s.Lock()
+	s.mux.Lock()
 	if s.stop != nil {
 		s.stop <- true
 		<-s.stop
 		s.stop = nil
 	}
-	s.Unlock()
+	s.mux.Unlock()
 }
 
 // Run the socket

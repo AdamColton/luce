@@ -20,11 +20,12 @@ type Commands struct {
 	cls          func()
 }
 
+// Close the underlying socket
 func (c *Commands) Close() {
 	c.cls()
 }
 
-// Run the socket
+// Run the underlying socket
 func (c *Commands) Run() error {
 	c.populateCmdMap()
 	s := &Socket{
@@ -78,8 +79,7 @@ func (c *Commands) populateCmdMap() {
 	}
 }
 
-// Help returns a description of all the commands registered with the socket as
-// a string.
+// Help returns a description of all the registered commands as a string.
 func (c *Commands) Help() string {
 	buf := bytes.NewBuffer(nil)
 	buf.WriteString("  Commands:\n")
