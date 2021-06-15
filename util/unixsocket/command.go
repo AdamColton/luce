@@ -19,7 +19,7 @@ type Command struct {
 type Context struct {
 	conn        net.Conn
 	rawStr      string
-	Socket      *Socket
+	Socket      *Commands
 	shouldClose bool
 	Args        []string
 	in          <-chan string
