@@ -9,26 +9,25 @@ import (
 
 	"github.com/adamcolton/luce/ds/bus/iobus"
 	"github.com/adamcolton/luce/ds/bus/procbus"
+	"github.com/urfave/cli"
 )
 
-func main() {
+func socketclient(c *cli.Context) error {
 	inBus := iobus.ReaderConfig{
 		CloseOnEOF: true,
 	}.New(os.Stdin)
 	in := procbus.Delim(inBus.In, '\n')
 	addr, err := getSock(in)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	if addr == "" {
-		return
+		return nil
 	}
 	fmt.Print("  Connecting to", addr, "\n\n")
 	conn, err := net.Dial("unix", addr)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	defer conn.Close()
 
@@ -40,6 +39,7 @@ func main() {
 	for m := range cr.In {
 		fmt.Print(string(m))
 	}
+	return nil
 }
 
 func getSock(in <-chan []byte) (string, error) {
