@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	sck := &unixsocket.Socket{
+	sck := &unixsocket.Commands{
 		Name:         "socket-demo",
 		Addr:         "/tmp/socket-demo.sock",
 		StartMessage: "Welcome to the socket demo\nenter 'help' for more\n",
