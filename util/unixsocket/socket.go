@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/adamcolton/luce/ds/bus/iobus"
 	"github.com/adamcolton/luce/ds/bus/serialbus"
@@ -19,15 +20,18 @@ type Socket struct {
 	Commands     []Command
 	cmdMap       map[string]Command
 	StartMessage string
+	sync.Mutex
 }
 
 // Close a running socket.
 func (s *Socket) Close() {
+	s.Lock()
 	if s.stop != nil {
 		s.stop <- true
 		<-s.stop
 		s.stop = nil
 	}
+	s.Unlock()
 }
 
 // Run the socket
@@ -44,9 +48,11 @@ func (s *Socket) Run() error {
 	}
 
 	s.stop = make(chan bool)
+	closed := false
 
 	go func() {
 		<-s.stop
+		closed = true
 		l.Close()
 		os.RemoveAll(addr)
 		close(s.stop)
@@ -55,6 +61,9 @@ func (s *Socket) Run() error {
 	for {
 		conn, err := l.Accept()
 		if err != nil {
+			if closed {
+				return nil
+			}
 			return err
 		}
 
