@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net"
-	"os"
 	"strings"
-	"sync"
 
 	"github.com/adamcolton/luce/ds/bus/iobus"
 	"github.com/adamcolton/luce/ds/bus/serialbus"
@@ -14,61 +12,27 @@ import (
 
 // Commands is used to setup and run the server side of a unix socket connection.
 type Commands struct {
-	Name         string
 	Addr         string
-	stop         chan bool
+	Name         string
 	Commands     []Command
 	cmdMap       map[string]Command
 	StartMessage string
-	sync.Mutex
+	cls          func()
 }
 
-// Close a running socket.
 func (c *Commands) Close() {
-	c.Lock()
-	if c.stop != nil {
-		c.stop <- true
-		<-c.stop
-		c.stop = nil
-	}
-	c.Unlock()
+	c.cls()
 }
 
 // Run the socket
 func (c *Commands) Run() error {
 	c.populateCmdMap()
-	addr := c.Addr
-	if err := os.RemoveAll(addr); err != nil {
-		return err
+	s := &Socket{
+		Addr:    c.Addr,
+		Handler: c.handleUnixClient,
 	}
-
-	l, err := net.Listen("unix", addr)
-	if err != nil {
-		return err
-	}
-
-	c.stop = make(chan bool)
-	closed := false
-
-	go func() {
-		<-c.stop
-		closed = true
-		l.Close()
-		os.RemoveAll(addr)
-		close(c.stop)
-	}()
-
-	for {
-		conn, err := l.Accept()
-		if err != nil {
-			if closed {
-				return nil
-			}
-			return err
-		}
-
-		go c.handleUnixClient(conn)
-	}
+	c.cls = s.Close
+	return s.Run()
 }
 
 func (c *Commands) handleUnixClient(conn net.Conn) {
