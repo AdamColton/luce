@@ -38,6 +38,11 @@ func main() {
 					},
 				},
 				{
+					Name:   "r32",
+					Action: rand32,
+					Usage:  "Generate a random uint32",
+				},
+				{
 					Name:   "randbase64",
 					Action: randBase64,
 					Usage:  "Generate a random base64 value",

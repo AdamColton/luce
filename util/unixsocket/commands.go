@@ -28,10 +28,7 @@ func (c *Commands) Close() {
 // Run the underlying socket
 func (c *Commands) Run() error {
 	c.populateCmdMap()
-	s := &Socket{
-		Addr:    c.Addr,
-		Handler: c.handleUnixClient,
-	}
+	s := New(c.Addr, c.handleUnixClient)
 	c.cls = s.Close
 	return s.Run()
 }
