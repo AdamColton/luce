@@ -30,7 +30,7 @@ func (u Url) Initilize(t reflect.Type) DataInserter {
 	}
 }
 
-func (ui *urlInserter) Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) (error, func()) {
+func (ui *urlInserter) Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) (func(), error) {
 	v := reflect.ValueOf(mux.Vars(r)[ui.v])
 	dst.Elem().FieldByIndex(ui.idx).Set(v)
 	return nil, nil

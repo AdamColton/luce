@@ -1,6 +1,7 @@
 package lusess
 
 import (
+	"fmt"
 	"net/http"
 	"reflect"
 
@@ -26,13 +27,16 @@ func (s *Store) Initilize(t reflect.Type) midware.DataInserter {
 	}
 }
 
-func (mi midwareInserter) Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) (error, func()) {
+func (mi midwareInserter) Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) (func(), error) {
 	s, err := mi.s.Session(w, r)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	dst.Elem().FieldByIndex(mi.idx).Set(reflect.ValueOf(s))
-	return nil, func() {
-		s.Save()
-	}
+	return func() {
+		err := s.Save()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}, nil
 }

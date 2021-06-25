@@ -3,6 +3,8 @@ package midware
 import (
 	"net/http"
 	"reflect"
+
+	"github.com/adamcolton/luce/lerr"
 )
 
 type Magic struct {
@@ -20,7 +22,7 @@ type Initilizer interface {
 }
 
 type DataInserter interface {
-	Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) (error, func())
+	Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) (func(), error)
 }
 
 func (m *Magic) Handle(fn interface{}) http.HandlerFunc {
@@ -50,7 +52,8 @@ func (m *Magic) Handle(fn interface{}) http.HandlerFunc {
 		dst := reflect.New(dstType)
 		var callbacks []func()
 		for _, di := range dis {
-			_, callback := di.Insert(w, r, dst)
+			callback, err := di.Insert(w, r, dst)
+			lerr.Log(err)
 			if callback != nil {
 				callbacks = append(callbacks, callback)
 			}

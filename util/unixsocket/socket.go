@@ -13,6 +13,13 @@ type Socket struct {
 	mux     sync.Mutex
 }
 
+func New(addr string, handler func(conn net.Conn)) *Socket {
+	return &Socket{
+		Addr:    addr,
+		Handler: handler,
+	}
+}
+
 // Close a running socket.
 func (s *Socket) Close() {
 	s.mux.Lock()
