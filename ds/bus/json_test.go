@@ -224,6 +224,7 @@ func TestListeners(t *testing.T) {
 func TestRegisterHandlers(t *testing.T) {
 	tm := type32.NewTypeMap()
 	ho := make(handlerObj)
+
 	bCh := make(chan []byte)
 	done := make(chan bool)
 	s := &serialbus.Sender{
@@ -238,6 +239,7 @@ func TestRegisterHandlers(t *testing.T) {
 	l, err := bus.NewListener(r, nil, nil)
 	assert.NoError(t, err)
 	bus.RegisterHandlerType(l, ho)
+
 	go func() {
 		l.Run()
 		done <- true
