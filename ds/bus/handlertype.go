@@ -2,7 +2,9 @@ package bus
 
 import (
 	"reflect"
-	"strings"
+
+	"github.com/adamcolton/luce/util/filter"
+	"github.com/adamcolton/luce/util/reflector"
 )
 
 // RegisterMuxHandlerType is a bit of reflection magic. It takes a object and
@@ -11,25 +13,28 @@ import (
 // and the ListenerMuxer's ErrHandler field is nil, the field will be set to the
 // method. A slice containing the arugments types of the handlers is returned.
 func RegisterMuxHandlerType(lm ListenerMuxer, handlerType interface{}) ([]reflect.Type, error) {
-	v := reflect.ValueOf(handlerType)
-	t := v.Type()
-	ms := v.NumMethod()
+	ms := reflector.ArgCount(filter.EQ.Int(1)).MethodFilter().
+		And(reflector.MethodName(filter.Prefix("Handle"))).
+		On(handlerType).Funcs()
+
 	var ts []reflect.Type
-	for i := 0; i < ms; i++ {
-		tm := t.Method(i)
-		if strings.HasPrefix(tm.Name, "Handle") {
-			at, err := lm.RegisterMuxHandler(v.Method(i).Interface())
-			if err != nil {
-				return ts, err
-			}
-			ts = append(ts, at)
-		} else if tm.Name == "ErrHandler" {
-			errHandler, ok := v.Method(i).Interface().(func(err error))
-			if ok {
-				lm.SetErrorHandler(errHandler)
-			}
+	for _, m := range ms {
+		at, err := lm.RegisterMuxHandler(m)
+		if err != nil {
+			return ts, err
 		}
+		ts = append(ts, at)
 	}
+
+	var errHandler func(err error)
+	ok := reflector.
+		MethodName(filter.EQ.String("ErrHandler")).
+		One(handlerType).
+		SetTo(&errHandler)
+	if ok {
+		lm.SetErrorHandler(errHandler)
+	}
+
 	return ts, nil
 }
 
