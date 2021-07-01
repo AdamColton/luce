@@ -98,6 +98,7 @@ type TypeMap interface {
 	serial.Detyper
 	Add(t reflect.Type, id uint32)
 	RegisterType32(zeroValue TypeIDer32)
+	RegisterType32s(zeroValues ...TypeIDer32)
 	Serializer(s serial.Serializer) serial.PrefixSerializer
 	WriterSerializer(s serial.WriterSerializer) serial.PrefixSerializer
 	Deserializer(d serial.Deserializer) serial.PrefixDeserializer
@@ -133,6 +134,13 @@ func (tm typeMap) RegisterType(zeroValue interface{}) error {
 // serial.TypeRegistrar but adds type safety.
 func (tm typeMap) RegisterType32(zeroValue TypeIDer32) {
 	tm.Add(reflect.TypeOf(zeroValue), zeroValue.TypeID32())
+}
+
+// RegisterType32s registers many TypeIDer32s.
+func (tm typeMap) RegisterType32s(zeroValues ...TypeIDer32) {
+	for _, zeroValue := range zeroValues {
+		tm.Add(reflect.TypeOf(zeroValue), zeroValue.TypeID32())
+	}
 }
 
 // Add maps a type to an id. This allows for types that do not fulfill
