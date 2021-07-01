@@ -42,13 +42,17 @@ func (lm *ListenerMux) Run() {
 
 func (lm *ListenerMux) handle(i interface{}) {
 	v := []reflect.Value{reflect.ValueOf(i)}
-	for _, l := range lm.handlers[v[0].Type()] {
-		out := l.Call(v)
-		if l := len(out); l > 0 {
-			err, ok := out[l-1].Interface().(error)
-			if ok && err != nil && lm.ErrHandler != nil {
-				lm.ErrHandler(err)
-			}
+	for _, h := range lm.handlers[v[0].Type()] {
+		go lm.call(v, h)
+	}
+}
+
+func (lm *ListenerMux) call(v []reflect.Value, handler reflect.Value) {
+	out := handler.Call(v)
+	if l := len(out); l > 0 {
+		err, ok := out[l-1].Interface().(error)
+		if ok && err != nil && lm.ErrHandler != nil {
+			lm.ErrHandler(err)
 		}
 	}
 }
