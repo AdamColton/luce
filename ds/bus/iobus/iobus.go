@@ -47,7 +47,6 @@ func (brc ReaderConfig) New(r io.Reader) *Reader {
 }
 
 func (br *Reader) run(r io.Reader) {
-
 	bufSize := br.BufSize
 	if bufSize < 1 {
 		bufSize = int(BufSize)
@@ -111,6 +110,19 @@ type ReadWriter struct {
 // NewReadWriter runs both a Reader and a BusWriter on an io.ReaderWriter.
 func NewReadWriter(rw io.ReadWriter) *ReadWriter {
 	br := NewReader(rw)
+	out := make(chan []byte)
+	go Writer(rw, out, br.errCh)
+	return &ReadWriter{
+		Reader: br,
+		Out:    out,
+	}
+}
+
+// NewReadWriter runs both a Reader and a BusWriter on an io.ReaderWriter using
+// the ReaderConfig for the reader.
+func (brc ReaderConfig) NewReadWriter(rw io.ReadWriter) *ReadWriter {
+	br := brc.New(rw)
+
 	out := make(chan []byte)
 	go Writer(rw, out, br.errCh)
 	return &ReadWriter{
