@@ -49,12 +49,28 @@ func main() {
 						},
 					},
 				},
+				{
+					Name:    "filter",
+					Aliases: []string{"f"},
+					Action:  filter,
+					Usage:   "Generate a chunk of filter code",
+					Flags: []cli.Flag{
+						&cli.StringFlag{
+							Name:  "t",
+							Usage: "Name of the type generated",
+						},
+						&cli.StringFlag{
+							Name:  "r",
+							Usage: "Receiver",
+						},
+					},
+				},
 			},
 		},
 		{
 			Name:    "socketclient",
-			Action:  socketclient,
 			Aliases: []string{"sc"},
+			Action:  socketclient,
 			Usage:   "Connect to a unixsocket",
 		},
 	}
