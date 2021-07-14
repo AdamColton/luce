@@ -26,7 +26,11 @@ func (b *bufMux) Read(p []byte) (int, error) {
 	}
 	b.Lock()
 	defer b.Unlock()
-	return b.Buffer.Read(p)
+	n, err := b.Buffer.Read(p)
+	if err == io.EOF {
+		err = nil
+	}
+	return n, err
 }
 
 func (b *bufMux) Write(p []byte) (int, error) {
@@ -42,7 +46,9 @@ func TestBasic(t *testing.T) {
 	buf := &bufMux{
 		Buffer: bytes.NewBuffer(nil),
 	}
-	rw := iobus.NewReadWriter(buf)
+	rw := iobus.Config{
+		CloseOnEOF: true,
+	}.NewReadWriter(buf)
 
 	done := make(chan bool, 1)
 
@@ -80,7 +86,6 @@ func TestBasic(t *testing.T) {
 	case <-done:
 	}
 
-	rw.CloseOnEOF = true
 	buf.err = io.EOF
 
 	select {
@@ -115,4 +120,34 @@ func TestWriteError(t *testing.T) {
 	w <- []byte("this is a test")
 
 	assert.Equal(t, err, <-errCh)
+}
+
+func TestLong(t *testing.T) {
+	msg := make([]byte, 1000)
+	rand.Read(msg)
+
+	cfg := iobus.Config{
+		PrefixMessageLength: true,
+		CloseOnEOF:          true,
+	}
+
+	buf := bytes.NewBuffer(nil)
+	in, _ := cfg.NewWriter(buf)
+
+	in <- msg
+	out, _ := cfg.NewReader(buf)
+	timeout.After(100, func() { assert.Equal(t, msg, <-out) })
+	close(in)
+
+	// demonstrate that without Prefix message comes through in two parts
+	cfg.PrefixMessageLength = false
+
+	buf = bytes.NewBuffer(nil)
+	in, _ = cfg.NewWriter(buf)
+
+	in <- msg
+	out, _ = cfg.NewReader(buf)
+	timeout.After(100, func() { assert.Equal(t, msg[:iobus.BufSize], <-out) })
+	timeout.After(100, func() { assert.Equal(t, msg[iobus.BufSize:], <-out) })
+	close(in)
 }
