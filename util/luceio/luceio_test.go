@@ -55,9 +55,3 @@ func TestTemplate(t *testing.T) {
 	assert.Equal(t, "My name is testing", buf.String())
 	assert.Equal(t, int(n), len(buf.Bytes()))
 }
-
-func TestJoin(t *testing.T) {
-	assert.Equal(t, "a, b, c", Join("a", "b", "c", ", "))
-	assert.Equal(t, "a", Join("a", ", "))
-	assert.Equal(t, "", Join(", "))
-}
