@@ -2,7 +2,6 @@ package luceio
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 	"text/template"
 
@@ -23,27 +22,6 @@ func TestStringsWriter(t *testing.T) {
 	_, err := sw.WriteStrings("this", "is", "a", "test")
 	assert.NoError(t, err)
 	assert.Equal(t, "thisisatest", buf.String())
-}
-
-func TestSumWriter(t *testing.T) {
-	buf := &bytes.Buffer{}
-	sw := NewSumWriter(buf)
-	sw.WriteString("test")
-	sw.WriteInt(1)
-	sw.WriteRune('-')
-	sw.Write([]byte("test2"))
-	i, err := sw.WriterTo(StringWriterTo("-test3"))
-	assert.NoError(t, err)
-	assert.Equal(t, int64(6), i)
-	assert.NoError(t, sw.Err)
-	expectErr := fmt.Errorf("test error")
-	sw.Err = expectErr
-	sw.WriteString("test3")
-	i, err = sw.Rets()
-	assert.Equal(t, expectErr, err)
-	assert.Equal(t, "test1-test2-test3", buf.String())
-	assert.Equal(t, int64(17), i)
-
 }
 
 func TestMany(t *testing.T) {

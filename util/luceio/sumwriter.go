@@ -1,6 +1,7 @@
 package luceio
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strconv"
@@ -17,6 +18,13 @@ type SumWriter struct {
 // NewSumWriter takes a Writer and returns a SumWriter
 func NewSumWriter(w io.Writer) *SumWriter {
 	return &SumWriter{Writer: w}
+}
+
+// BufferSumWriter creates a new buffer passing it into the SumWriter and
+// returns both.
+func BufferSumWriter() (*bytes.Buffer, *SumWriter) {
+	buf := bytes.NewBuffer(nil)
+	return buf, NewSumWriter(buf)
 }
 
 // WriteString writes a string to underlying Writer
@@ -77,4 +85,17 @@ func (s *SumWriter) WriterTo(w io.WriterTo) (int64, error) {
 // Fprint wraps a call to Sprintf.
 func (s *SumWriter) Fprint(format string, args ...interface{}) (int, error) {
 	return s.WriteString(fmt.Sprintf(format, args...))
+}
+
+//
+func (s *SumWriter) Join(elems []string, sep string) (int, error) {
+	sum := len(sep) * (len(elems) - 1)
+	n, _ := s.WriteString(elems[0])
+	sum += n
+	for _, e := range elems[1:] {
+		s.WriteString(sep)
+		n, _ = s.WriteString(e)
+		sum += n
+	}
+	return sum, s.Err
 }
