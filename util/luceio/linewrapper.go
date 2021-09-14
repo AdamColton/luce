@@ -93,11 +93,11 @@ func (w *LineWrappingWriter) Write(b []byte) (int, error) {
 	for i < len(b) {
 		r, size := utf8.DecodeRune(b[i:])
 		if r == '\n' {
+			i += size
 			w.SumWriter.Write(b[start:i])
 			w.SumWriter.Write(w.padding)
 			w.onNewLine = true
 			lineLen = w.lnPad
-			i += size
 			start = i // skip \n
 			done = true
 			continue

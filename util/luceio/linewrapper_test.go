@@ -10,7 +10,7 @@ import (
 func TestBasicWrapping(t *testing.T) {
 	text := []byte("aggrandize epistolography playwoman unreformable wretched supinate reassort relent kurchicine lithophyllous trilingual inventiveness historicoprophetic Bereshith musal unempty Lagothrix symbological zechin soundlessly arylate fetterbush probationism pluriseptate")
 
-	buf := &bytes.Buffer{}
+	buf := bytes.NewBuffer(make([]byte, 0, 300))
 	w := NewLineWrappingWriter(buf)
 	w.Write(text)
 	expected := `aggrandize epistolography playwoman unreformable wretched supinate reassort
@@ -75,5 +75,18 @@ func TestContinueWrapping(t *testing.T) {
 	w.Write([]byte(" wretched supinate reassort relent kurchicine lithophyllous"))
 	expected := `aggrandize epistolography playwoman unreformable wretched supinate reassort
 relent kurchicine lithophyllous`
+	assert.Equal(t, expected, buf.String())
+}
+
+func TestHandleNewLine(t *testing.T) {
+	text := []byte("aggrandize epistolography playwoman unreformable wretched supinate reassort relent kurchicine lithophyllous\ntrilingual inventiveness historicoprophetic Bereshith musal unempty Lagothrix symbological zechin soundlessly arylate fetterbush probationism pluriseptate")
+
+	buf := &bytes.Buffer{}
+	w := NewLineWrappingWriter(buf)
+	w.Write(text)
+	expected := `aggrandize epistolography playwoman unreformable wretched supinate reassort
+relent kurchicine lithophyllous
+trilingual inventiveness historicoprophetic Bereshith musal unempty Lagothrix
+symbological zechin soundlessly arylate fetterbush probationism pluriseptate`
 	assert.Equal(t, expected, buf.String())
 }
