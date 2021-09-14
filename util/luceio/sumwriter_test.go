@@ -1,6 +1,7 @@
 package luceio_test
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/adamcolton/luce/util/luceio"
@@ -30,4 +31,15 @@ func TestSumWriterJoin(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, int(14), n)
 	assert.Equal(t, "this is a test", b.String())
+}
+
+func TestSumWriterTo(t *testing.T) {
+	out, sw := luceio.BufferSumWriter()
+
+	s := "this is a test"
+	in := bytes.NewBufferString(s)
+	n, err := sw.WriterTo(in)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(14), n)
+	assert.Equal(t, s, out.String())
 }
