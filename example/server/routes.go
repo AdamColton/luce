@@ -17,6 +17,8 @@ func (s *Server) routes() {
 	m := midware.New(
 		s.Users,
 		midware.NewDecoder(formdecoder.New(), "Form"),
+		midware.NewWebSocket().Initilizer("To", "From", "Socket"),
+		midware.NewRedirect("Redirect"),
 	)
 	r := s.Router
 
@@ -30,17 +32,12 @@ func (s *Server) routes() {
 
 	r.HandleFunc("/user/grid", s.GetUserGrid).Methods("GET")
 
-	ws := midware.NewWebSocket()
 	r.HandleFunc("/websocket", s.GetWebsocket).Methods("GET")
-	r.HandleFunc("/websocket/connect", ws.HandleSocketChans(s.WebSocket))
+	r.HandleFunc("/websocket/connect", m.Handle(s.WebSocket))
 
 	r.HandleFunc("/token", s.tokens.Post).Methods("POST")
 
 	r.HandleFunc("/logout", m.Handle(s.Logout)).Methods("GET")
-}
-
-func redirect(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (s *Server) Template(w io.Writer, name string, data interface{}) {
@@ -54,7 +51,7 @@ func (s *Server) Template(w io.Writer, name string, data interface{}) {
 
 }
 
-func (s *Server) Home(w http.ResponseWriter, r *http.Request, data struct {
+func (s *Server) Home(w http.ResponseWriter, r *http.Request, data *struct {
 	Session *lusess.Session
 }) {
 	s.Template(w, "home.html", data.Session.User())
@@ -65,18 +62,19 @@ func (s *Server) GetWebsocket(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) Logout(w http.ResponseWriter, r *http.Request, data struct {
-	Session *lusess.Session
+	Session  *lusess.Session
+	Redirect string
 }) {
 	data.Session.Logout()
-	data.Session.Save()
-	redirect(w, r)
+	data.Redirect = "/"
 }
 
 func (s *Server) GetLogin(w http.ResponseWriter, r *http.Request, data struct {
-	Session *lusess.Session
+	Session  *lusess.Session
+	Redirect string
 }) {
 	if data.Session.User() != nil {
-		redirect(w, r)
+		data.Redirect = "/"
 	} else {
 		s.login(w, r, "")
 	}
@@ -90,9 +88,10 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request, message string) {
 	})
 }
 
-func (s *Server) PostLogin(w http.ResponseWriter, r *http.Request, data struct {
-	Session *lusess.Session
-	Form    *lusess.Login
+func (s *Server) PostLogin(w http.ResponseWriter, r *http.Request, data *struct {
+	Session  *lusess.Session
+	Form     *lusess.Login
+	Redirect string
 }) {
 	_, err := data.Session.Login(data.Form)
 	if err != nil {
@@ -101,10 +100,10 @@ func (s *Server) PostLogin(w http.ResponseWriter, r *http.Request, data struct {
 	}
 	data.Session.Save()
 
-	redirect(w, r)
+	data.Redirect = "/"
 }
 
-func (s *Server) GetCreateUser(w http.ResponseWriter, r *http.Request, data struct {
+func (s *Server) GetCreateUser(w http.ResponseWriter, r *http.Request, data *struct {
 	Session *lusess.Session
 }) {
 	if s.Settings.AdminLockUserCreation {
@@ -117,11 +116,12 @@ func (s *Server) GetCreateUser(w http.ResponseWriter, r *http.Request, data stru
 	s.Template(w, "createUser.html", nil)
 }
 
-func (s *Server) PostCreateUser(w http.ResponseWriter, r *http.Request, data struct {
+func (s *Server) PostCreateUser(w http.ResponseWriter, r *http.Request, data *struct {
 	Session *lusess.Session
 	Form    *struct {
 		Username, Password, Again string
 	}
+	Redirect string
 }) {
 	currentUser := data.Session.User()
 	if s.Settings.AdminLockUserCreation {
@@ -162,7 +162,7 @@ func (s *Server) PostCreateUser(w http.ResponseWriter, r *http.Request, data str
 		}
 	}
 
-	redirect(w, r)
+	data.Redirect = "/"
 }
 
 func (s *Server) GetUserGrid(w http.ResponseWriter, r *http.Request) {

@@ -20,7 +20,10 @@ type wsInstance struct {
 	u    *lusers.User
 }
 
-func (s *Server) WebSocket(to chan<- []byte, from <-chan []byte, r *http.Request) {
+func (s *Server) WebSocket(w http.ResponseWriter, r *http.Request, data *struct {
+	To   chan<- []byte
+	From <-chan []byte
+}) {
 	tm := typestring.NewTypeMap(
 		(*login)(nil),
 		(*loginStatus)(nil),
@@ -29,13 +32,13 @@ func (s *Server) WebSocket(to chan<- []byte, from <-chan []byte, r *http.Request
 	wsi := &wsInstance{
 		send: &serialbus.Sender{
 			TypeSerializer: tm.WriterSerializer(json.Serialize),
-			Chan:           to,
+			Chan:           data.To,
 		},
 		s: s,
 	}
 
 	l, err := bus.NewListener(&serialbus.Receiver{
-		In:               from,
+		In:               data.From,
 		TypeDeserializer: tm.ReaderDeserializer(json.Deserialize),
 		TypeRegistrar:    tm,
 	}, nil, nil)
@@ -43,7 +46,6 @@ func (s *Server) WebSocket(to chan<- []byte, from <-chan []byte, r *http.Request
 	bus.RegisterHandlerType(l, wsi)
 
 	l.Run()
-	close(to)
 }
 
 type login struct {
