@@ -39,3 +39,14 @@ func TestNewPanics(t *testing.T) {
 
 	assert.PanicsWithValue(t, boom, func() { New(0) })
 }
+
+func TestBase64(t *testing.T) {
+	k := New(0)
+
+	got, err := Parse(k.String())
+	assert.NoError(t, err)
+	assert.Equal(t, k, got)
+
+	_, err = Parse("not base64!")
+	assert.Error(t, err)
+}
