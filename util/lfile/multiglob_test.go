@@ -33,3 +33,37 @@ func TestMultiglob(t *testing.T) {
 	_, err = MultiGlob{"]]] == bad pattern == [[["}.Filenames()
 	assert.Equal(t, filepath.ErrBadPattern, err)
 }
+
+func TestMultiGlobIter(t *testing.T) {
+	restoreGlob := Glob
+	restoreReadFile := ReadFile
+	defer func() { Glob, ReadFile = restoreGlob, restoreReadFile }()
+
+	ReadFile = func(filename string) ([]byte, error) {
+		return []byte(filename), nil
+	}
+
+	mockdir := map[string][]string{
+		"foo*":  {"foo", "fooer", "foo.bar"},
+		"*.bar": {"foo.bar", "bar.bar"},
+	}
+	Glob = func(pattern string) ([]string, error) {
+		matches, found := mockdir[pattern]
+		if found {
+			return matches, nil
+		}
+		return nil, filepath.ErrBadPattern
+	}
+
+	c := 0
+	for i, done := (MultiGlob{"foo*", "*.bar"}).Iter(true); !done; done = i.Next() {
+		c++
+		assert.Equal(t, i.Filename, string(i.Data))
+	}
+	assert.Equal(t, 4, c)
+
+	i, done := MultiGlob{"]]] == bad pattern == [[["}.Iter(true)
+	assert.True(t, done)
+	assert.Equal(t, filepath.ErrBadPattern, i.Err)
+
+}

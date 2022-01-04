@@ -33,3 +33,13 @@ func (mg MultiGlob) Filenames() ([]string, error) {
 	}
 	return out, nil
 }
+
+// Iter will iterate over the files found by the MultiGlob.
+func (mg MultiGlob) Iter(autoload bool) (i *Iter, done bool) {
+	fs, err := mg.Filenames()
+	if err != nil {
+		return &Iter{Err: err}, true
+	}
+
+	return Filenames(fs).Iter(autoload)
+}
