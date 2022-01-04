@@ -3,6 +3,7 @@ package key
 import (
 	"bytes"
 	"crypto/rand"
+	"encoding/base64"
 	"strconv"
 )
 
@@ -26,6 +27,11 @@ func New(ln int) Key {
 	return Key(key)
 }
 
+// String creates a key from a base64 URLEncoded string.
+func String(s string) (Key, error) {
+	return base64.URLEncoding.DecodeString(s)
+}
+
 // Code converts the key to a string of Go code.
 func (k Key) Code() string {
 	buf := bytes.NewBuffer(nil)
@@ -38,4 +44,9 @@ func (k Key) Code() string {
 	}
 	buf.WriteString("}")
 	return buf.String()
+}
+
+// String fulfills stringer and encodes the key using base64 URLEncoding.
+func (k Key) String() string {
+	return base64.URLEncoding.EncodeToString(k)
 }
