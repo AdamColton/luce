@@ -25,3 +25,11 @@ func TestCode(t *testing.T) {
 
 	assert.Equal(t, "[]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31}", New(0).Code())
 }
+
+func TestBase64(t *testing.T) {
+	k := New(0)
+
+	got, err := String(k.String())
+	assert.NoError(t, err)
+	assert.Equal(t, k, got)
+}
