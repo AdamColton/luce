@@ -11,15 +11,15 @@ import (
 
 var tm = type32.NewTypeMap()
 
-func init() {
-	gob.Register((Routes)(nil))
-	gob.Register(Request{})
-	gob.Register(Response{})
-	gob.Register(SocketOpened{})
-	gob.Register(SocketClose{})
-	gob.Register(SocketMessage{})
+func Register(zeroValues ...type32.TypeIDer32) {
+	for _, z := range zeroValues {
+		gob.Register(z)
+	}
+	tm.RegisterType32s(zeroValues...)
+}
 
-	tm.RegisterType32s(
+func init() {
+	Register(
 		(Routes)(nil),
 		Request{},
 		Response{},
