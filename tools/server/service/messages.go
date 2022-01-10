@@ -51,8 +51,8 @@ func (*Request) TypeID32() uint32 {
 }
 
 // Response to the Request.
-func (r *Request) Response(body []byte) Response {
-	return Response{
+func (r *Request) Response(body []byte) *Response {
+	return &Response{
 		ID:     r.ID,
 		Body:   body,
 		Status: http.StatusOK,
@@ -60,7 +60,7 @@ func (r *Request) Response(body []byte) Response {
 }
 
 // ResponseString to the Request.
-func (r *Request) ResponseString(body string) Response {
+func (r *Request) ResponseString(body string) *Response {
 	return r.Response([]byte(body))
 }
 
@@ -94,9 +94,18 @@ func (*Response) TypeID32() uint32 {
 	return 370114636
 }
 
-func (r Response) SetStatus(status int) Response {
+func (r *Response) SetStatus(status int) *Response {
 	r.Status = status
 	return r
+}
+
+func (r *Response) Write(p []byte) (n int, err error) {
+	if r.Body == nil {
+		r.Body = p
+	} else {
+		r.Body = append(r.Body, p...)
+	}
+	return len(p), nil
 }
 
 type SocketOpened struct {

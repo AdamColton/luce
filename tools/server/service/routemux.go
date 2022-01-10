@@ -1,10 +1,10 @@
 package service
 
 // RequestHandler will handle a request but it will not respond to it.
-type RequestHandler func(r Request)
+type RequestHandler func(r *Request)
 
 // RequestResponder will hand a request and return a reponse.
-type RequestResponder func(r Request) Response
+type RequestResponder func(r *Request) *Response
 
 // Mux maps the Requests to their handlers.
 type Mux struct {
@@ -20,7 +20,7 @@ func NewMux() *Mux {
 }
 
 // Handle a request. If there is no handler, nothing happens.
-func (m *Mux) Handle(r Request) {
+func (m *Mux) Handle(r *Request) {
 	h, found := m.Handlers[r.RouteConfig]
 	if !found {
 		return

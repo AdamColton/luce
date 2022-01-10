@@ -56,7 +56,7 @@ func (c *Client) Run() {
 // route.
 func (c *Client) Add(h RequestResponder, r *RouteConfig) {
 	lerr.Panic(r.Validate())
-	fn := func(req Request) {
+	fn := func(req *Request) {
 		c.Sender.Send(h(req))
 	}
 	c.Mux.Add(fn, r)
