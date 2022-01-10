@@ -81,6 +81,15 @@ func (r *Response) SetStatus(status int) *Response {
 	return r
 }
 
+func (r *Response) Write(p []byte) (n int, err error) {
+	if r.Body == nil {
+		r.Body = p
+	} else {
+		r.Body = append(r.Body, p...)
+	}
+	return len(p), nil
+}
+
 type SocketOpened struct {
 	ID uint32
 }
