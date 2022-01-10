@@ -28,3 +28,24 @@ func (h ErrHandler) Check(w http.ResponseWriter, r *http.Request, err error) boo
 	}
 	return isErr
 }
+
+// StatusCoder allows errors to indicate the status code they should return.
+type StatusCoder interface {
+	StatusCode() int
+}
+
+// StatusCodeWrapper combines an error and a status code.
+type StatusCodeWrapper struct {
+	Err    error
+	Status int
+}
+
+// Error fullfils error.
+func (scw StatusCodeWrapper) Error() string {
+	return scw.Err.Error()
+}
+
+// StatusCode fulfills StatusCoder.
+func (scw StatusCodeWrapper) StatusCode() int {
+	return scw.Status
+}

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/adamcolton/luce/lhttp"
 	"github.com/adamcolton/luce/serial/type32"
 	"github.com/adamcolton/luce/util/lusers"
 )
@@ -61,6 +62,23 @@ func (r *Request) Response(body []byte) Response {
 // ResponseString to the Request.
 func (r *Request) ResponseString(body string) Response {
 	return r.Response([]byte(body))
+}
+
+// ResponseError to the Request. If status==0 and err implements
+// lhttp.StatusCoder, that status code will be used.
+func (r *Request) ResponseError(err error, status int) *Response {
+	var resp *Response
+	if err == nil {
+		resp = r.Response(nil)
+	} else {
+		resp = r.ResponseString(err.Error())
+	}
+	if status == 0 {
+		if sc, ok := err.(lhttp.StatusCoder); ok {
+			resp.SetStatus(sc.StatusCode())
+		}
+	}
+	return resp
 }
 
 // Response to a request. The ID is the same as the ID is taken from the
