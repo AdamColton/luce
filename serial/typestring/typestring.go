@@ -167,6 +167,9 @@ func (tm typeMap) Serializer(s serial.Serializer) serial.PrefixSerializer {
 	}
 }
 
+// WriterSerializer accepts a WriterSerializer func, which automatically casts
+// it to that type so it can be passed into Serializer because
+// serial.WriterSerializer fulfills serial.Serializer.
 func (tm typeMap) WriterSerializer(s serial.WriterSerializer) serial.PrefixSerializer {
 	return tm.Serializer(s)
 }
@@ -180,6 +183,9 @@ func (tm typeMap) Deserializer(d serial.Deserializer) serial.PrefixDeserializer 
 	}
 }
 
+// ReaderDeserializer accepts a ReaderDeserializer func, which automatically
+// casts it to that type so it can be passed into Deserializer because
+// serial.WriterSerializer fulfills serial.Deserializer.
 func (tm typeMap) ReaderDeserializer(d serial.ReaderDeserializer) serial.PrefixDeserializer {
 	return tm.Deserializer(d)
 }

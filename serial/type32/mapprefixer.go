@@ -13,11 +13,11 @@ type MapPrefixer map[reflect.Type]uint32
 // PrefixReflectType fulfills ReflectTypePrefixer. It will prefix with 4 bytes.
 func (p MapPrefixer) PrefixReflectType(t reflect.Type, b []byte) ([]byte, error) {
 	if p == nil {
-		return b, ErrTypeNotFound
+		return b, ErrTypeNotFound{t}
 	}
 	u, ok := p[t]
 	if !ok {
-		return b, ErrTypeNotFound
+		return b, ErrTypeNotFound{t}
 	}
 	ln := len(b)
 	b = checkLn(b)
