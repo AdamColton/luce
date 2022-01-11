@@ -71,7 +71,7 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 		sc.respMap[req.ID] = ch
 		sc.mapLock.Unlock()
 
-		err := sc.Sender.Send(*req)
+		err := sc.Sender.Send(req)
 		lerr.Panic(err)
 		select {
 		case resp := <-ch:
