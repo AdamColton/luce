@@ -1,6 +1,20 @@
 package type32
 
-import "github.com/adamcolton/luce/serial/rye"
+import (
+	"fmt"
+	"reflect"
+
+	"github.com/adamcolton/luce/serial/rye"
+)
+
+type ErrTypeNotFound struct {
+	reflect.Type
+}
+
+// Error fulfills error.
+func (err ErrTypeNotFound) Error() string {
+	return fmt.Sprintf("Type %s was not found", err.Type)
+}
 
 func checkLn(b []byte) []byte {
 	// TODO: move this to slice

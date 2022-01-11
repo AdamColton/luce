@@ -13,7 +13,6 @@ const (
 	ErrNotRegistered = lerr.Str("No type registered")
 	ErrSerNotT32     = lerr.Str("Serialize requires interface to be TypeIDer32")
 	ErrNilZero       = lerr.Str("TypeID32Deserializer.Register) cannot register nil interface")
-	ErrTypeNotFound  = lerr.Str("Type was not found")
 )
 
 // TypeIDer32 identifies a type by a uint32. The uint32 size was chosen becuase

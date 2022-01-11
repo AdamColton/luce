@@ -13,7 +13,7 @@ func TestMapPrefixer(t *testing.T) {
 	strTp := reflector.Type[string]()
 	var mp type32.MapPrefixer
 	_, err := mp.PrefixReflectType(strTp, nil)
-	assert.Equal(t, type32.ErrTypeNotFound, err)
+	assert.Equal(t, type32.ErrTypeNotFound{strTp}, err)
 
 	mp = make(type32.MapPrefixer)
 	mp[strTp] = 1234
@@ -25,12 +25,19 @@ func TestMapPrefixer(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expected, b)
 
-	check, err := mp.PrefixReflectType(reflector.Type[int](), b)
+	intTp := reflector.Type[int]()
+	check, err := mp.PrefixReflectType(intTp, b)
 	assert.Equal(t, b, check)
-	assert.Equal(t, type32.ErrTypeNotFound, err)
+	assert.Equal(t, type32.ErrTypeNotFound{intTp}, err)
 
 	s := mp.Serializer(nil)
 	b, err = s.PrefixInterfaceType("test", b[:0])
 	assert.NoError(t, err)
 	assert.Equal(t, expected, b)
+}
+
+func TestErrTypeNotFound(t *testing.T) {
+	intTp := reflector.Type[int]()
+	assert.Equal(t, "Type int was not found", type32.ErrTypeNotFound{intTp}.Error())
+
 }

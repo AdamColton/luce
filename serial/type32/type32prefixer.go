@@ -1,6 +1,8 @@
 package type32
 
 import (
+	"reflect"
+
 	"github.com/adamcolton/luce/serial"
 	"github.com/adamcolton/luce/serial/rye"
 )
@@ -14,7 +16,7 @@ type Type32Prefixer struct{}
 func (Type32Prefixer) PrefixInterfaceType(i interface{}, b []byte) ([]byte, error) {
 	t32, ok := i.(TypeIDer32)
 	if !ok {
-		return nil, ErrTypeNotFound
+		return nil, ErrTypeNotFound{reflect.TypeOf(i)}
 	}
 	ln := len(b)
 	b = checkLn(b)
