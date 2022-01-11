@@ -7,11 +7,14 @@ import (
 	"sort"
 
 	"github.com/adamcolton/luce/tools/server/service"
+	"github.com/adamcolton/luce/util/lfile"
 )
 
 type Handler func(path string, file *os.File, req *service.Request) *service.Response
 
-func Wrap(fn func([]byte, *service.Request) *service.Response) Handler {
+type ByteHandler func([]byte, *service.Request) *service.Response
+
+func Wrap(fn ByteHandler) Handler {
 	return func(path string, f *os.File, req *service.Request) *service.Response {
 		b, err := ioutil.ReadAll(f)
 		if err != nil {
@@ -21,19 +24,29 @@ func Wrap(fn func([]byte, *service.Request) *service.Response) Handler {
 	}
 }
 
+type DirHandler func(*DirContents, *service.Request) *service.Response
+
+func WrapDir(fn DirHandler) Handler {
+	return func(path string, f *os.File, req *service.Request) *service.Response {
+		dc, err := GetDirContents(f)
+		if err != nil {
+			return req.ResponseError(err, 500)
+		}
+		dc.Path = path
+		return fn(dc, req)
+	}
+}
+
 var (
 	HandleBinary = Wrap(func(b []byte, req *service.Request) *service.Response {
 		return req.Response(b)
 	})
+	HandleDir = WrapDir(JsonDir)
 )
 
-func HandleDir(path string, f *os.File, req *service.Request) *service.Response {
-	dc, err := GetDirContents(f)
-	if err != nil {
-		return req.ResponseError(err, 500)
-	}
+func JsonDir(dc *DirContents, req *service.Request) *service.Response {
 	resp := req.Response(nil)
-	err = json.NewEncoder(resp).Encode(dc)
+	err := json.NewEncoder(resp).Encode(dc)
 	if err != nil {
 		return req.ResponseError(err, 500)
 	}
@@ -41,11 +54,17 @@ func HandleDir(path string, f *os.File, req *service.Request) *service.Response 
 }
 
 type DirContents struct {
-	SubDirs []string
-	Files   []string
+	Name, Path string
+	SubDirs    []string
+	Files      []string
 }
 
-func GetDirContents(f *os.File) (*DirContents, error) {
+type Dir interface {
+	ReadDir(n int) ([]os.DirEntry, error)
+	Name() string
+}
+
+func GetDirContents(f Dir) (*DirContents, error) {
 	fs, err := f.ReadDir(-1)
 	if err != nil {
 		return nil, err
@@ -65,7 +84,9 @@ func GetDirContents(f *os.File) (*DirContents, error) {
 	}
 	sort.Strings(out[:dIdx])
 	sort.Strings(out[dIdx:])
+	name := lfile.Name(f.Name())
 	dc := &DirContents{
+		Name:    name,
 		SubDirs: out[:dIdx],
 		Files:   out[dIdx:],
 	}

@@ -25,28 +25,41 @@ func (s *Service) Handler(req *service.Request) *service.Response {
 		return req.ResponseError(err, 404)
 	}
 
-	var h Handler = HandleBinary
-	if info, err := f.Stat(); err != nil {
+	info, err := f.Stat()
+	if err != nil {
 		return req.ResponseError(err, 500)
-	} else if info.IsDir() {
-		if s.HandleDir != nil {
-			h = s.HandleDir
-		} else {
-			h = HandleDir
-		}
-	} else {
-		ext := filepath.Ext(path)
-		sh, found := s.Handlers[ext]
-		if found {
-			h = sh
-		} else {
-			ph, found := s.parent.Handlers[ext]
-			if found {
-				h = ph
-			}
+	}
+
+	h := s.getHandler(info.IsDir(), path)
+	return h(path, f, req)
+}
+
+func (s *Service) getHandler(isDir bool, path string) Handler {
+	if isDir {
+		return s.getDirHandler()
+	}
+	return s.getFileHandler(path)
+}
+
+func (s *Service) getDirHandler() Handler {
+	if s.HandleDir != nil {
+		return s.HandleDir
+	}
+	return HandleDir
+}
+
+func (s *Service) getFileHandler(path string) Handler {
+	ext := filepath.Ext(path)
+	if s.Handlers != nil {
+		if h, found := s.Handlers[ext]; found {
+			return h
 		}
 	}
-	return h(path, f, req)
+	h, found := s.parent.Handlers[ext]
+	if found {
+		return h
+	}
+	return HandleBinary
 }
 
 func (s *Service) Register(conn *service.Client) {
@@ -68,12 +81,14 @@ func New() *Services {
 	}
 }
 
-func (s *Services) New(baseURL, rootDir string) *Service {
+func (s *Services) New(baseURL, rootDir string, handlers map[string]Handler, handleDir Handler) *Service {
 	baseURL = "/" + baseURL
 	srv := &Service{
-		BaseURL: baseURL,
-		RootDir: rootDir,
-		parent:  s,
+		BaseURL:   baseURL,
+		RootDir:   rootDir,
+		parent:    s,
+		Handlers:  handlers,
+		HandleDir: handleDir,
 	}
 	s.byURL[baseURL] = srv
 	return srv
