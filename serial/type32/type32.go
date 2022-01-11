@@ -1,6 +1,7 @@
 package type32
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/adamcolton/luce/lerr"
@@ -13,8 +14,15 @@ const (
 	ErrNotRegistered = lerr.Str("No type registered")
 	ErrSerNotT32     = lerr.Str("Serialize requires interface to be TypeIDer32")
 	ErrNilZero       = lerr.Str("TypeID32Deserializer.Register) cannot register nil interface")
-	ErrTypeNotFound  = lerr.Str("Type was not found")
 )
+
+type ErrTypeNotFound struct {
+	reflect.Type
+}
+
+func (err ErrTypeNotFound) Error() string {
+	return fmt.Sprintf("Type %s was not found", err.Type)
+}
 
 // TypeIDer32 identifies a type by a uint32. The uint32 size was chosen becuase
 // it should allow for plenty of TypeID32 types, but uses little overhead.
@@ -44,11 +52,11 @@ type MapPrefixer map[reflect.Type]uint32
 // PrefixReflectType fulfills ReflectTypePrefixer. It will prefix with 4 bytes.
 func (p MapPrefixer) PrefixReflectType(t reflect.Type, b []byte) ([]byte, error) {
 	if p == nil {
-		return nil, ErrTypeNotFound
+		return nil, ErrTypeNotFound{t}
 	}
 	u, ok := p[t]
 	if !ok {
-		return nil, ErrTypeNotFound
+		return nil, ErrTypeNotFound{t}
 	}
 	return append(b, uint32ToSlice(u)...), nil
 }
@@ -71,7 +79,7 @@ type Type32Prefixer struct{}
 func (Type32Prefixer) PrefixInterfaceType(i interface{}, b []byte) ([]byte, error) {
 	t32, ok := i.(TypeIDer32)
 	if !ok {
-		return nil, ErrTypeNotFound
+		return nil, ErrTypeNotFound{reflect.TypeOf(i)}
 	}
 	b = append(b, uint32ToSlice(t32.TypeID32())...)
 	return b, nil
