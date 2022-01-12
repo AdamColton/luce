@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 
 	"github.com/adamcolton/luce/tools/server/service"
 )
@@ -26,14 +27,23 @@ func main() {
 	conn.Run()
 }
 
+var hiTmpl = template.Must(template.New("sayHi").Parse(`<!DOCTYPE html>
+<html>
+	<head><title>Say Hi</title></head>
+	<body>Hi, {{.Name}}</body>
+</html>
+`))
+
 func SayHi(req *service.Request) *service.Response {
-	name := req.PathVars["name"]
-	if req.User != nil && req.User.Name != "" {
-		name = req.User.Name
+	n := struct {
+		Name string
+	}{
+		Name: req.PathVars["name"],
 	}
-	return req.ResponseString(
-		fmt.Sprintf("Hi, %s!", name),
-	)
+	if req.User != nil && req.User.Name != "" {
+		n.Name = req.User.Name
+	}
+	return req.ResponseTemplate("", hiTmpl, n)
 }
 
 func Query(req *service.Request) *service.Response {
