@@ -53,6 +53,9 @@ type RouteConfig struct {
 	Body       bool
 	User       bool
 	Query      bool
+	Require    struct {
+		Group string
+	}
 }
 
 const ErrPathRequired = lerr.Str("RouteConfig: Path is required")
@@ -92,8 +95,22 @@ func (r *RouteConfig) WithUser() *RouteConfig {
 	return r
 }
 
+func (r *RouteConfig) WithBody() *RouteConfig {
+	r.Body = true
+	return r
+}
+
 func (r *RouteConfig) WithPrefix() *RouteConfig {
 	r.PathPrefix = true
+	return r
+}
+
+func (r *RouteConfig) RequireGroup(group string) *RouteConfig {
+	if r.Require.Group == "" {
+		r.Require.Group = group
+	} else {
+		r.Require.Group += "," + group
+	}
 	return r
 }
 
