@@ -1,12 +1,14 @@
 package service
 
 import (
+	"bytes"
 	"encoding/gob"
 	"net/http"
 	"net/url"
 
 	"github.com/adamcolton/luce/lhttp"
 	"github.com/adamcolton/luce/serial/type32"
+	"github.com/adamcolton/luce/util/luceio"
 	"github.com/adamcolton/luce/util/lusers"
 )
 
@@ -55,6 +57,29 @@ func (r *Request) Response(body []byte) *Response {
 	return &Response{
 		ID:     r.ID,
 		Body:   body,
+		Status: http.StatusOK,
+	}
+}
+
+func (r *Request) ResponseTemplate(name string, t luceio.TemplateExecutor, data interface{}) *Response {
+	buf := bytes.NewBuffer(nil)
+	var err error
+	if name == "" {
+		err = t.Execute(buf, data)
+	} else {
+		err = t.ExecuteTemplate(buf, name, data)
+	}
+	if err != nil {
+		return &Response{
+			ID:     r.ID,
+			Body:   []byte(err.Error()),
+			Status: http.StatusInternalServerError,
+		}
+	}
+
+	return &Response{
+		ID:     r.ID,
+		Body:   buf.Bytes(),
 		Status: http.StatusOK,
 	}
 }
