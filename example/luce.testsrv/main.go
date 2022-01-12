@@ -24,6 +24,11 @@ func main() {
 		g.GetQuery("query").WithPrefix(),
 	)
 
+	conn.Add(
+		Admin,
+		g.GetQuery("admin").RequireGroup("admin"),
+	)
+
 	conn.Run()
 }
 
@@ -50,4 +55,8 @@ func Query(req *service.Request) *service.Response {
 	r := req.Response(nil)
 	fmt.Fprintf(r, "Query: %v Path: %v", req.Query, req.Path)
 	return r
+}
+
+func Admin(req *service.Request) *service.Response {
+	return req.ResponseString("You are admin")
 }

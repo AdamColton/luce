@@ -8,6 +8,18 @@ import (
 	"github.com/adamcolton/luce/lhttp"
 )
 
+type Require struct {
+	Group string
+}
+
+func (r *Require) RequireGroup(group string) {
+	if r.Group == "" {
+		r.Group = group
+	} else {
+		r.Group += "," + group
+	}
+}
+
 // Routes holds a collection of RouteConfigs.
 type Routes []RouteConfig
 
@@ -19,6 +31,7 @@ func (Routes) TypeID32() uint32 {
 // RouteConfigGen is used to create RouteConfigs from a Base path.
 type RouteConfigGen struct {
 	Base string
+	Require
 }
 
 func NewRouteConfigGen(basePath string) *RouteConfigGen {
@@ -27,8 +40,15 @@ func NewRouteConfigGen(basePath string) *RouteConfigGen {
 	}
 }
 
+func (r *RouteConfigGen) RequireGroup(group string) *RouteConfigGen {
+	r.Require.RequireGroup(group)
+	return r
+}
+
 func (g *RouteConfigGen) Path(path string) *RouteConfig {
-	return NewRoute(lhttp.Join(g.Base, path))
+	r := NewRoute(lhttp.Join(g.Base, path))
+	r.Require = g.Require
+	return r
 }
 
 // Get creates a RouteConfig with a Path of Base+path at
@@ -60,6 +80,7 @@ type RouteConfig struct {
 	Body       bool
 	User       bool
 	Query      bool
+	Require
 }
 
 const ErrPathRequired = lerr.Str("RouteConfig: Path is required")
@@ -106,6 +127,11 @@ func (r *RouteConfig) WithBody() *RouteConfig {
 
 func (r *RouteConfig) WithPrefix() *RouteConfig {
 	r.PathPrefix = true
+	return r
+}
+
+func (r *RouteConfig) RequireGroup(group string) *RouteConfig {
+	r.Require.RequireGroup(group)
 	return r
 }
 
