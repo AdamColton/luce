@@ -27,6 +27,9 @@ func (u *User) CheckPassword(password string) error {
 }
 
 func (u *User) In(group string) bool {
+	if u == nil {
+		return false
+	}
 	idx := sort.Search(len(u.Groups), func(i int) bool {
 		return u.Groups[i] >= group
 	})
