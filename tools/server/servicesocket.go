@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/adamcolton/luce/ds/bus/serialbus"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/tools/server/service"
+	"github.com/adamcolton/luce/util/lusers"
 	"github.com/adamcolton/luce/util/unixsocket"
 	"github.com/gorilla/mux"
 )
@@ -66,6 +68,9 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 	cvrt := sc.routeConfigToRequestConverter(route)
 	h := func(w http.ResponseWriter, r *http.Request) {
 		req := cvrt(r)
+		if req == nil {
+			return
+		}
 		ch := make(chan *service.Response)
 		sc.mapLock.Lock()
 		sc.respMap[req.ID] = ch
@@ -104,7 +109,33 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 }
 
 func (sc *serviceConn) routeConfigToRequestConverter(cfg service.RouteConfig) func(r *http.Request) *service.Request {
+	var groups []string
+	if cfg.Require.Group != "" {
+		groups = strings.Split(cfg.Require.Group, ",")
+	}
+
 	return func(r *http.Request) *service.Request {
+		var u *lusers.User
+		if len(groups) > 0 || cfg.User {
+			u, _ = sc.s.Users.User(r)
+		}
+
+		if len(groups) > 0 {
+			if u == nil {
+				return nil
+			}
+			inGroup := false
+			for _, g := range groups {
+				if u.In(g) {
+					inGroup = true
+					break
+				}
+			}
+			if !inGroup {
+				return nil
+			}
+		}
+
 		out := &service.Request{
 			Path:        r.URL.Path,
 			RouteConfig: cfg.ID,
@@ -137,7 +168,6 @@ func (sc *serviceConn) routeConfigToRequestConverter(cfg service.RouteConfig) fu
 		}
 
 		if cfg.User {
-			u, _ := sc.s.Users.User(r)
 			out.User = u
 		}
 
