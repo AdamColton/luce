@@ -97,11 +97,15 @@ func (s *Services) New(baseURL, rootDir string, handlers map[string]Handler, han
 func (s *Services) Run(addr string) {
 	conn := service.MustClient(addr)
 
+	s.Register(conn)
+
+	conn.Run()
+}
+
+func (s *Services) Register(conn *service.Client) {
 	for _, srv := range s.byURL {
 		srv.Register(conn)
 	}
-
-	conn.Run()
 }
 
 func (s *Services) Handler(req *service.Request) *service.Response {
