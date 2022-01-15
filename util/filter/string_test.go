@@ -56,3 +56,40 @@ func TestContains(t *testing.T) {
 		})
 	}
 }
+
+func TestRegex(t *testing.T) {
+	tt := map[string]map[string]bool{
+		"ca*t": {
+			"cat":         true,
+			"ct":          true,
+			"cot":         false,
+			"acat":        true,
+			"dogcatmouse": true,
+		},
+		"^ca*t$": {
+			"cat":         true,
+			"ct":          true,
+			"cot":         false,
+			"acat":        false,
+			"dogcatmouse": false,
+		},
+	}
+
+	for n, tc := range tt {
+		t.Run(n, func(t *testing.T) {
+			r := filter.MustRegex(n)
+			for s, expected := range tc {
+				assert.Equal(t, expected, r(s))
+			}
+			var err error
+			r, err = filter.Regex(n)
+			assert.NoError(t, err)
+			for s, expected := range tc {
+				assert.Equal(t, expected, r(s))
+			}
+		})
+	}
+
+	_, err := filter.Regex("bad [ regex")
+	assert.Error(t, err)
+}

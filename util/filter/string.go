@@ -1,6 +1,9 @@
 package filter
 
-import "strings"
+import (
+	"regexp"
+	"strings"
+)
 
 // Prefix creates a String filter that returns true when passed a string with
 // the given prefix.
@@ -24,4 +27,20 @@ func Contains(substr string) Filter[string] {
 	return func(s string) bool {
 		return strings.Contains(s, substr)
 	}
+}
+
+// Regex returns the MatchString method on regular expressions generated from
+// re.
+func Regex(re string) (Filter[string], error) {
+	r, err := regexp.Compile(re)
+	if err != nil {
+		return nil, err
+	}
+	return r.MatchString, nil
+}
+
+// Regex returns the MatchString method on regular expressions generated from
+// re. If re is not a valid regex it will panic.
+func MustRegex(re string) Filter[string] {
+	return regexp.MustCompile(re).MatchString
 }
