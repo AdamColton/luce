@@ -78,3 +78,10 @@ func setupForTestMultiGlobIter() func() {
 
 	return func() { Glob, ReadFile, Stat = restoreGlob, restoreReadFile, restoreStat }
 }
+
+func TestGlobRecursive(t *testing.T) {
+	mg := MultiGlob{"foo"}
+	mg = mg.Recursive("foo/", "bar")
+	expected := MultiGlob{"foo", "foo/bar", "foo/**/bar"}
+	assert.Equal(t, expected, mg)
+}

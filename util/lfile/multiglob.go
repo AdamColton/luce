@@ -43,3 +43,11 @@ func (mg MultiGlob) Iterator() (Iterator, bool) {
 
 	return Paths(fs).Iterator()
 }
+
+// Recursive adds two glob patterns, one to the base and one recursive.
+func (mg MultiGlob) Recursive(base, pattern string) MultiGlob {
+	return append(mg,
+		base+pattern,
+		base+"**/"+pattern,
+	)
+}
