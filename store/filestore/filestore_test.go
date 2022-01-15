@@ -15,7 +15,8 @@ func TestBasic(t *testing.T) {
 		b, _ := base64.RawURLEncoding.DecodeString(s)
 		return b
 	}
-	f, err := Factory(name, base64.RawURLEncoding.EncodeToString, decoder)
+	enc := base64.RawURLEncoding.EncodeToString
+	f, err := Factory(name, enc, enc, decoder, decoder)
 	assert.NoError(t, err)
 	defer func() {
 		os.RemoveAll(name)

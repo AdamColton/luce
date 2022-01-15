@@ -14,21 +14,39 @@ type Encoder func([]byte) string
 type Decoder func(string) []byte
 
 type dir struct {
-	path    string
-	encoder Encoder
-	decoder Decoder
+	path                string
+	encoder, bktEncoder Encoder
+	decoder, bktDecoder Decoder
 }
 
-func Factory(path string, encoder Encoder, decoder Decoder) (store.Factory, error) {
+func Store(path string, encoder, bktEncoder Encoder, decoder, bktDecoder Decoder) (store.Store, error) {
 	err := os.MkdirAll(path, 0777)
 	if err != nil {
 		return nil, err
 	}
+	if encoder == nil {
+		encoder = EncoderCast
+	}
+	if bktEncoder == nil {
+		bktEncoder = encoder
+	}
+	if decoder == nil {
+		decoder = DecoderCast
+	}
+	if bktDecoder == nil {
+		bktDecoder = decoder
+	}
 	return &dir{
-		path:    path,
-		encoder: encoder,
-		decoder: decoder,
+		path:       path,
+		encoder:    encoder,
+		bktEncoder: bktEncoder,
+		decoder:    decoder,
+		bktDecoder: bktDecoder,
 	}, nil
+}
+
+func Factory(path string, encoder, bktEncoder Encoder, decoder, bktDecoder Decoder) (store.Store, error) {
+	return Store(path, encoder, bktEncoder, decoder, bktDecoder)
 }
 
 func (d *dir) encode(key []byte) string {
@@ -39,18 +57,24 @@ func (d *dir) encode(key []byte) string {
 
 }
 
+func (d *dir) bkt(path string) *dir {
+	return &dir{
+		path:       path,
+		encoder:    d.encoder,
+		bktEncoder: d.bktEncoder,
+		decoder:    d.decoder,
+		bktDecoder: d.bktDecoder,
+	}
+}
+
 func (d *dir) Store(bkt []byte) (store.Store, error) {
-	n := path.Join(d.path, d.encode(bkt))
+	n := path.Join(d.path, d.bktEncoder(bkt))
 	s, _ := os.Stat(n)
 	if s != nil && !s.IsDir() {
 		return nil, fmt.Errorf("Value already exists at that key")
 	}
 	os.MkdirAll(n, 0777)
-	return &dir{
-		path:    n,
-		encoder: d.encoder,
-		decoder: d.decoder,
-	}, nil
+	return d.bkt(n), nil
 }
 
 func (d *dir) Put(key, value []byte) error {
@@ -77,11 +101,7 @@ func (d *dir) Get(key []byte) store.Record {
 		return r
 	}
 	if s.IsDir() {
-		r.Store = &dir{
-			path:    n,
-			encoder: d.encoder,
-			decoder: d.decoder,
-		}
+		r.Store = d.bkt(n)
 		r.Found = true
 		return r
 	}
@@ -109,10 +129,12 @@ func (d *dir) Next(key []byte) []byte {
 		return files[i].Name() > n
 	})
 	if i < len(files) {
-		if d.decoder != nil {
-			return d.decoder(files[i].Name())
+		n := files[i].Name()
+		info, _ := os.Stat(path.Join(d.path, n))
+		if info.IsDir() {
+			return d.bktDecoder(n)
 		}
-		return []byte(files[i].Name())
+		return d.decoder(n)
 	}
 	return nil
 }
