@@ -1,6 +1,7 @@
 package fileservice
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -19,6 +20,10 @@ type Service struct {
 
 func (s *Service) Handler(req *service.Request) *service.Response {
 	path := strings.Replace(req.Path, s.BaseURL, s.RootDir, 1)
+	if strings.Contains(path, "//") {
+		fmt.Println("FIX ME")
+		path = strings.ReplaceAll(path, "//", "/")
+	}
 
 	f, err := os.Open(path)
 	if err != nil {
@@ -82,7 +87,8 @@ func New() *Services {
 }
 
 func (s *Services) New(baseURL, rootDir string, handlers map[string]Handler, handleDir Handler) *Service {
-	baseURL = "/" + baseURL
+	baseURL = "/" + strings.Trim(baseURL, "/")
+	rootDir = strings.TrimRight(rootDir, "/")
 	srv := &Service{
 		BaseURL:   baseURL,
 		RootDir:   rootDir,
