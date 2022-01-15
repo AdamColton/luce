@@ -3,6 +3,7 @@ package filter_test
 import (
 	"testing"
 
+	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/filter"
 	"github.com/stretchr/testify/assert"
 )
@@ -55,4 +56,35 @@ func TestContains(t *testing.T) {
 			assert.Equal(t, tc, c(n))
 		})
 	}
+}
+
+func TestRegex(t *testing.T) {
+	tt := map[string]map[string]bool{
+		"ca*t": {
+			"cat":         true,
+			"ct":          true,
+			"cot":         false,
+			"acat":        true,
+			"dogcatmouse": true,
+		},
+		"^ca*t$": {
+			"cat":         true,
+			"ct":          true,
+			"cot":         false,
+			"acat":        false,
+			"dogcatmouse": false,
+		},
+	}
+
+	for n, tc := range tt {
+		t.Run(n, func(t *testing.T) {
+			r := lerr.Must(filter.Regex(n))
+			for s, expected := range tc {
+				assert.Equal(t, expected, r(s))
+			}
+		})
+	}
+
+	_, err := filter.Regex("bad [ regex")
+	assert.Error(t, err)
 }
