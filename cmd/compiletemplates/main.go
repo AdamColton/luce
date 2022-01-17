@@ -1,60 +1,82 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/adamcolton/luce/lerr"
+	ljson "github.com/adamcolton/luce/serial/wrap/json"
+	"github.com/adamcolton/luce/util/filter"
+	"github.com/adamcolton/luce/util/lfile"
+	"github.com/adamcolton/luce/util/ltmpl"
+	"github.com/adamcolton/luce/util/luceio"
 )
-
-var removeHTML = strings.NewReplacer(".html", "")
 
 type config struct {
 	TemplateName string
 	Package      string
 	Var          string
 	FileName     string
+	Path         string
+	Comment      string
+	SkipImport   bool
 }
 
 func main() {
-	outputDir, err := os.Getwd()
-	lerr.Panic(err)
-
-	templatesDir := outputDir
-	args := os.Args[1:]
-	if len(args) > 0 {
-		templatesDir = filepath.Join(templatesDir, args[0])
+	cfgName := "config.json"
+	if args := os.Args; len(args) > 1 {
+		cfgName = args[1]
 	}
-	os.Chdir(templatesDir)
 
-	cfgFile, err := os.Open("config.json")
-	if err != nil {
-		fmt.Println("Expect file 'config.json' with fields 'TemplateName', 'Package', 'Var', and 'FileName'")
-	}
 	cfg := &config{}
-	lerr.Panic(json.NewDecoder(cfgFile).Decode(cfg))
-	cfgFile.Close()
-
-	files, err := filepath.Glob("*.html")
+	err := ljson.Deserializer{}.Load(cfg, cfgName)
 	lerr.Panic(err)
-
-	ts := make([]string, len(files))
-	for i, name := range files {
-		file, err := ioutil.ReadFile(name)
+	var outdir string
+	if cfg.Path != "" {
+		outdir, err = os.Getwd()
 		lerr.Panic(err)
-		name = removeHTML.Replace(name)
-		ts[i] = fmt.Sprintf("{{define \"%s\" -}}\n%s\n{{- end}}", name, file)
+		lerr.Panic(os.Chdir(cfg.Path))
 	}
 
-	lerr.Panic(os.Chdir(outputDir))
-	out, err := os.Create(cfg.FileName)
+	m := &lfile.Match{
+		SkipDir: filter.MustRegex(lfile.FilterHidden),
+	}
+	m.Find.File = func(name string) bool {
+		if name == cfgName {
+			return false
+		}
+		return !strings.HasSuffix(name, ".go")
+	}
+	files, _, err := m.Do("./")
 	lerr.Panic(err)
 
-	fmt.Fprintf(out, "package %s\n\nimport \"html/template\"\n\nvar %s = template.Must(template.New(\"%s\").Parse(`\n%s\n`))\n", cfg.Package, cfg.Var, cfg.TemplateName, strings.Join(ts, "\n\n"))
-	out.Close()
+	loader := &ltmpl.HTMLLoader{
+		Iterator: lfile.Filenames(files),
+	}
+	buf, sw := luceio.BufferSumWriter()
+	if cfg.Package != "" {
+		sw.Fprint("package %s\n\n", cfg.Package)
+	}
+	if !cfg.SkipImport {
+		sw.WriteString("import \"html/template\"\n\n")
+	}
+	if cfg.Comment != "" {
+		sw.Fprint("//%s\n\n", cfg.Comment)
+	}
+	sw.Fprint("var %s = template.Must(template.New(\"%s\").Parse(`\n", cfg.Var, cfg.TemplateName)
+	loader.WriteTo(buf)
+	sw.WriteString("`))\n")
 
+	if cfg.FileName != "" {
+		if cfg.Path != "" {
+			os.Chdir(outdir)
+		}
+		out, err := os.Create(cfg.FileName)
+		lerr.Panic(err)
+		out.Write(buf.Bytes())
+		out.Close()
+	} else {
+		fmt.Println(buf.String())
+	}
 }
