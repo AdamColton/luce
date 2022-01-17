@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"os"
 )
 
 // Serialize wraps encoding/json Encoder to fulfill type32.SerializeTypeID32Func
@@ -30,14 +31,41 @@ func NewSerializer(prefix, indent string) Serializer {
 
 func (s Serializer) Serialize(i interface{}, buf []byte) ([]byte, error) {
 	b := bytes.NewBuffer(buf)
-	enc := json.NewEncoder(b)
+	return b.Bytes(), s.WriteTo(i, b)
+}
+
+func (s Serializer) WriteTo(i interface{}, w io.Writer) error {
+	enc := json.NewEncoder(w)
 	enc.SetIndent(s.Prefix, s.Indent)
-	err := enc.Encode(i)
-	return b.Bytes(), err
+	return enc.Encode(i)
+}
+
+func (s Serializer) Save(i interface{}, path string) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	return s.WriteTo(i, f)
 }
 
 type Deserializer struct{}
 
 func (Deserializer) Deserialize(v interface{}, data []byte) error {
 	return json.Unmarshal(data, v)
+}
+
+func (Deserializer) ReadFrom(v interface{}, r io.Reader) error {
+	return json.NewDecoder(r).Decode(v)
+}
+
+func (d Deserializer) Load(v interface{}, path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	return d.ReadFrom(v, f)
 }
