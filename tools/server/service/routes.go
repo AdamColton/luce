@@ -7,6 +7,18 @@ import (
 	"github.com/adamcolton/luce/lerr"
 )
 
+type Require struct {
+	Group string
+}
+
+func (r *Require) RequireGroup(group string) {
+	if r.Group == "" {
+		r.Group = group
+	} else {
+		r.Group += "," + group
+	}
+}
+
 // Routes holds a collection of RouteConfigs.
 type Routes []RouteConfig
 
@@ -18,27 +30,41 @@ func (Routes) TypeID32() uint32 {
 // RouteConfigGen is used to create RouteConfigs from a Base path.
 type RouteConfigGen struct {
 	Base string
+	Require
 }
 
-func (g RouteConfigGen) Path(path string) *RouteConfig {
-	return NewRoute(g.Base + path)
+func NewRouteConfigGen(basePath string) *RouteConfigGen {
+	return &RouteConfigGen{
+		Base: basePath,
+	}
+}
+
+func (r *RouteConfigGen) RequireGroup(group string) *RouteConfigGen {
+	r.Require.RequireGroup(group)
+	return r
+}
+
+func (g *RouteConfigGen) Path(path string) *RouteConfig {
+	r := NewRoute(g.Base + path)
+	r.Require = g.Require
+	return r
 }
 
 // Get creates a RouteConfig with a Path of Base+path at
-func (g RouteConfigGen) Get(path string) *RouteConfig {
+func (g *RouteConfigGen) Get(path string) *RouteConfig {
 	return g.Path(path).Get()
 }
 
 // GetQuery
-func (g RouteConfigGen) GetQuery(path string) *RouteConfig {
+func (g *RouteConfigGen) GetQuery(path string) *RouteConfig {
 	return g.Path(path).Get().WithQuery()
 }
 
-func (g RouteConfigGen) Post(path string) *RouteConfig {
+func (g *RouteConfigGen) Post(path string) *RouteConfig {
 	return g.Path(path).Post()
 }
 
-func (g RouteConfigGen) PostForm(path string) *RouteConfig {
+func (g *RouteConfigGen) PostForm(path string) *RouteConfig {
 	return g.Path(path).Post().WithForm()
 }
 
@@ -53,9 +79,7 @@ type RouteConfig struct {
 	Body       bool
 	User       bool
 	Query      bool
-	Require    struct {
-		Group string
-	}
+	Require
 }
 
 const ErrPathRequired = lerr.Str("RouteConfig: Path is required")
@@ -106,11 +130,7 @@ func (r *RouteConfig) WithPrefix() *RouteConfig {
 }
 
 func (r *RouteConfig) RequireGroup(group string) *RouteConfig {
-	if r.Require.Group == "" {
-		r.Require.Group = group
-	} else {
-		r.Require.Group += "," + group
-	}
+	r.Require.RequireGroup(group)
 	return r
 }
 
