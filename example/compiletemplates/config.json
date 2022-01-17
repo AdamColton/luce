@@ -1,0 +1,8 @@
+{
+    "Comment":"Generated file - DO NOT EDIT",
+    "TemplateName":"testTmpl",
+    "Var":"bar",
+    "Path": "tmpl",
+    "FileName":"templates.go",
+    "Package": "main"
+}
