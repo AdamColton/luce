@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/adamcolton/luce/tools/key"
+
+	//"github.com/adamcolton/luce/util/"lrand
 	"github.com/urfave/cli"
 )
 

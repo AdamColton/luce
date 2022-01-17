@@ -31,7 +31,7 @@ type Server struct {
 
 var TimeoutDuration = time.Second * 5
 
-func New(ses sessions.Store, fac store.Factory, t *template.Template, n TemplateNames) (*Server, error) {
+func New(ses sessions.Store, fac store.Factory, t *template.Template, n TemplateNames, host string) (*Server, error) {
 	us, err := lusers.NewUserStore(fac)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func New(ses sessions.Store, fac store.Factory, t *template.Template, n Template
 		serviceRoutes: make(map[string]*mux.Route),
 	}
 
-	srv.setRoutes()
+	srv.setRoutes(host)
 	return srv, nil
 }
 

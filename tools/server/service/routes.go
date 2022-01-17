@@ -30,6 +30,7 @@ func (Routes) TypeID32() uint32 {
 // RouteConfigGen is used to create RouteConfigs from a Base path.
 type RouteConfigGen struct {
 	Base string
+	Host string
 	Require
 }
 
@@ -44,9 +45,15 @@ func (r *RouteConfigGen) RequireGroup(group string) *RouteConfigGen {
 	return r
 }
 
+func (r *RouteConfigGen) SetHost(host string) *RouteConfigGen {
+	r.Host = host
+	return r
+}
+
 func (g *RouteConfigGen) Path(path string) *RouteConfig {
 	r := NewRoute(g.Base + path)
 	r.Require = g.Require
+	r.Host = g.Host
 	return r
 }
 
@@ -71,6 +78,7 @@ func (g *RouteConfigGen) PostForm(path string) *RouteConfig {
 type RouteConfig struct {
 	ID   string
 	Path string
+	Host string
 	// Method is comma delimited methods that are accepted
 	Method     string
 	PathPrefix bool
@@ -137,9 +145,6 @@ func (r *RouteConfig) RequireGroup(group string) *RouteConfig {
 // Validate the RouteConfig has necessary fields filled in. Unset fields will
 // be set to their defaults.
 func (r *RouteConfig) Validate() error {
-	if r.Path == "" {
-		return ErrPathRequired
-	}
 	if r.Method == "" {
 		r.Method = "GET"
 	}

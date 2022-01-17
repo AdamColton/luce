@@ -15,13 +15,15 @@ type TemplateNames struct {
 	HomeSignedIn string
 }
 
-func (s *Server) setRoutes() {
+func (s *Server) setRoutes(host string) {
 	m := midware.NewMagic(
 		s.Users,
 		midware.NewDecoder(formdecoder.New(), "Form"),
 	)
 	r := s.Router
-
+	if host != "" {
+		r = r.Host(host).Subrouter()
+	}
 	r.HandleFunc("/setCookie", setCookie)
 	r.HandleFunc("/", m.Handle(s.home))
 	r.HandleFunc("/user/signin", m.Handle(s.getSignIn)).Methods("GET")
@@ -31,7 +33,8 @@ func (s *Server) setRoutes() {
 }
 
 func redirect(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/", http.StatusFound)
+	// sometimes the 302 doesn't seem to work...
+	http.Redirect(w, r, "/", 302)
 }
 
 func setCookie(w http.ResponseWriter, r *http.Request) {

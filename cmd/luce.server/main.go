@@ -19,6 +19,7 @@ import (
 
 type Config struct {
 	Session       []string
+	Host          string
 	BoltFile      string
 	Socket        string
 	ServiceSocket string
@@ -69,7 +70,7 @@ func main() {
 	lerr.Log(err)
 
 	var gs sessions.Store = memstore.NewMemStore(conf.SessionBytes()...)
-	s, err := server.New(gs, f, t, conf.TemplateNames)
+	s, err := server.New(gs, f, t, conf.TemplateNames, conf.Host)
 	lerr.Panic(err)
 
 	if conf.Socket != "" {
