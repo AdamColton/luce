@@ -43,8 +43,10 @@ func (l *HTMLLoader) Load() (*template.Template, error) {
 
 func (l *HTMLLoader) WriteTo(w io.Writer) (int64, error) {
 	sw := luceio.NewSumWriter(w)
+	sep := ""
 	fn := func(name string, i lfile.Iterator) error {
-		sw.Fprint("{{define \"%s\" -}}\n%s\n{{- end}}", name, string(i.Data()))
+		sw.Fprint("%s{{define \"%s\" -}}\n%s\n{{- end}}", sep, name, string(i.Data()))
+		sep = "\n"
 		return sw.Err
 	}
 
