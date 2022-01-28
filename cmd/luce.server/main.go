@@ -69,7 +69,9 @@ func main() {
 	}).Load()
 	lerr.Log(err)
 
-	var gs sessions.Store = memstore.NewMemStore(conf.SessionBytes()...)
+	var ms = memstore.NewMemStore(conf.SessionBytes()...)
+	ms.Options.Domain = "adamcolton.dev"
+	var gs sessions.Store = ms
 	s, err := server.New(gs, f, t, conf.TemplateNames, conf.Host)
 	lerr.Panic(err)
 

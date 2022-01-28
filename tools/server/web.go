@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/adamcolton/luce/lerr"
@@ -34,7 +35,7 @@ func (s *Server) setRoutes(host string) {
 
 func redirect(w http.ResponseWriter, r *http.Request) {
 	// sometimes the 302 doesn't seem to work...
-	http.Redirect(w, r, "/", 302)
+	http.Redirect(w, r, "/", 303)
 }
 
 func setCookie(w http.ResponseWriter, r *http.Request) {
@@ -49,6 +50,7 @@ func (s *Server) home(w http.ResponseWriter, r *http.Request, d *struct {
 	Session *lusess.Session
 }) {
 	u := d.Session.User()
+	fmt.Println(u)
 	n := s.TemplateNames.Home
 	if u != nil {
 		n = s.TemplateNames.HomeSignedIn

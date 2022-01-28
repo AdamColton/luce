@@ -33,7 +33,7 @@ func (s *Server) postSignIn(w http.ResponseWriter, r *http.Request, d *struct {
 		log.Print(err)
 		return
 	}
-	redirect(w, r)
+	//redirect(w, r)
 }
 
 func (s *Server) getSignOut(w http.ResponseWriter, r *http.Request, d *struct {
