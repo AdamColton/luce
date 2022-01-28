@@ -15,30 +15,35 @@ type signinData struct {
 func (signinData) Title() string { return "Sign In" }
 
 func (s *Server) getSignIn(w http.ResponseWriter, r *http.Request, d *struct {
-	Session *lusess.Session
+	Session  *lusess.Session
+	Redirect string
 }) {
 	if d.Session.User() != nil {
-		redirect(w, r)
+		d.Redirect = "/"
+		return
 	}
 	err := s.Templates.ExecuteTemplate(w, s.TemplateNames.SignIn, signinData{})
 	lerr.Panic(err)
 }
 
 func (s *Server) postSignIn(w http.ResponseWriter, r *http.Request, d *struct {
-	Form    *lusess.Login
-	Session *lusess.Session
+	Form     *lusess.Login
+	Session  *lusess.Session
+	Redirect string
 }) {
 	_, err := d.Session.Login(d.Form)
 	if err != nil {
 		log.Print(err)
 		return
 	}
-	//redirect(w, r)
+	d.Session.Save()
+	d.Redirect = "/"
 }
 
 func (s *Server) getSignOut(w http.ResponseWriter, r *http.Request, d *struct {
-	Session *lusess.Session
+	Session  *lusess.Session
+	Redirect string
 }) {
 	d.Session.Logout()
-	redirect(w, r)
+	d.Redirect = "/"
 }

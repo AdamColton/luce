@@ -20,6 +20,7 @@ func (s *Server) setRoutes(host string) {
 	m := midware.NewMagic(
 		s.Users,
 		midware.NewDecoder(formdecoder.New(), "Form"),
+		midware.Redirect{"Redirect"},
 	)
 	r := s.Router
 	if host != "" {
@@ -31,11 +32,6 @@ func (s *Server) setRoutes(host string) {
 	r.HandleFunc("/user/signin", m.Handle(s.postSignIn)).Methods("POST")
 	r.HandleFunc("/user/signout", m.Handle(s.getSignOut)).Methods("GET")
 	r.HandleFunc("/admin/users", m.Handle(s.adminUsers)).Methods("GET")
-}
-
-func redirect(w http.ResponseWriter, r *http.Request) {
-	// sometimes the 302 doesn't seem to work...
-	http.Redirect(w, r, "/", 303)
 }
 
 func setCookie(w http.ResponseWriter, r *http.Request) {
