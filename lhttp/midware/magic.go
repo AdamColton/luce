@@ -7,6 +7,7 @@ import (
 	"github.com/adamcolton/luce/lerr"
 )
 
+// Magic allows for a third "magic" argument to be passed to http handlers.
 type Magic struct {
 	Initilizers []Initilizer
 }
@@ -17,14 +18,23 @@ func NewMagic(initilizers ...Initilizer) *Magic {
 	}
 }
 
+// Initilizer only runs when a route is added, not on each invocation. If the
+// route meets the parameters, the returned DataInserter will be invoked before
+// the route is called.
 type Initilizer interface {
 	Initilize(reflect.Type) DataInserter
 }
 
+// DataInserter will typically modify the dst value. It cann also return a
+// callback that will run after the handler is closed.
 type DataInserter interface {
 	Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) (func(), error)
 }
 
+// Handle requires fn to be a function with 3 arguments. The frist should be
+// http.ResponseWriter, the second *http.Request and the third should be a
+// pointer to a struct. The struct will be passed into the initilizers to setup
+// the DataInserters.
 func (m *Magic) Handle(fn interface{}) http.HandlerFunc {
 	t := reflect.TypeOf(fn)
 	if t.Kind() != reflect.Func || t.NumIn() != 3 {
@@ -50,7 +60,7 @@ func (m *Magic) Handle(fn interface{}) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		dst := reflect.New(dstType)
-		var callbacks []func()
+		callbacks := make([]func(), 0, len(dis))
 		for _, di := range dis {
 			callback, err := di.Insert(w, r, dst)
 			lerr.Log(err)
