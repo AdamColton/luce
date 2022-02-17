@@ -8,7 +8,7 @@ import (
 )
 
 func TestIntSlice(t *testing.T) {
-	got := GTE.Int(5).Slice([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
+	got := GTE(5).Slice([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
 	expected := []int{5, 6, 7, 8, 9, 10}
 	assert.Equal(t, expected, got)
 }
@@ -24,7 +24,7 @@ func TestIntChan(t *testing.T) {
 
 	to := timeout.After(5, func() {
 		expected := []int{5, 6, 7, 8, 9, 10}
-		get := GTE.Int(5).Chan(ch, 0)
+		get := GTE(5).Chan(ch, 0)
 		for _, e := range expected {
 			assert.Equal(t, e, <-get)
 		}
@@ -34,11 +34,11 @@ func TestIntChan(t *testing.T) {
 
 func TestIntBools(t *testing.T) {
 	tt := map[string]struct {
-		f Int
+		f Filter[int]
 		x map[int]bool
 	}{
 		"4<x_AND_x<7": {
-			f: LT.Int(7).And(GT.Int(4)),
+			f: LT(7).And(GT(4)),
 			x: map[int]bool{
 				4: false,
 				5: true,
@@ -47,7 +47,7 @@ func TestIntBools(t *testing.T) {
 			},
 		},
 		"4>x_OR_x>7": {
-			f: GT.Int(7).Or(LT.Int(4)),
+			f: GT(7).Or(LT(4)),
 			x: map[int]bool{
 				4: false,
 				3: true,
@@ -56,7 +56,7 @@ func TestIntBools(t *testing.T) {
 			},
 		},
 		"!(x>5)": {
-			f: GT.Int(5).Not(),
+			f: GT(5).Not(),
 			x: map[int]bool{
 				5: true,
 				6: false,

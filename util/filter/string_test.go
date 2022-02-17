@@ -8,7 +8,7 @@ import (
 )
 
 func TestLazyOr(t *testing.T) {
-	s := String(func(s string) bool { return true }).
+	s := Filter[string](func(s string) bool { return true }).
 		Or(func(s string) bool {
 			t.Error("you should not be here")
 			return false
@@ -17,7 +17,7 @@ func TestLazyOr(t *testing.T) {
 }
 
 func TestStringSlice(t *testing.T) {
-	got := GTE.String("5").Slice([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9"})
+	got := GTE("5").Slice([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9"})
 	expected := []string{"5", "6", "7", "8", "9"}
 	assert.Equal(t, expected, got)
 }
@@ -33,7 +33,7 @@ func TestStringChan(t *testing.T) {
 
 	to := timeout.After(5, func() {
 		expected := []string{"5", "6", "7", "8", "9"}
-		get := GTE.String("5").Chan(ch, 0)
+		get := GTE("5").Chan(ch, 0)
 		for _, e := range expected {
 			assert.Equal(t, e, <-get)
 		}
@@ -43,11 +43,11 @@ func TestStringChan(t *testing.T) {
 
 func TestStringBools(t *testing.T) {
 	tt := map[string]struct {
-		f String
+		f Filter[string]
 		x map[string]bool
 	}{
 		"4<x_AND_x<7": {
-			f: LT.String("7").And(GT.String("4")),
+			f: LT("7").And(GT("4")),
 			x: map[string]bool{
 				"4": false,
 				"5": true,
@@ -56,7 +56,7 @@ func TestStringBools(t *testing.T) {
 			},
 		},
 		"4>x_OR_x>7": {
-			f: GT.String("7").Or(LT.String("4")),
+			f: GT("7").Or(LT("4")),
 			x: map[string]bool{
 				"4": false,
 				"3": true,
@@ -65,7 +65,7 @@ func TestStringBools(t *testing.T) {
 			},
 		},
 		"!(x>5)": {
-			f: GT.String("5").Not(),
+			f: GT("5").Not(),
 			x: map[string]bool{
 				"5": true,
 				"6": false,
