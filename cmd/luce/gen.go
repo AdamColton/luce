@@ -4,14 +4,15 @@ import (
 	cryptorand "crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 	"text/template"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
 	"github.com/adamcolton/luce/lerr"
-	"github.com/adamcolton/luce/util/lrand"
 	"github.com/urfave/cli"
 )
 
@@ -21,7 +22,8 @@ func randCmd(c *cli.Context) error {
 		fmt.Println(b)
 		max = 1 << uint(b)
 	}
-	fmt.Println(lrand.New().Int63n(max))
+	rand.Seed(time.Now().UnixMicro())
+	fmt.Println(rand.Int63n(max))
 	return nil
 }
 
@@ -115,7 +117,9 @@ func filter(c *cli.Context) error {
 	fd.update()
 	return filterTmpl.Execute(os.Stdout, fd)
 }
+
 func rand32(c *cli.Context) error {
-	fmt.Println(lrand.New().Uint32())
+	rand.Seed(time.Now().UnixMicro())
+	fmt.Println(rand.Uint32())
 	return nil
 }
