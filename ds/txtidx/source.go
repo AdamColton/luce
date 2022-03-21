@@ -82,23 +82,23 @@ func (s SourceIDX) Indexed() bool {
 	return s < isUnindexed
 }
 
-func (s SourceIDX) Variant() uint64 {
-	return uint64(s) >> 32
+func (s SourceIDX) Variant() uint16 {
+	return uint16(s >> 32)
 }
 func (s SourceIDX) SetVariant(v int) SourceIDX {
 	return (s & rootMask) | (SourceIDX(v) << 32)
 }
 
-func (s SourceIDX) Root() uint64 {
-	return uint64(s & rootMask)
+func (s SourceIDX) Root() uint32 {
+	return uint32(s & rootMask)
 }
 
-func (s SourceIDX) Unindex() uint64 {
-	return uint64(s &^ isUnindexed)
+func (s SourceIDX) Unindex() uint32 {
+	return uint32(s &^ isUnindexed)
 }
 
-func IndexedIDX(root, variant uint64) SourceIDX {
-	return SourceIDX((variant << 32) | root)
+func IndexedIDX(root uint32, variant uint16) SourceIDX {
+	return (SourceIDX(variant) << 32) | SourceIDX(root)
 }
 
 func UnindexedIDX(idx int) SourceIDX {

@@ -14,13 +14,22 @@ func Build(s *Source, d *String) string {
 	out := make([]byte, 0, d.Len)
 	l := NewLookup(s, d)
 
-	cursors := make([]uint16, len(d.IndexWords)+len(d.UnindexWords))
-	cur := d.Start
 	lniw := uint32(len(d.IndexWords))
+	lnuw := uint32(len(d.UnindexWords))
+	cursors := make([]uint16, lniw+lnuw)
+	for i := uint32(0); i < lniw; i++ {
+		cursors[i] = uint16(len(d.IndexWords[i].Links) - 1)
+	}
+	for i := uint32(0); i < lnuw; i++ {
+		cursors[lniw+i] = uint16(len(d.UnindexWords[i].Next)) - 1
+	}
+
+	cur := d.Start
+
 	var word string
 	for cur != MaxUint32 {
 		nc := cursors[cur]
-		cursors[cur]++
+		cursors[cur]--
 		if cur >= lniw {
 			cur -= lniw
 			word = l.Unindexed[cur]

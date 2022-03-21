@@ -69,8 +69,8 @@ func TestSourceIDX(t *testing.T) {
 	assert.Equal(t, SourceIDX(0), SourceIDX(1)&isUnindexed)
 	assert.Equal(t, SourceIDX(1), SourceIDX(1)&rootMask)
 
-	var r uint64 = 123
-	var v uint64 = 456
+	var r uint32 = 123
+	var v uint16 = 456
 	i := IndexedIDX(r, v)
 	assert.True(t, i.Indexed())
 	assert.Equal(t, r, i.Root())
@@ -81,7 +81,7 @@ func TestSourceIDX(t *testing.T) {
 	var u int = 31415
 	i = UnindexedIDX(u)
 	assert.False(t, i.Indexed())
-	assert.Equal(t, uint64(u), i.Unindex())
+	assert.Equal(t, uint32(u), i.Unindex())
 }
 
 func TestAppendSource(t *testing.T) {
@@ -95,4 +95,27 @@ func TestAppendSource(t *testing.T) {
 	idx = s.UpsertUnindexed("foo")
 	assert.Equal(t, "foo", s.Get(idx))
 	assert.Equal(t, idx, s.UpsertUnindexed("foo"))
+}
+
+func TestPreParse(t *testing.T) {
+	s := NewSource()
+	p := s.NewPreParser()
+	p.Indexed("this", "This ")
+	p.Unindex("is ")
+	p.Unindex("a ")
+	p.Indexed("test", "test. ")
+	p.Indexed("yes", "Yes, ")
+	p.Unindex("a ")
+	p.Indexed("test", "test ")
+	p.Indexed("this", "this ")
+	p.Unindex("is.")
+	assert.Equal(t, uint32(3), p.IndexedCount)
+
+	// assert.Equal(t, "This ", s.Get(p.IDXs[0]))
+	// assert.Equal(t, "is ", s.Get(p.IDXs[1]))
+	// assert.Equal(t, "a ", s.Get(p.IDXs[2]))
+	// assert.Equal(t, "test", s.Get(p.IDXs[3]))
+
+	got := Build(s, p.String())
+	assert.Equal(t, "This is a test. Yes, a test this is.", got)
 }
