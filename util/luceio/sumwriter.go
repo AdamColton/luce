@@ -11,8 +11,11 @@ import (
 // encounters an error, it will stop writing.
 type SumWriter struct {
 	io.Writer
-	Sum int64
-	Err error
+	// Cache holds bytes that will be written before the next write operation.
+	// If no write operation is executed, they will never be written.
+	Cache []byte
+	Sum   int64
+	Err   error
 }
 
 // NewSumWriter takes a Writer and returns a SumWriter
@@ -53,8 +56,16 @@ func (s *SumWriter) Write(b []byte) (int, error) {
 	if s.Err != nil {
 		return 0, s.Err
 	}
-	var n int
+	var n, c int
+	if s.Cache != nil {
+		c, s.Err = s.Writer.Write(s.Cache)
+		if s.Err != nil {
+			return 0, s.Err
+		}
+	}
+
 	n, s.Err = s.Writer.Write(b)
+	n += c
 	s.Sum += int64(n)
 	return n, s.Err
 }
@@ -98,4 +109,14 @@ func (s *SumWriter) Join(elems []string, sep string) (int, error) {
 		sum += n
 	}
 	return sum, s.Err
+}
+
+// AppendCacheString will append a string to the current Cache value.
+func (s *SumWriter) AppendCacheString(str string) {
+	s.AppendCache([]byte(str))
+}
+
+// AppendCache will append a byte slice to the current Cache value.
+func (s *SumWriter) AppendCache(b []byte) {
+	s.Cache = append(s.Cache, b...)
 }

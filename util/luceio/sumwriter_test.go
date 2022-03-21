@@ -43,3 +43,13 @@ func TestSumWriterTo(t *testing.T) {
 	assert.Equal(t, int64(14), n)
 	assert.Equal(t, s, out.String())
 }
+
+func TestSumWriterCache(t *testing.T) {
+	out, sw := luceio.BufferSumWriter()
+	sw.WriteString("this")
+	sw.AppendCacheString("\n")
+	sw.WriteString("is a test")
+	assert.NoError(t, sw.Err)
+	assert.Equal(t, int64(14), sw.Sum)
+	assert.Equal(t, "this\nis a test", out.String())
+}
