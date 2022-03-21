@@ -41,10 +41,10 @@ func (s *SumWriter) WriteStrings(strs ...string) (int, error) {
 	for _, str := range strs {
 		_, err := s.Write([]byte(str))
 		if err != nil {
-			return int(s.Sum - d), err
+			return s.Diff(d)
 		}
 	}
-	return int(s.Sum - d), nil
+	return s.Diff(d)
 }
 
 // WriteRune writes a rune to underlying Writer
@@ -74,6 +74,12 @@ func (s *SumWriter) Rets() (int64, error) {
 	return s.Sum, s.Err
 }
 
+// Diff is a shorthand way to handle returns by marking the difference in the
+// Sum.
+func (s *SumWriter) Diff(d int64) (int, error) {
+	return int(s.Sum - d), s.Err
+}
+
 // WriteInt uses strconv to write an int
 func (s *SumWriter) WriteInt(i int) (int, error) {
 	return s.WriteString(strconv.Itoa(i))
@@ -85,11 +91,9 @@ func (s *SumWriter) WriterTo(w io.WriterTo) (int64, error) {
 	if s.Err != nil {
 		return 0, s.Err
 	}
-	i, err := w.WriteTo(s)
-	if s.Err == nil {
-		s.Err = err
-	}
-	return i, err
+	var n int64
+	n, s.Err = w.WriteTo(s)
+	return n, s.Err
 }
 
 // Fprint wraps a call to Fprintf.
