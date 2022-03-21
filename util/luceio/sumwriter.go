@@ -93,9 +93,9 @@ func (s *SumWriter) WriterTo(w io.WriterTo) (int64, error) {
 	return i, err
 }
 
-// Fprint wraps a call to Sprintf.
+// Fprint wraps a call to Fprintf.
 func (s *SumWriter) Fprint(format string, args ...interface{}) (int, error) {
-	return s.WriteString(fmt.Sprintf(format, args...))
+	return fmt.Fprintf(s, format, args...)
 }
 
 // Join a list of strings using a provided seperator.
