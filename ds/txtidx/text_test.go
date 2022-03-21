@@ -9,7 +9,7 @@ import (
 func TestDoc(t *testing.T) {
 	expected := "This is a test"
 
-	di := &DocumentIndex{
+	di := &String{
 		Len:   15,
 		Start: 1,
 		IndexWords: []IWordIndex{

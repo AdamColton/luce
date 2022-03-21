@@ -1,6 +1,6 @@
 package txtidx
 
-type DocumentIndex struct {
+type String struct {
 	Len          uint32
 	Start        uint32
 	IndexWords   []IWordIndex

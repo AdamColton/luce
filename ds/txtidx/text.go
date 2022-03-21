@@ -10,7 +10,7 @@ type IWordIndex struct {
 	Links    []Link
 }
 
-func Build(s *Source, d *DocumentIndex) string {
+func Build(s *Source, d *String) string {
 	out := make([]byte, 0, d.Len)
 	l := NewLookup(s, d)
 
@@ -42,7 +42,7 @@ type Lookup struct {
 	Unindexed       []string
 }
 
-func NewLookup(s *Source, d *DocumentIndex) *Lookup {
+func NewLookup(s *Source, d *String) *Lookup {
 	l := &Lookup{
 		IndexedVariants: make([][]string, len(d.IndexWords)),
 		Unindexed:       make([]string, len(d.UnindexWords)),
