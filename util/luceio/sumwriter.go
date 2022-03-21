@@ -37,15 +37,14 @@ func (s *SumWriter) WriteString(str string) (int, error) {
 
 // WriteStrings writes strings to underlying Writer
 func (s *SumWriter) WriteStrings(strs ...string) (int, error) {
-	var sum int
+	d := s.Sum
 	for _, str := range strs {
-		i, err := s.Write([]byte(str))
+		_, err := s.Write([]byte(str))
 		if err != nil {
-			return sum, err
+			return int(s.Sum - d), err
 		}
-		sum += i
 	}
-	return sum, nil
+	return int(s.Sum - d), nil
 }
 
 // WriteRune writes a rune to underlying Writer
@@ -98,17 +97,14 @@ func (s *SumWriter) Fprint(format string, args ...interface{}) (int, error) {
 	return s.WriteString(fmt.Sprintf(format, args...))
 }
 
-//
+// Join a list of strings using a provided seperator.
 func (s *SumWriter) Join(elems []string, sep string) (int, error) {
-	sum := len(sep) * (len(elems) - 1)
-	n, _ := s.WriteString(elems[0])
-	sum += n
+	d := s.Sum
+	s.WriteString(elems[0])
 	for _, e := range elems[1:] {
-		s.WriteString(sep)
-		n, _ = s.WriteString(e)
-		sum += n
+		s.WriteStrings(sep, e)
 	}
-	return sum, s.Err
+	return int(s.Sum - d), s.Err
 }
 
 // AppendCacheString will append a string to the current Cache value.
