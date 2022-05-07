@@ -15,4 +15,5 @@ type Iterator interface {
 	Err() error
 	Next() (done bool)
 	Stat() os.FileInfo
+	Reset() (done bool)
 }

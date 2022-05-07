@@ -53,6 +53,14 @@ func (i *pathsIterator) Next() (done bool) {
 	return i.update()
 }
 
+// Reset the Iter to the start and set the autoload value.
+func (i *pathsIterator) Reset() (done bool) {
+	i.Index = 0
+	i.done = false
+	i.data = nil
+	return i.update()
+}
+
 // ReadFile is a reference to ioutil.ReadFile. It is left exposed for testing.
 var ReadFile = ioutil.ReadFile
 
