@@ -14,32 +14,32 @@ func TestCompare(t *testing.T) {
 		str string
 	}{
 		"lt": {
-			cmp: LT,
+			cmp: CmprLT,
 			fn:  func(a, b int) bool { return b < a },
 			str: "<",
 		},
 		"lte": {
-			cmp: LTE,
+			cmp: CmprLTE,
 			fn:  func(a, b int) bool { return b <= a },
 			str: "<=",
 		},
 		"eq": {
-			cmp: EQ,
+			cmp: CmprEQ,
 			fn:  func(a, b int) bool { return b == a },
 			str: "==",
 		},
 		"gt": {
-			cmp: GT,
+			cmp: CmprGT,
 			fn:  func(a, b int) bool { return b > a },
 			str: ">",
 		},
 		"gte": {
-			cmp: GTE,
+			cmp: CmprGTE,
 			fn:  func(a, b int) bool { return b >= a },
 			str: ">=",
 		},
 		"neq": {
-			cmp: NEQ,
+			cmp: CmprNEQ,
 			fn:  func(a, b int) bool { return b != a },
 			str: "!=",
 		},
@@ -52,15 +52,25 @@ func TestCompare(t *testing.T) {
 				for b := 0; b < 3; b++ {
 					expect := tc.fn(a, b)
 					bs := strconv.Itoa(b)
-					assert.Equal(t, tc.str, tc.cmp.Str())
-					str := bs + tc.cmp.Str() + as
-					assert.Equal(t, expect, tc.cmp.Int(a)(b), str)
-					assert.Equal(t, expect, tc.cmp.Float(float64(a))(float64(b)), str)
-					assert.Equal(t, expect, tc.cmp.String(as)(bs), str)
+					assert.Equal(t, tc.str, tc.cmp.String())
+					str := bs + tc.cmp.String() + as
+
+					assert.Equal(t, expect, CompareFilter(tc.cmp, a)(b), str)
+					assert.Equal(t, expect, CompareFilter(tc.cmp, float64(a))(float64(b)), str)
+					assert.Equal(t, expect, CompareFilter(tc.cmp, as)(bs), str)
 				}
 			}
 		})
 	}
 
-	assert.Equal(t, "??", Compare(20).Str())
+	assert.Equal(t, "??", Compare(20).String())
+
+	assert.True(t, EQ("x")("x"))
+	assert.False(t, EQ("x")("y"))
+	assert.False(t, NEQ("x")("x"))
+	assert.True(t, NEQ("x")("y"))
+	assert.False(t, LTE(5)(6))
+	assert.True(t, LTE(5)(5))
+	assert.True(t, LTE(5)(4))
+
 }

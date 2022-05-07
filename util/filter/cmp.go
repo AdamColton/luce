@@ -5,60 +5,79 @@ type Compare byte
 
 // Compare Constants
 const (
-	EQ Compare = 1 << iota
-	GT
+	CmprEQ Compare = 1 << iota
+	CmprGT
 	not
 
-	NEQ = not | EQ
-	LTE = not | GT
-	LT  = NEQ | GT
-	GTE = EQ | GT
+	CmprNEQ = not | CmprEQ
+	CmprLTE = not | CmprGT
+	CmprLT  = CmprNEQ | CmprGT
+	CmprGTE = CmprEQ | CmprGT
 )
 
-// Int creates a filter that will take a value and apply the comparison to the
-// value given for a.
-func (c Compare) Int(a int) Int {
-	return func(b int) bool {
-		return ((c&EQ == EQ && a == b) ||
-			(c&GT == GT && b > a)) !=
+// EQ returns a filter that will check if a given value is equal to 'a'.
+func EQ[T Comparable](a T) Filter[T] {
+	return func(b T) bool { return a == b }
+}
+
+// EQ returns a filter that will check if a given value is greater than to 'a'.
+func GT[T Comparable](a T) Filter[T] {
+	return func(b T) bool { return a < b }
+}
+
+// NEQ returns a filter that will check if a given value is not equal to 'a'.
+func NEQ[T Comparable](a T) Filter[T] {
+	return func(b T) bool { return a != b }
+}
+
+// LTE returns a filter that will check if a given value is less than or equal
+// to 'a'.
+func LTE[T Comparable](a T) Filter[T] {
+	return func(b T) bool { return a >= b }
+}
+
+// LT returns a filter that will check if a given value is not less than to 'a'.
+func LT[T Comparable](a T) Filter[T] {
+	return func(b T) bool { return a > b }
+}
+
+// GTE returns a filter that will check if a given value is greater than or
+// equal to 'a'.
+func GTE[T Comparable](a T) Filter[T] {
+	return func(b T) bool { return a <= b }
+}
+
+// Comparable are the types that support ==, != and >.
+type Comparable interface {
+	int | int8 | int16 | int32 | int64 |
+		uint | uint8 | uint16 | uint32 | uint64 |
+		float32 | float64 |
+		string
+}
+
+// CompareFilter creates a Filter from a compare type.
+func CompareFilter[T Comparable](c Compare, a T) Filter[T] {
+	return func(b T) bool {
+		return ((c&CmprEQ == CmprEQ && a == b) ||
+			(c&CmprGT == CmprGT && b > a)) !=
 			(c&not == not)
 	}
 }
 
-// Float creates a filter that will take a value and apply the comparison to the
-// value given for a.
-func (c Compare) Float(a float64) Float {
-	return func(b float64) bool {
-		return ((c&EQ == EQ && a == b) ||
-			(c&GT == GT && b > a)) !=
-			(c&not == not)
-	}
-}
-
-// String creates a filter that will take a value and apply the comparison to
-// the value given for a.
-func (c Compare) String(a string) String {
-	return func(b string) bool {
-		return ((c&EQ == EQ && a == b) ||
-			(c&GT == GT && b > a)) !=
-			(c&not == not)
-	}
-}
-
-// Str return the string representing the Compare
-func (c Compare) Str() string {
+// String return the string representing the Compare; fulfills Stringer.
+func (c Compare) String() string {
 	switch c {
-	case LT:
+	case CmprLT:
 		return "<"
-	case LTE:
+	case CmprLTE:
 		return "<="
-	case EQ:
+	case CmprEQ:
 		return "=="
-	case GT:
+	case CmprGT:
 		return ">"
-	case GTE:
+	case CmprGTE:
 		return ">="
-	case NEQ:
+	case CmprNEQ:
 		return "!="
 	}
 	return "??"

@@ -17,7 +17,7 @@ func (foo) TwoArgs(first, second string) {}
 
 func TestGetByName(t *testing.T) {
 	var f foo
-	mf := MethodName(filter.EQ.String("Hello"))
+	mf := MethodName(filter.EQ("Hello"))
 	m := mf.One(f)
 	assert.NotNil(t, m)
 	var fn func()
@@ -27,7 +27,7 @@ func TestGetByName(t *testing.T) {
 
 func TestGetMany(t *testing.T) {
 	var f foo
-	mf := ArgCount(filter.LT.Int(2)).MethodFilter()
+	mf := ArgCount(filter.LT(2)).MethodFilter()
 	ms := mf.On(f)
 	assert.Len(t, ms, 2)
 
@@ -52,7 +52,7 @@ func TestMethodOr(t *testing.T) {
 }
 
 func TestMethodAnd(t *testing.T) {
-	m1 := ArgCount(filter.EQ.Int(0)).MethodFilter()
+	m1 := ArgCount(filter.EQ(0)).MethodFilter()
 	m2 := MethodName(filter.Prefix("He"))
 	mf := m1.And(m2)
 
@@ -64,7 +64,7 @@ func TestMethodAnd(t *testing.T) {
 }
 
 func TestMethodNot(t *testing.T) {
-	mf := MethodName(filter.EQ.String("Hello")).Not()
+	mf := MethodName(filter.EQ("Hello")).Not()
 
 	var f foo
 	ms := mf.On(f)

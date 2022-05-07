@@ -8,7 +8,7 @@ import (
 )
 
 func TestFloatSlice(t *testing.T) {
-	got := GTE.Float(5).Slice([]float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
+	got := GTE(5.0).Slice([]float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
 	expected := []float64{5, 6, 7, 8, 9, 10}
 	assert.Equal(t, expected, got)
 }
@@ -24,7 +24,7 @@ func TestFloatChan(t *testing.T) {
 
 	to := timeout.After(5, func() {
 		expected := []float64{5, 6, 7, 8, 9, 10}
-		get := GTE.Float(5).Chan(ch, 0)
+		get := GTE(5.0).Chan(ch, 0)
 		for _, e := range expected {
 			assert.Equal(t, e, <-get)
 		}
@@ -34,11 +34,11 @@ func TestFloatChan(t *testing.T) {
 
 func TestFloatBools(t *testing.T) {
 	tt := map[string]struct {
-		f Float
+		f Filter[float64]
 		x map[float64]bool
 	}{
 		"4<x_AND_x<7": {
-			f: LT.Float(7).And(GT.Float(4)),
+			f: LT(7.0).And(GT(4.0)),
 			x: map[float64]bool{
 				4: false,
 				5: true,
@@ -47,7 +47,7 @@ func TestFloatBools(t *testing.T) {
 			},
 		},
 		"4>x_OR_x>7": {
-			f: GT.Float(7).Or(LT.Float(4)),
+			f: GT(7.0).Or(LT(4.0)),
 			x: map[float64]bool{
 				4: false,
 				3: true,
@@ -56,7 +56,7 @@ func TestFloatBools(t *testing.T) {
 			},
 		},
 		"!(x>5)": {
-			f: GT.Float(5).Not(),
+			f: GT(5.0).Not(),
 			x: map[float64]bool{
 				5: true,
 				6: false,
