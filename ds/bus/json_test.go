@@ -2,6 +2,7 @@ package bus_test
 
 import (
 	"errors"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -251,9 +252,25 @@ func TestRegisterHandlers(t *testing.T) {
 	s.Send(strSlice{"3", "1", "4"})
 	assert.Equal(t, "3|1|4", <-ho)
 
+	// This will trigger both HandleFoo and HandleFooErr. HandleFooErr will
+	// return an error which will be sent to the ErrHandler. The order in which
+	// HandleFoo and HandleFooErr are called is not determinate.
 	s.Send(&person{Name: "RegisterHandlers"})
-	assert.Equal(t, "RegisterHandlers", <-ho)
-	assert.Equal(t, "Error: RegisterHandlers", <-ho)
+	got := make([]string, 2)
+	for i := range got {
+		select {
+		case <-time.After(time.Millisecond * 5):
+			t.Error("Timeout: failed to receive from handlerObj")
+		case x := <-ho:
+			got[i] = x
+		}
+	}
+	if assert.Len(t, got, 2) {
+		sort.Strings(got)
+		assert.Equal(t, "Error: RegisterHandlers", got[0])
+		assert.Equal(t, "RegisterHandlers", got[1])
+	}
+
 	close(bCh)
 	select {
 	case <-time.After(time.Millisecond * 5):
