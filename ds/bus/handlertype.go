@@ -13,7 +13,7 @@ import (
 // and the ListenerMuxer's ErrHandler field is nil, the field will be set to the
 // method. A slice containing the arugments types of the handlers is returned.
 func RegisterMuxHandlerType(lm ListenerMuxer, handlerType interface{}) ([]reflect.Type, error) {
-	ms := reflector.ArgCount(filter.EQ.Int(1)).MethodFilter().
+	ms := reflector.ArgCount(filter.EQ(1)).MethodFilter().
 		And(reflector.MethodName(filter.Prefix("Handle"))).
 		On(handlerType).Funcs()
 
@@ -28,7 +28,7 @@ func RegisterMuxHandlerType(lm ListenerMuxer, handlerType interface{}) ([]reflec
 
 	var errHandler func(err error)
 	ok := reflector.
-		MethodName(filter.EQ.String("ErrHandler")).
+		MethodName(filter.EQ("ErrHandler")).
 		One(handlerType).
 		SetTo(&errHandler)
 	if ok {
