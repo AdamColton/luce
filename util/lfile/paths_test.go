@@ -43,6 +43,19 @@ func mockStat(name string) (os.FileInfo, error) {
 	}, nil
 }
 
+type mockHandler struct {
+	got      []string
+	autoload bool
+}
+
+func (mh *mockHandler) HandleIter(i Iterator) {
+	mh.got = append(mh.got, i.Path())
+}
+
+func (mh *mockHandler) Autoload() bool {
+	return mh.autoload
+}
+
 func TestIter(t *testing.T) {
 	restore := setupForTestIter()
 	defer restore()
@@ -68,6 +81,19 @@ func TestIter(t *testing.T) {
 	}
 	assert.True(t, i.Done())
 	assert.Equal(t, len(fs), c)
+
+	mh := &mockHandler{
+		autoload: false,
+	}
+	err := RunHandlerSource(fs, mh)
+	assert.NoError(t, err)
+	assert.Equal(t, []string(fs), mh.got)
+
+	mh.got = nil
+	err = RunHandler(i, mh)
+	assert.NoError(t, err)
+	assert.Equal(t, []string(fs), mh.got)
+
 }
 
 func setupForTestIter() func() {
