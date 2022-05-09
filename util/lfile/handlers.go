@@ -23,3 +23,19 @@ func RunHandler(i Iterator, ih IterHandler) error {
 	}
 	return i.Err()
 }
+
+// GetByTypeHandler records all the files and directories the Iterator visits
+// and seperates them by type.
+type GetByTypeHandler struct {
+	Files, Dirs []string
+}
+
+// HandleIter fulfills IterHandler and records the current location based on
+// the type.
+func (bt *GetByTypeHandler) HandleIter(i Iterator) {
+	if i.Stat().IsDir() {
+		bt.Dirs = append(bt.Dirs, i.Path())
+	} else {
+		bt.Files = append(bt.Files, i.Path())
+	}
+}
