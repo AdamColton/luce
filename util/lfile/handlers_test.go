@@ -6,33 +6,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetNamesByType(t *testing.T) {
-	restore := setupForTestGetNamesByType()
-	defer restore()
-
-	fs := Paths{"foo/", "foo.txt", "bar.txt", "bar/"}
-	bt := &GetByTypeHandler{}
-	err := RunHandlerSource(fs, bt)
-	assert.NoError(t, err)
-	assert.Equal(t, []string{"foo.txt", "bar.txt"}, bt.Files)
-	assert.Equal(t, []string{"foo/", "bar/"}, bt.Dirs)
-}
-
-func setupForTestGetNamesByType() func() {
-	restoreStat := Stat
-	Stat = mockStat
-	return func() {
-		Stat = restoreStat
-	}
-}
-
-func TestGetContents(t *testing.T) {
-	restore := setupForTestGetContents()
+func TestMultiHandler(t *testing.T) {
+	restore := setupForTestMultiHandler()
 	defer restore()
 
 	fs := Paths{"foo/", "foo.txt", "bar.txt", "bar/"}
 	c := GetContentsHandler{}
-	err := RunHandlerSource(fs, c)
+	bt := &GetByTypeHandler{}
+	err := RunHandlerSource(fs, MultiHandler{c, bt})
 	assert.NoError(t, err)
 
 	expected := GetContentsHandler{
@@ -40,9 +21,11 @@ func TestGetContents(t *testing.T) {
 		"bar.txt": []byte("bar.txt"),
 	}
 	assert.Equal(t, expected, c)
+	assert.Equal(t, []string{"foo.txt", "bar.txt"}, bt.Files)
+	assert.Equal(t, []string{"foo/", "bar/"}, bt.Dirs)
 }
 
-func setupForTestGetContents() func() {
+func setupForTestMultiHandler() func() {
 	restoreStat := Stat
 	restoreReadFile := ReadFile
 	Stat = mockStat

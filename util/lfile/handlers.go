@@ -50,3 +50,14 @@ func (c GetContentsHandler) HandleIter(i Iterator) {
 		c[i.Path()] = i.Data()
 	}
 }
+
+// MultiHandler is a slice of IterHandler. HandleIter will call HandleIter on
+// each IterHandler in the slice
+type MultiHandler []IterHandler
+
+// HandleIter will call HandleIter on each IterHandler in the slice
+func (mh MultiHandler) HandleIter(i Iterator) {
+	for _, h := range mh {
+		h.HandleIter(i)
+	}
+}
