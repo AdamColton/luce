@@ -14,12 +14,15 @@ func TestIter(t *testing.T) {
 	restore := setupForTestIter()
 	defer restore()
 
-	fs := Filenames{"foo.txt", "bar.txt"}
+	fs := Paths{"foo.txt", "bar.txt"}
 	c := 0
-	for i, done := fs.Iter(true); !done; done = i.Next() {
+	i, done := fs.Iterator()
+	for ; !done; done = i.Next() {
 		c++
-		assert.Equal(t, fs[i.Index], string(i.Data))
+		assert.Equal(t, fs[i.(*pathsIterator).Index], string(i.Data()))
+		assert.False(t, i.Done())
 	}
+	assert.True(t, i.Done())
 	assert.Equal(t, len(fs), c)
 }
 

@@ -12,13 +12,13 @@ func TestMultiglob(t *testing.T) {
 	restore := setupForTestMultiglob()
 	defer restore()
 
-	got, err := MultiGlob{"foo*", "*.bar"}.Filenames()
+	got, err := MultiGlob{"foo*", "*.bar"}.Paths()
 	assert.NoError(t, err)
 	sort.Strings(got)
 	expected := []string{"bar.bar", "foo", "foo.bar", "fooer"}
 	assert.Equal(t, expected, got)
 
-	_, err = MultiGlob{"]]] == bad pattern == [[["}.Filenames()
+	_, err = MultiGlob{"]]] == bad pattern == [[["}.Paths()
 	assert.Equal(t, filepath.ErrBadPattern, err)
 }
 
@@ -45,15 +45,15 @@ func TestMultiGlobIter(t *testing.T) {
 	defer restore()
 
 	c := 0
-	for i, done := (MultiGlob{"foo*", "*.bar"}).Iter(true); !done; done = i.Next() {
+	for i, done := (MultiGlob{"foo*", "*.bar"}).Iterator(); !done; done = i.Next() {
 		c++
-		assert.Equal(t, i.Filename, string(i.Data))
+		assert.Equal(t, i.Path(), string(i.Data()))
 	}
 	assert.Equal(t, 4, c)
 
-	i, done := MultiGlob{"]]] == bad pattern == [[["}.Iter(true)
+	i, done := MultiGlob{"]]] == bad pattern == [[["}.Iterator()
 	assert.True(t, done)
-	assert.Equal(t, filepath.ErrBadPattern, i.Err)
+	assert.Equal(t, filepath.ErrBadPattern, i.Err())
 
 }
 

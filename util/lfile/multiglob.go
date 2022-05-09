@@ -13,8 +13,8 @@ var Glob = filepath.Glob
 // into a single slice with no duplicates.
 type MultiGlob []string
 
-// Filenames found using MultiGlob.
-func (mg MultiGlob) Filenames() ([]string, error) {
+// Paths found using MultiGlob.
+func (mg MultiGlob) Paths() ([]string, error) {
 	unique := make(map[string]bool)
 
 	for _, p := range mg {
@@ -35,11 +35,11 @@ func (mg MultiGlob) Filenames() ([]string, error) {
 }
 
 // Iter will iterate over the files found by the MultiGlob.
-func (mg MultiGlob) Iter(autoload bool) (i *Iter, done bool) {
-	fs, err := mg.Filenames()
+func (mg MultiGlob) Iterator() (Iterator, bool) {
+	fs, err := mg.Paths()
 	if err != nil {
-		return &Iter{Err: err}, true
+		return &pathsIterator{err: err}, true
 	}
 
-	return Filenames(fs).Iter(autoload)
+	return Paths(fs).Iterator()
 }
