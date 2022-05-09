@@ -1,5 +1,7 @@
 package lfile
 
+import "os"
+
 // IteratorSource can generate an Iterator.
 type IteratorSource interface {
 	Iterator() (i Iterator, done bool)
@@ -12,4 +14,5 @@ type Iterator interface {
 	Data() []byte
 	Err() error
 	Next() (done bool)
+	Stat() os.FileInfo
 }

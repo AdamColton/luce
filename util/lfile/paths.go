@@ -1,6 +1,9 @@
 package lfile
 
-import "io/ioutil"
+import (
+	"io/ioutil"
+	"os"
+)
 
 // Paths to be iterated over.
 type Paths []string
@@ -52,10 +55,20 @@ func (i *pathsIterator) Next() (done bool) {
 // ReadFile is a reference to ioutil.ReadFile. It is left exposed for testing.
 var ReadFile = ioutil.ReadFile
 
+// Stat is a reference to os.Stat. It is left exposed for testing.
+var Stat = os.Stat
+
+// Load the current file to Data. Any errors will be stored in Err.
+func (i *pathsIterator) Stat() (info os.FileInfo) {
+	info, i.err = Stat(i.filename)
+	return
+}
+
 func (i *pathsIterator) update() bool {
 	i.done = i.done || i.Index >= len(i.Paths) || i.err != nil
 	if i.done {
 		i.filename = ""
+
 	} else {
 		i.filename = i.Paths[i.Index]
 		i.data = nil
