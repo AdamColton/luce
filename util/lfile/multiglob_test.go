@@ -9,20 +9,8 @@ import (
 )
 
 func TestMultiglob(t *testing.T) {
-	restore := Glob
-	defer func() { Glob = restore }()
-
-	mockdir := map[string][]string{
-		"foo*":  {"foo", "fooer", "foo.bar"},
-		"*.bar": {"foo.bar", "bar.bar"},
-	}
-	Glob = func(pattern string) ([]string, error) {
-		matches, found := mockdir[pattern]
-		if found {
-			return matches, nil
-		}
-		return nil, filepath.ErrBadPattern
-	}
+	restore := setupForTestMultiglob()
+	defer restore()
 
 	got, err := MultiGlob{"foo*", "*.bar"}.Filenames()
 	assert.NoError(t, err)
@@ -34,14 +22,8 @@ func TestMultiglob(t *testing.T) {
 	assert.Equal(t, filepath.ErrBadPattern, err)
 }
 
-func TestMultiGlobIter(t *testing.T) {
+func setupForTestMultiglob() func() {
 	restoreGlob := Glob
-	restoreReadFile := ReadFile
-	defer func() { Glob, ReadFile = restoreGlob, restoreReadFile }()
-
-	ReadFile = func(filename string) ([]byte, error) {
-		return []byte(filename), nil
-	}
 
 	mockdir := map[string][]string{
 		"foo*":  {"foo", "fooer", "foo.bar"},
@@ -54,6 +36,13 @@ func TestMultiGlobIter(t *testing.T) {
 		}
 		return nil, filepath.ErrBadPattern
 	}
+
+	return func() { Glob = restoreGlob }
+}
+
+func TestMultiGlobIter(t *testing.T) {
+	restore := setupForTestMultiGlobIter()
+	defer restore()
 
 	c := 0
 	for i, done := (MultiGlob{"foo*", "*.bar"}).Iter(true); !done; done = i.Next() {
@@ -66,4 +55,25 @@ func TestMultiGlobIter(t *testing.T) {
 	assert.True(t, done)
 	assert.Equal(t, filepath.ErrBadPattern, i.Err)
 
+}
+
+func setupForTestMultiGlobIter() func() {
+	restoreGlob := Glob
+	restoreReadFile := ReadFile
+
+	ReadFile = mockReadFileAsName
+
+	mockdir := map[string][]string{
+		"foo*":  {"foo", "fooer", "foo.bar"},
+		"*.bar": {"foo.bar", "bar.bar"},
+	}
+	Glob = func(pattern string) ([]string, error) {
+		matches, found := mockdir[pattern]
+		if found {
+			return matches, nil
+		}
+		return nil, filepath.ErrBadPattern
+	}
+
+	return func() { Glob, ReadFile = restoreGlob, restoreReadFile }
 }
