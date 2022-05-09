@@ -60,9 +60,10 @@ func TestMultiGlobIter(t *testing.T) {
 func setupForTestMultiGlobIter() func() {
 	restoreGlob := Glob
 	restoreReadFile := ReadFile
+	restoreStat := Stat
 
 	ReadFile = mockReadFileAsName
-
+	Stat = mockStat
 	mockdir := map[string][]string{
 		"foo*":  {"foo", "fooer", "foo.bar"},
 		"*.bar": {"foo.bar", "bar.bar"},
@@ -75,5 +76,5 @@ func setupForTestMultiGlobIter() func() {
 		return nil, filepath.ErrBadPattern
 	}
 
-	return func() { Glob, ReadFile = restoreGlob, restoreReadFile }
+	return func() { Glob, ReadFile, Stat = restoreGlob, restoreReadFile, restoreStat }
 }

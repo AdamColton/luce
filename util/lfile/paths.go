@@ -26,6 +26,7 @@ type pathsIterator struct {
 	Index    int
 	data     []byte
 	err      error
+	info     *os.FileInfo
 }
 
 func (i *pathsIterator) Path() string {
@@ -58,17 +59,21 @@ var ReadFile = ioutil.ReadFile
 // Stat is a reference to os.Stat. It is left exposed for testing.
 var Stat = os.Stat
 
-// Load the current file to Data. Any errors will be stored in Err.
 func (i *pathsIterator) Stat() (info os.FileInfo) {
-	info, i.err = Stat(i.filename)
+	if i.info == nil {
+		info, i.err = Stat(i.filename)
+		i.info = &info
+	} else {
+		info = *(i.info)
+	}
 	return
 }
 
 func (i *pathsIterator) update() bool {
 	i.done = i.done || i.Index >= len(i.Paths) || i.err != nil
+	i.info = nil
 	if i.done {
 		i.filename = ""
-
 	} else {
 		i.filename = i.Paths[i.Index]
 		i.data = nil
