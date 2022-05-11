@@ -36,3 +36,13 @@ func Except(err error, except ...error) bool {
 	}
 	return false
 }
+
+// Any returns the first error in errs that is not nil.
+func Any(errs ...error) error {
+	for _, e := range errs {
+		if e != nil {
+			return e
+		}
+	}
+	return nil
+}

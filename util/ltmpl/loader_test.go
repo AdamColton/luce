@@ -17,8 +17,8 @@ func TestHTMLLoader(t *testing.T) {
 	}
 
 	l := HTMLLoader{
-		Trimmer:  lfile.PathLength(3),
-		Iterator: lfile.Filenames{"foo.bar", "bar.bar"},
+		Trimmer:        lfile.PathLength(3),
+		IteratorSource: lfile.Paths{"foo.bar", "bar.bar"},
 	}
 	tmpl, err := l.Load()
 	assert.NoError(t, err)

@@ -3,6 +3,7 @@ package ltmpl
 import (
 	"html/template"
 
+	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/lfile"
 )
 
@@ -15,7 +16,7 @@ type Trimmer interface {
 // HTMLLoader defines a list of Globs to match and the path length to preserve.
 // This allows for the file structure to be retained for useful template names.
 type HTMLLoader struct {
-	lfile.Iterator
+	lfile.IteratorSource
 	Trimmer
 }
 
@@ -30,16 +31,18 @@ func (l *HTMLLoader) Load() (*template.Template, error) {
 		return t
 	}
 
-	i, done := l.Iter(true)
-	for ; !done; done = i.Next() {
-		tmplname := i.Filename
+	var err error
+	i, done := l.Iterator()
+	for ; !done && err == nil; done = i.Next() {
+		tmplname := i.Path()
 		if l.Trimmer != nil {
 			tmplname = l.Trim(tmplname)
 		}
-		_, i.Err = addTemplate(tmplname).Parse(string(i.Data))
+		_, err = addTemplate(tmplname).Parse(string(i.Data()))
 	}
-	if i.Err != nil {
-		return nil, i.Err
+	err = lerr.Any(i.Err(), err)
+	if err != nil {
+		return nil, err
 	}
 
 	return t, nil
