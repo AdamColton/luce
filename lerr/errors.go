@@ -23,6 +23,14 @@ func NewMany(errs ...error) Many {
 	return m
 }
 
+// First error if Many has any.
+func (m Many) First() error {
+	if len(m) > 0 {
+		return m[0]
+	}
+	return nil
+}
+
 // Error fulfills error
 func (m Many) Error() string {
 	out := make([]string, 0, len(m))
