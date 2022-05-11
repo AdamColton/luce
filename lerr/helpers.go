@@ -76,3 +76,13 @@ func HandlerFunc(handler any) (fn ErrHandler, err error) {
 	}
 	return
 }
+
+// Any returns the first error in errs that is not nil.
+func Any(errs ...error) error {
+	for _, e := range errs {
+		if e != nil {
+			return e
+		}
+	}
+	return nil
+}
