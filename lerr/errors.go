@@ -14,6 +14,21 @@ func (err Str) Error() string {
 // Many allows many errors to be collected.
 type Many []error
 
+func NewMany(errs ...error) Many {
+	var m Many
+	for _, err := range errs {
+		m = m.Add(err)
+	}
+	return m
+}
+
+func (m Many) First() error {
+	if len(m) > 0 {
+		return m[0]
+	}
+	return nil
+}
+
 // Error fulfills error
 func (m Many) Error() string {
 	out := make([]string, 0, len(m))
