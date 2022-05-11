@@ -176,3 +176,13 @@ func TestLog(t *testing.T) {
 
 	assert.False(t, lerr.Log(te, te))
 }
+
+func TestManyFirst(t *testing.T) {
+	te := lerr.Str("test error")
+	to := lerr.Str("test other")
+	err := lerr.NewMany(nil, te, nil, to, nil).First()
+	assert.Equal(t, te, err)
+
+	err = lerr.NewMany(nil, nil, nil).First()
+	assert.NoError(t, err)
+}
