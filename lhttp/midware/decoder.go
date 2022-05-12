@@ -9,7 +9,6 @@ import (
 
 type Decoder struct {
 	lhttp.RequestDecoder
-	lhttp.ErrHandler
 	FieldName string
 }
 
