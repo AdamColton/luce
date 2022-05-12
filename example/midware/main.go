@@ -20,7 +20,7 @@ func main() {
 	m := midware.New(
 		midware.NewDecoder(formdecoder.New(), "Form"),
 		midware.NewDecoder(jsondecoder.New(), "JSON"),
-		midware.Url{Var: "id", FieldName: "ID"},
+		midware.URL("id", "ID"),
 	)
 	s.HandleFunc("/decode", getPerson).Methods("GET")
 	s.HandleFunc("/decode/{id:[0-9]+}", m.Handle(postPerson)).Methods("POST")
