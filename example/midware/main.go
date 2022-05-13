@@ -17,13 +17,13 @@ func main() {
 	s := mux.NewRouter()
 	s.HandleFunc("/", home)
 
-	m := midware.NewMagic(
+	m := midware.New(
 		midware.NewDecoder(formdecoder.New(), "Form"),
 		midware.NewDecoder(jsondecoder.New(), "JSON"),
 		midware.Url{Var: "id", FieldName: "ID"},
 	)
 	s.HandleFunc("/decode", getPerson).Methods("GET")
-	s.HandleFunc("/decode/{id}", m.Handle(postPerson)).Methods("POST")
+	s.HandleFunc("/decode/{id:[0-9]+}", m.Handle(postPerson)).Methods("POST")
 
 	s.HandleFunc("/decode/json", getJsonPerson).Methods("GET")
 	s.HandleFunc("/decode/json", m.Handle(postJsonPerson)).Methods("POST")
@@ -115,7 +115,7 @@ func getPerson(w http.ResponseWriter, r *http.Request) {
 	render(w, "Decode Person", personForm)
 }
 
-func postPerson(w http.ResponseWriter, r *http.Request, data struct {
+func postPerson(w http.ResponseWriter, r *http.Request, data *struct {
 	Form *Person
 	ID   string
 }) {
