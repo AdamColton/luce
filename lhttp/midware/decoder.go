@@ -4,57 +4,55 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/lhttp"
+	"github.com/adamcolton/luce/util/filter"
 )
 
-type Decoder struct {
-	lhttp.RequestDecoder
-	FieldName string
-}
-
-func NewDecoder(d lhttp.RequestDecoder, fieldName string) Decoder {
-	return Decoder{
+// NewDecoder creates a magic midware that decodes data from the request and
+// sets it to a field on the magic data type.
+func NewDecoder(d lhttp.RequestDecoder, fieldName string) Initilizer {
+	return NewFieldInitilizer(DecoderInitilizer{
 		RequestDecoder: d,
-		FieldName:      fieldName,
-	}
+	}, fieldName)
 }
 
-type decoderInserter struct {
+// DecoderInitilizer fulfills FieldSetterInitilizer.
+type DecoderInitilizer struct {
 	lhttp.RequestDecoder
-	idx []int
-	t   reflect.Type
 }
 
-func (d Decoder) Initilize(t reflect.Type) DataInserter {
-	if d.FieldName == "" {
-		panic("Decoder.FieldName cannot be blank when used as Initilizer")
-	}
-	decField, hasDec := t.FieldByName(d.FieldName)
-	if !hasDec {
-		return nil
-	}
-	di := &decoderInserter{
-		RequestDecoder: d.RequestDecoder,
-		idx:            decField.Index,
-	}
+const (
+	// ErrDecoderField is the panic value used by DecoderInitilizer if the field
+	// type is not a pointer to a struct.
+	ErrDecoderField = lerr.Str("Decoder field should be pointer to struct")
+)
 
-	di.t = decField.Type
-	if di.t.Kind() != reflect.Ptr {
-		panic("Decoder field should be pointer to struct:" + di.t.String())
+var decoderCheck = filter.TypeCheck(isPtrToStruct, ErrDecoderField)
+
+// Initilize fulfills FieldSetterInitilizer. It validates that the Type t is a
+// pointer to a struct.
+func (di DecoderInitilizer) Initilize(fieldType reflect.Type) FieldSetter {
+	return &decoderSetter{
+		RequestDecoder: di.RequestDecoder,
+		Type:           decoderCheck.Panic(fieldType).Elem(),
 	}
-	di.t = di.t.Elem()
-	if di.t.Kind() != reflect.Struct {
-		panic("Decoder field should be pointer to struct")
-	}
-	return di
 }
 
-func (di *decoderInserter) Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) (func(), error) {
-	v := reflect.New(di.t)
-	err := di.Decode(v.Interface(), r)
-	if err != nil {
-		return nil, err
+type decoderSetter struct {
+	lhttp.RequestDecoder
+	reflect.Type
+}
+
+// Set fulfills FieldSetter. It creates and instance of the field to set, which
+// will be a pointer to struct and calls Decode on the underlying RequestDecoder
+// to set the field value.
+func (ds decoderSetter) Set(w http.ResponseWriter, r *http.Request, field reflect.Value) (func(), error) {
+	v := reflect.New(ds.Type)
+	err := ds.Decode(v.Interface(), r)
+	if err == nil {
+		field.Set(v)
 	}
-	dst.Elem().FieldByIndex(di.idx).Set(v)
-	return nil, nil
+
+	return nil, err
 }
