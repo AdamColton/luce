@@ -26,19 +26,8 @@ func (m *mockCallback) Callback() {
 	m.calledBack = true
 }
 
-type mockRequestDecoder struct {
-	str string
-	err error
-}
-
 type testFieldType struct {
 	A string
-}
-
-func (mrd *mockRequestDecoder) Decode(i interface{}, r *http.Request) error {
-	tft := i.(*testFieldType)
-	tft.A = mrd.str
-	return mrd.err
 }
 
 func TestMidware(t *testing.T) {
