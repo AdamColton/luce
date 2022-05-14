@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/adamcolton/luce/lerr"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -72,5 +73,18 @@ func TestCompare(t *testing.T) {
 	assert.False(t, LTE(5)(6))
 	assert.True(t, LTE(5)(5))
 	assert.True(t, LTE(5)(4))
+}
 
+func TestChecker(t *testing.T) {
+	err := lerr.Str("Test Error")
+	c := EQ("Test").Check(func(s string) error {
+		return err
+	})
+	assert.NoError(t, c("Test"))
+	assert.Equal(t, err, c("foo"))
+
+	defer func() {
+		assert.Equal(t, err, recover())
+	}()
+	c.Panic("foo")
 }
