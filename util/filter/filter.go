@@ -52,3 +52,25 @@ func (f Filter[T]) Not() Filter[T] {
 		return !f(val)
 	}
 }
+
+// Checker returns an error based on a single argument.
+type Checker[T any] func(T) error
+
+// Check converts a filter to a Checker and returns the provided err if the
+// filter fails.
+func (f Filter[T]) Check(err error) Checker[T] {
+	return func(val T) error {
+		if !f(val) {
+			return err
+		}
+		return nil
+	}
+}
+
+// Panic runs the Checker and if it returns an error, panics with that error.
+func (c Checker[T]) Panic(val T) {
+	err := c(val)
+	if err != nil {
+		panic(err)
+	}
+}
