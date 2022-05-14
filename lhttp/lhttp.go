@@ -33,3 +33,11 @@ func (h ErrHandler) Check(w http.ResponseWriter, r *http.Request, err error) boo
 	}
 	return isErr
 }
+
+// MessageReaderWriter is the part of a websocket connection (such as
+// *websocket.Conn) that Socket needs: reading and writing whole messages. The
+// messageType is a websocket message type such as websocket.TextMessage.
+type MessageReaderWriter interface {
+	WriteMessage(messageType int, data []byte) error
+	ReadMessage() (int, []byte, error)
+}
