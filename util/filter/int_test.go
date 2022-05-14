@@ -65,6 +65,14 @@ func TestIntBools(t *testing.T) {
 				3: true,
 			},
 		},
+		"x==3": {
+			f: EQ(3),
+			x: map[int]bool{
+				2: false,
+				3: true,
+				4: false,
+			},
+		},
 	}
 
 	for n, tc := range tt {
