@@ -3,6 +3,7 @@ package filter
 import (
 	"github.com/adamcolton/luce/ds/channel"
 	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/lerr"
 )
 
 // Filter represents boolean logic on a Type.
@@ -54,4 +55,23 @@ func (f Filter[T]) Chan(pipe channel.Pipe[T]) channel.Pipe[T] {
 		close(pipe.Snd)
 	}()
 	return out
+}
+
+// Checker returns an error based on a single argument.
+type Checker[T any] func(T) error
+
+// Check converts a filter to a Checker and returns the provided err if the
+// filter fails.
+func (f Filter[T]) Check(errFn func(T) error) Checker[T] {
+	return func(val T) error {
+		if !f(val) {
+			return errFn(val)
+		}
+		return nil
+	}
+}
+
+// Panic runs the Checker and if it returns an error, panics with that error.
+func (c Checker[T]) Panic(val T) {
+	lerr.Panic(c(val))
 }
