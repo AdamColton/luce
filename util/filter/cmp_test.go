@@ -3,6 +3,7 @@ package filter_test
 import (
 	"testing"
 
+	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/filter"
 	"github.com/stretchr/testify/assert"
 )
@@ -50,4 +51,18 @@ func TestCompare(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestChecker(t *testing.T) {
+	err := lerr.Str("Test Error")
+	c := filter.EQ("Test").Check(func(s string) error {
+		return err
+	})
+	assert.NoError(t, c("Test"))
+	assert.Equal(t, err, c("foo"))
+
+	defer func() {
+		assert.Equal(t, err, recover())
+	}()
+	c.Panic("foo")
 }
