@@ -32,26 +32,6 @@ func (ws WebSocket) Handler(handler lhttp.SocketHandler) http.HandlerFunc {
 	}
 }
 
-func (WebSocket) RunReader(from chan<- []byte, socket *websocket.Conn) {
-	for {
-		_, msg, err := socket.ReadMessage()
-		if err != nil {
-			break
-		}
-		from <- msg
-	}
-	close(from)
-}
-
-func (WebSocket) RunSender(to <-chan []byte, socket *websocket.Conn) {
-	for msg := range to {
-		err := socket.WriteMessage(1, msg)
-		if err != nil {
-			break
-		}
-	}
-}
-
 // HandleSocketChans abstracts the websocket as a pair of channels. The handler
 // must close the to channel when it is done.
 func (ws WebSocket) HandleSocketChans(handler lhttp.ChanHandler) http.HandlerFunc {
@@ -64,9 +44,11 @@ func (ws WebSocket) HandleSocketChans(handler lhttp.ChanHandler) http.HandlerFun
 			return nil
 		})
 
-		go ws.RunReader(from, socket)
+		sw := lhttp.NewSocket(socket)
+
+		go sw.RunReader(from)
 		go handler(to, from, r)
-		ws.RunSender(to, socket)
+		sw.RunSender(to)
 		socket.Close()
 	})
 }
