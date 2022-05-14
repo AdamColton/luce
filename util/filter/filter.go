@@ -2,6 +2,7 @@ package filter
 
 import (
 	"github.com/adamcolton/luce/ds/channel"
+	"github.com/adamcolton/luce/lerr"
 )
 
 // Filter is a func that tests a value of type T. Filters can be combined with
@@ -63,4 +64,23 @@ func (f Filter[T]) Chan(pipe channel.Pipe[T]) channel.Pipe[T] {
 		close(pipe.Snd)
 	}()
 	return out
+}
+
+// Checker returns an error for a value, or nil if the value is acceptable.
+type Checker[T any] func(T) error
+
+// Check converts a filter to a Checker. The Checker returns errFn(val) if the
+// filter is false for val, otherwise nil.
+func (f Filter[T]) Check(errFn func(T) error) Checker[T] {
+	return func(val T) error {
+		if !f(val) {
+			return errFn(val)
+		}
+		return nil
+	}
+}
+
+// Panic runs the Checker and if it returns an error, panics with that error.
+func (c Checker[T]) Panic(val T) {
+	lerr.Panic(c(val))
 }
