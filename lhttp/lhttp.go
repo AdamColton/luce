@@ -29,3 +29,8 @@ func (h ErrHandler) Check(w http.ResponseWriter, r *http.Request, err error) boo
 	}
 	return isErr
 }
+
+type MessageReaderWriter interface {
+	WriteMessage(messageType int, data []byte) error
+	ReadMessage() (int, []byte, error)
+}
