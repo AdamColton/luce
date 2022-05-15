@@ -17,8 +17,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (s *Server) RunServiceSocket(addr string) error {
-	sck := unixsocket.New(addr, s.handleServiceSocket)
+func (s *Server) RunServiceSocket() error {
+	sck := unixsocket.New(s.ServiceSocket, s.handleServiceSocket)
 	return sck.Run()
 }
 
