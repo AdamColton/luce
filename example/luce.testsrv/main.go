@@ -15,12 +15,12 @@ func main() {
 
 	conn.Add(
 		SayHi,
-		g.Get("/sayHi/{name}").WithUser(),
+		g.Get("sayHi/{name}").WithUser(),
 	)
 
 	conn.Add(
 		Query,
-		g.GetQuery("/query").WithPrefix(),
+		g.GetQuery("query").WithPrefix(),
 	)
 
 	conn.Run()

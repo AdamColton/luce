@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/lhttp"
 )
 
 // Routes holds a collection of RouteConfigs.
@@ -26,40 +27,26 @@ func NewRouteConfigGen(basePath string) *RouteConfigGen {
 	}
 }
 
+func (g *RouteConfigGen) Path(path string) *RouteConfig {
+	return NewRoute(lhttp.Join(g.Base, path))
+}
+
 // Get creates a RouteConfig with a Path of Base+path at
 func (g *RouteConfigGen) Get(path string) *RouteConfig {
-	r := &RouteConfig{
-		Path:   g.Base + path,
-		Method: "GET",
-	}
-	return r
+	return g.Path(path).Get()
 }
 
 // GetQuery
 func (g *RouteConfigGen) GetQuery(path string) *RouteConfig {
-	r := &RouteConfig{
-		Path:   g.Base + path,
-		Method: "GET",
-		Query:  true,
-	}
-	return r
+	return g.Path(path).Get().WithQuery()
 }
 
 func (g *RouteConfigGen) Post(path string) *RouteConfig {
-	r := &RouteConfig{
-		Path:   g.Base + path,
-		Method: "POST",
-	}
-	return r
+	return g.Path(path).Post()
 }
 
 func (g *RouteConfigGen) PostForm(path string) *RouteConfig {
-	r := &RouteConfig{
-		Path:   g.Base + path,
-		Method: "POST",
-		Form:   true,
-	}
-	return r
+	return g.Path(path).Post().WithForm()
 }
 
 type RouteConfig struct {
