@@ -13,10 +13,14 @@ import (
 )
 
 func socketclient(c *cli.Context) error {
-	inBus := iobus.ReaderConfig{
+	inBus, stdinErrBus := iobus.Config{
 		CloseOnEOF: true,
-	}.New(os.Stdin)
-	in := procbus.Delim(inBus.In, '\n')
+	}.NewReader(os.Stdin)
+	go func() {
+		panic(<-stdinErrBus)
+	}()
+
+	in := procbus.Delim(inBus, '\n')
 	addr, err := getSock(in)
 	if err != nil {
 		return err
@@ -33,10 +37,13 @@ func socketclient(c *cli.Context) error {
 
 	go iobus.Writer(conn, in, nil)
 
-	cr := iobus.ReaderConfig{
+	in, socketErrCh := iobus.Config{
 		CloseOnEOF: true,
-	}.New(conn)
-	for m := range cr.In {
+	}.NewReader(conn)
+	go func() {
+		panic(<-socketErrCh)
+	}()
+	for m := range in {
 		fmt.Print(string(m))
 	}
 	return nil
