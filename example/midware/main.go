@@ -17,21 +17,21 @@ func main() {
 	s := mux.NewRouter()
 	s.HandleFunc("/", home)
 
-	m := midware.NewMagic(
+	m := midware.New(
 		midware.NewDecoder(formdecoder.New(), "Form"),
 		midware.NewDecoder(jsondecoder.New(), "JSON"),
-		midware.Url{Var: "id", FieldName: "ID"},
+		midware.URL("id", "ID"),
+		midware.NewWebSocket().Initilizer("To", "From", "Socket"),
 	)
 	s.HandleFunc("/decode", getPerson).Methods("GET")
-	s.HandleFunc("/decode/{id}", m.Handle(postPerson)).Methods("POST")
+	s.HandleFunc("/decode/{id:[0-9]+}", m.Handle(postPerson)).Methods("POST")
 
 	s.HandleFunc("/decode/json", getJsonPerson).Methods("GET")
 	s.HandleFunc("/decode/json", m.Handle(postJsonPerson)).Methods("POST")
 
-	ws := midware.NewWebSocket()
 	s.HandleFunc("/socket", socketDemo).Methods("GET")
-	s.HandleFunc("/socket/handler", ws.Handler(socketHandler))
-	s.HandleFunc("/socket/chan", ws.HandleSocketChans(chanHandler))
+	s.HandleFunc("/socket/handler", m.Handle(socketHandler))
+	s.HandleFunc("/socket/chan", m.Handle(chanHandler))
 
 	lerr.Panic(http.ListenAndServe(":8081", s))
 }
@@ -115,7 +115,7 @@ func getPerson(w http.ResponseWriter, r *http.Request) {
 	render(w, "Decode Person", personForm)
 }
 
-func postPerson(w http.ResponseWriter, r *http.Request, data struct {
+func postPerson(w http.ResponseWriter, r *http.Request, data *struct {
 	Form *Person
 	ID   string
 }) {
@@ -123,12 +123,14 @@ func postPerson(w http.ResponseWriter, r *http.Request, data struct {
 }
 
 func getJsonPerson(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("get json person")
 	render(w, "Decode Json Person", jsonPerson)
 }
 
 func postJsonPerson(w http.ResponseWriter, r *http.Request, data *struct {
 	JSON *Person
 }) {
+	fmt.Println("post json person")
 	fmt.Println(data.JSON)
 	fmt.Fprint(w, data.JSON)
 }
@@ -137,20 +139,22 @@ func socketDemo(w http.ResponseWriter, r *http.Request) {
 	render(w, "Decode Person", socketBody)
 }
 
-func socketHandler(socket *websocket.Conn, r *http.Request) {
+func socketHandler(w http.ResponseWriter, r *http.Request, data *struct {
+	Socket *websocket.Conn
+}) {
 	go func() {
 		var err error
 		count := 0
 		for err == nil {
 			count++
 			msg := fmt.Sprintf("Server to client: %d", count)
-			err = socket.WriteMessage(1, []byte(msg))
+			err = data.Socket.WriteMessage(1, []byte(msg))
 			time.Sleep(time.Second)
 		}
 	}()
 
 	for {
-		_, msg, err := socket.ReadMessage()
+		_, msg, err := data.Socket.ReadMessage()
 		if err != nil {
 			//lost connection
 			break
@@ -160,17 +164,20 @@ func socketHandler(socket *websocket.Conn, r *http.Request) {
 	fmt.Println("Socket Closed")
 }
 
-func chanHandler(to chan<- []byte, from <-chan []byte, r *http.Request) {
+func chanHandler(w http.ResponseWriter, r *http.Request, data *struct {
+	To   chan<- []byte
+	From <-chan []byte
+}) {
 	done := false
 	go func() {
 		for count := 1; !done; count++ {
 			msg := fmt.Sprintf("server to client: %d", count)
-			to <- []byte(msg)
+			data.To <- []byte(msg)
 			time.Sleep(time.Second)
 		}
 	}()
 
-	for msg := range from {
+	for msg := range data.From {
 		fmt.Println(string(msg))
 	}
 	fmt.Println("Socket Closed")
