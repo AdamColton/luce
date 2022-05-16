@@ -99,6 +99,11 @@ func (r *RouteConfig) WithUser() *RouteConfig {
 	return r
 }
 
+func (r *RouteConfig) WithBody() *RouteConfig {
+	r.Body = true
+	return r
+}
+
 func (r *RouteConfig) WithPrefix() *RouteConfig {
 	r.PathPrefix = true
 	return r
