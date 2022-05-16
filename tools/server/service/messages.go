@@ -86,6 +86,13 @@ func (r *Request) ResponseString(body string) *Response {
 	return r.Response([]byte(body))
 }
 
+// ResponseString to the Request.
+func (r *Request) ResponseErr(err error, status int) *Response {
+	resp := r.ResponseString(err.Error())
+	resp.Status = status
+	return resp
+}
+
 // Response to a request. The ID is the same as the ID is taken from the
 // request.
 type Response struct {
