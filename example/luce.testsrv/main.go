@@ -26,7 +26,7 @@ func main() {
 	conn.Run()
 }
 
-func SayHi(req service.Request) service.Response {
+func SayHi(req *service.Request) *service.Response {
 	name := req.PathVars["name"]
 	if req.User != nil && req.User.Name != "" {
 		name = req.User.Name
@@ -36,6 +36,6 @@ func SayHi(req service.Request) service.Response {
 	)
 }
 
-func Query(req service.Request) service.Response {
+func Query(req *service.Request) *service.Response {
 	return req.ResponseString(fmt.Sprintf("Query: %v Path: %v", req.Query, req.Path))
 }

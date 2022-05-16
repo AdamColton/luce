@@ -20,9 +20,15 @@ type RouteConfigGen struct {
 	Base string
 }
 
+func NewRouteConfigGen(basePath string) *RouteConfigGen {
+	return &RouteConfigGen{
+		Base: basePath,
+	}
+}
+
 // Get creates a RouteConfig with a Path of Base+path at
-func (g RouteConfigGen) Get(path string) RouteConfig {
-	r := RouteConfig{
+func (g *RouteConfigGen) Get(path string) *RouteConfig {
+	r := &RouteConfig{
 		Path:   g.Base + path,
 		Method: "GET",
 	}
@@ -30,8 +36,8 @@ func (g RouteConfigGen) Get(path string) RouteConfig {
 }
 
 // GetQuery
-func (g RouteConfigGen) GetQuery(path string) RouteConfig {
-	r := RouteConfig{
+func (g *RouteConfigGen) GetQuery(path string) *RouteConfig {
+	r := &RouteConfig{
 		Path:   g.Base + path,
 		Method: "GET",
 		Query:  true,
@@ -39,16 +45,16 @@ func (g RouteConfigGen) GetQuery(path string) RouteConfig {
 	return r
 }
 
-func (g RouteConfigGen) Post(path string) RouteConfig {
-	r := RouteConfig{
+func (g *RouteConfigGen) Post(path string) *RouteConfig {
+	r := &RouteConfig{
 		Path:   g.Base + path,
 		Method: "POST",
 	}
 	return r
 }
 
-func (g RouteConfigGen) PostForm(path string) RouteConfig {
-	r := RouteConfig{
+func (g *RouteConfigGen) PostForm(path string) *RouteConfig {
+	r := &RouteConfig{
 		Path:   g.Base + path,
 		Method: "POST",
 		Form:   true,
@@ -71,12 +77,12 @@ type RouteConfig struct {
 
 const ErrPathRequired = lerr.Str("RouteConfig: Path is required")
 
-func (r RouteConfig) WithUser() RouteConfig {
+func (r *RouteConfig) WithUser() *RouteConfig {
 	r.User = true
 	return r
 }
 
-func (r RouteConfig) WithPrefix() RouteConfig {
+func (r *RouteConfig) WithPrefix() *RouteConfig {
 	r.PathPrefix = true
 	return r
 }
@@ -99,7 +105,7 @@ func (r *RouteConfig) Validate() error {
 	return nil
 }
 
-func (r RouteConfig) String() string {
+func (r *RouteConfig) String() string {
 	prefxStr := ""
 	if r.PathPrefix {
 		prefxStr = "..."
@@ -107,7 +113,7 @@ func (r RouteConfig) String() string {
 	return fmt.Sprintf("(%s) %s%s", r.Method, r.Path, prefxStr)
 }
 
-func (r RouteConfig) Methods() []string {
+func (r *RouteConfig) Methods() []string {
 	out := strings.Split(r.Method, ",")
 	for i, m := range out {
 		out[i] = strings.TrimSpace(m)
