@@ -77,11 +77,55 @@ type RouteConfig struct {
 
 const ErrPathRequired = lerr.Str("RouteConfig: Path is required")
 
+// NewRoute defined by path (relative to the base path).
+func NewRoute(path string) *RouteConfig {
+	return &RouteConfig{
+		Path: path,
+	}
+}
+
+// AddMethod is a chainable helper. It sets the Method field. If the Method
+// field is not empty, it appends the input with comma seperation.
+func (r *RouteConfig) AddMethod(method string) *RouteConfig {
+	if r.Method == "" {
+		r.Method = method
+	} else {
+		r.Method += "," + method
+	}
+	return r
+}
+
+// Get is a chainable helper. It adds Get to the Method field.
+func (r *RouteConfig) Get() *RouteConfig { return r.AddMethod("GET") }
+
+// Post is a chainable helper. It adds Post to the Method field.
+func (r *RouteConfig) Post() *RouteConfig { return r.AddMethod("POST") }
+
+// Delete is a chainable helper. It adds Delete to the Method field.
+func (r *RouteConfig) Delete() *RouteConfig { return r.AddMethod("DELETE") }
+
+// Put is a chainable helper. It adds Put to the Method field.
+func (r *RouteConfig) Put() *RouteConfig { return r.AddMethod("PUT") }
+
+// WithQuery is a chainable helper. It sets the Query field to true.
+func (r *RouteConfig) WithQuery() *RouteConfig {
+	r.Query = true
+	return r
+}
+
+// WithQuery is a chainable helper. It sets the Form field to true.
+func (r *RouteConfig) WithForm() *RouteConfig {
+	r.Form = true
+	return r
+}
+
+// WithUser is a chainable helper. It sets the User field to true.
 func (r *RouteConfig) WithUser() *RouteConfig {
 	r.User = true
 	return r
 }
 
+// WithPrefix is a chainable helper. It sets the PathPrefix field to true.
 func (r *RouteConfig) WithPrefix() *RouteConfig {
 	r.PathPrefix = true
 	return r
