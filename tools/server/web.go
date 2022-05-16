@@ -30,10 +30,6 @@ func (s *Server) setRoutes() {
 	r.HandleFunc("/admin/users", m.Handle(s.adminUsers)).Methods("GET")
 }
 
-func redirect(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/", http.StatusFound)
-}
-
 func setCookie(w http.ResponseWriter, r *http.Request) {
 	cookie := &http.Cookie{
 		Name:  "testing",
