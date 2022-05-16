@@ -44,3 +44,28 @@ func (u *User) sortGroups() {
 		return u.Groups[i] < u.Groups[j]
 	})
 }
+
+// OneRequired requires that a user be in one of the listed groups. If no groups
+// are listed, the result is true.
+func (u *User) OneRequired(groups []string) bool {
+	if len(groups) == 0 {
+		return true
+	}
+	if u == nil {
+		return false
+	}
+
+	ln := len(u.Groups)
+	var group string
+	fn := func(i int) bool {
+		return u.Groups[i] >= group
+	}
+
+	for _, group = range groups {
+		idx := sort.Search(ln, fn)
+		if idx >= 0 && idx < ln && u.Groups[idx] == group {
+			return true
+		}
+	}
+	return false
+}
