@@ -121,6 +121,12 @@ func (r *RouteConfig) WithUser() *RouteConfig {
 	return r
 }
 
+// WithBody is a chainable helper. It sets the Body field to true.
+func (r *RouteConfig) WithBody() *RouteConfig {
+	r.Body = true
+	return r
+}
+
 // WithPrefix is a chainable helper. It sets the PathPrefix field to true.
 func (r *RouteConfig) WithPrefix() *RouteConfig {
 	r.PathPrefix = true
