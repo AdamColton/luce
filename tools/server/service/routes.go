@@ -83,19 +83,20 @@ func (r *RouteConfig) Validate() error {
 		r.Method = "GET"
 	}
 	if r.ID == "" {
-		if r.Method != "" {
-			r.ID = fmt.Sprintf("(%s) %s", r.Method, r.Path)
-		} else {
-			r.ID = r.Path
-		}
-		if r.PathPrefix {
-			r.ID += "..."
-		}
+		r.ID = r.String()
 	}
 	if strings.Contains(r.Path, "{") {
 		r.PathVars = true
 	}
 	return nil
+}
+
+func (r RouteConfig) String() string {
+	prefxStr := ""
+	if r.PathPrefix {
+		prefxStr = "..."
+	}
+	return fmt.Sprintf("(%s) %s%s", r.Method, r.Path, prefxStr)
 }
 
 func (r RouteConfig) Methods() []string {

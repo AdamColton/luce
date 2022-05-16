@@ -31,6 +31,7 @@ func NewClient(addr string) (*Client, error) {
 	mux := NewMux()
 	err = conn.Listener.RegisterHandlers(mux.Handle)
 	if err != nil {
+		conn.NetConn.Close()
 		return nil, err
 	}
 
