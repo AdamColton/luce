@@ -77,6 +77,36 @@ type RouteConfig struct {
 
 const ErrPathRequired = lerr.Str("RouteConfig: Path is required")
 
+func NewRoute(path string) *RouteConfig {
+	return &RouteConfig{
+		Path: path,
+	}
+}
+
+func (r *RouteConfig) AddMethod(method string) *RouteConfig {
+	if r.Method == "" {
+		r.Method = method
+	} else {
+		r.Method += "," + method
+	}
+	return r
+}
+
+func (r *RouteConfig) Get() *RouteConfig    { return r.AddMethod("GET") }
+func (r *RouteConfig) Post() *RouteConfig   { return r.AddMethod("POST") }
+func (r *RouteConfig) Delete() *RouteConfig { return r.AddMethod("DELETE") }
+func (r *RouteConfig) Put() *RouteConfig    { return r.AddMethod("PUT") }
+
+func (r *RouteConfig) WithQuery() *RouteConfig {
+	r.Query = true
+	return r
+}
+
+func (r *RouteConfig) WithForm() *RouteConfig {
+	r.Form = true
+	return r
+}
+
 func (r *RouteConfig) WithUser() *RouteConfig {
 	r.User = true
 	return r
