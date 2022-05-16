@@ -7,16 +7,20 @@ import (
 	"github.com/adamcolton/luce/lerr"
 )
 
+// Routes holds a collection of RouteConfigs.
 type Routes []RouteConfig
 
+// TypeID32 fulfill TypeIDer32. The ID was choosen at random.
 func (Routes) TypeID32() uint32 {
 	return 2150347030
 }
 
+// RouteConfigGen is used to create RouteConfigs from a Base path.
 type RouteConfigGen struct {
 	Base string
 }
 
+// Get creates a RouteConfig with a Path of Base+path at
 func (g RouteConfigGen) Get(path string) RouteConfig {
 	r := RouteConfig{
 		Path:   g.Base + path,
@@ -25,6 +29,7 @@ func (g RouteConfigGen) Get(path string) RouteConfig {
 	return r
 }
 
+// GetQuery
 func (g RouteConfigGen) GetQuery(path string) RouteConfig {
 	r := RouteConfig{
 		Path:   g.Base + path,
@@ -52,8 +57,9 @@ func (g RouteConfigGen) PostForm(path string) RouteConfig {
 }
 
 type RouteConfig struct {
-	ID         string
-	Path       string
+	ID   string
+	Path string
+	// Method is comma delimited methods that are accepted
 	Method     string
 	PathPrefix bool
 	PathVars   bool
@@ -75,6 +81,8 @@ func (r RouteConfig) WithPrefix() RouteConfig {
 	return r
 }
 
+// Validate the RouteConfig has necessary fields filled in. Unset fields will
+// be set to their defaults.
 func (r *RouteConfig) Validate() error {
 	if r.Path == "" {
 		return ErrPathRequired
