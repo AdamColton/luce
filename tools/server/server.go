@@ -41,7 +41,7 @@ type Server struct {
 	ServiceSocket string
 	TemplateNames
 	server        *http.Server
-	serviceRoutes map[string]*mux.Route
+	serviceRoutes map[string]*serviceRoute
 }
 
 var TimeoutDuration = time.Second * 5
@@ -67,7 +67,7 @@ func (c *Config) New() (*Server, error) {
 		ServiceSocket: c.ServiceSocket,
 		TemplateNames: c.TemplateNames,
 		server:        &http.Server{},
-		serviceRoutes: make(map[string]*mux.Route),
+		serviceRoutes: make(map[string]*serviceRoute),
 	}
 
 	srv.setRoutes(c.Host)

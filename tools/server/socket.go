@@ -142,6 +142,17 @@ func (s *Server) RunSocket() {
 					}
 					s.Settings.AdminLockUserCreation = lock == "Y" || lock == "y"
 				},
+			}, {
+				Name:  "routes",
+				Usage: "View service routes",
+				Action: func(ctx *unixsocket.Context) {
+					for id, r := range s.serviceRoutes {
+						if r.active {
+							ctx.WriteString(id)
+							ctx.WriteString("\n")
+						}
+					}
+				},
 			},
 		},
 	}

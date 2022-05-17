@@ -6,9 +6,11 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
+	"unsafe"
 
 	"github.com/adamcolton/luce/ds/bus"
 	"github.com/adamcolton/luce/ds/bus/serialbus"
@@ -29,6 +31,7 @@ type serviceConn struct {
 	*serialbus.Sender
 	respMap map[uint32]chan<- *service.Response
 	mapLock sync.Mutex
+	routes  map[string]bool
 }
 
 func (s *Server) handleServiceSocket(netConn net.Conn) {
@@ -42,10 +45,38 @@ func (s *Server) handleServiceSocket(netConn net.Conn) {
 		s:       s,
 		Sender:  conn.Sender,
 		respMap: make(map[uint32]chan<- *service.Response),
+		routes:  make(map[string]bool),
 	}
 	bus.RegisterHandlerType(conn.Listener, sc)
 
 	conn.Listener.Run()
+
+	for id := range sc.routes {
+		s.serviceRoutes[id].setActive(false)
+	}
+}
+
+type serviceRoute struct {
+	*mux.Route
+	active bool
+}
+
+func (sr *serviceRoute) setActive(active bool) {
+	if sr.active == active {
+		return
+	}
+	if active {
+		ptr := reflect.
+			ValueOf(sr.Route).
+			Elem().
+			FieldByName("buildOnly").
+			Addr().
+			Pointer()
+		*(*bool)(unsafe.Pointer(ptr)) = false
+	} else {
+		sr.BuildOnly()
+	}
+	sr.active = active
 }
 
 func (sc *serviceConn) HandleResponse(resp *service.Response) {
@@ -93,8 +124,9 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 		sc.mapLock.Unlock()
 	}
 
-	r := sc.s.serviceRoutes[route.ID]
-	if r == nil {
+	sr := sc.s.serviceRoutes[route.ID]
+	if sr == nil {
+		var r *mux.Route
 		if route.PathPrefix {
 			r = sc.s.Router.PathPrefix(route.Path)
 		} else {
@@ -106,9 +138,16 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 		if route.Host != "" {
 			r = r.Host(route.Host)
 		}
-		sc.s.serviceRoutes[route.ID] = r
+		sr = &serviceRoute{
+			Route:  r,
+			active: true,
+		}
+		sc.s.serviceRoutes[route.ID] = sr
+	} else {
+		sr.setActive(true)
 	}
-	r.HandlerFunc(h)
+	sc.routes[route.ID] = true
+	sr.HandlerFunc(h)
 }
 
 func (sc *serviceConn) routeConfigToRequestConverter(cfg service.RouteConfig) func(r *http.Request) *service.Request {
