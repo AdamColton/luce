@@ -29,6 +29,11 @@ func main() {
 		g.GetQuery("admin").RequireGroup("admin"),
 	)
 
+	conn.Add(
+		Host,
+		g.Get("").SetHost("somehost.{domain:.*}"),
+	)
+
 	conn.Run()
 }
 
@@ -59,4 +64,8 @@ func Query(req *service.Request) *service.Response {
 
 func Admin(req *service.Request) *service.Response {
 	return req.ResponseString("You are admin")
+}
+
+func Host(req *service.Request) *service.Response {
+	return req.ResponseString("DOMAIN:" + req.PathVars["domain"])
 }

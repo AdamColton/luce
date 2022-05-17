@@ -15,13 +15,17 @@ type TemplateNames struct {
 	HomeSignedIn string
 }
 
-func (s *Server) setRoutes() {
+func (s *Server) setRoutes(host string) {
 	m := midware.New(
 		s.Users,
 		midware.NewDecoder(formdecoder.New(), "Form"),
 		midware.NewRedirect("Redirect"),
 	)
+
 	r := s.Router
+	if host != "" {
+		r = r.Host(host).Subrouter()
+	}
 
 	r.HandleFunc("/", m.Handle(s.home))
 	r.HandleFunc("/user/signin", m.Handle(s.getSignIn)).Methods("GET")

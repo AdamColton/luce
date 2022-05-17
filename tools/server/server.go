@@ -22,6 +22,7 @@ type Config struct {
 	Addr          string
 	Socket        string
 	ServiceSocket string
+	Host          string
 }
 
 type Server struct {
@@ -64,7 +65,7 @@ func (c *Config) New() (*Server, error) {
 		serviceRoutes: make(map[string]*mux.Route),
 	}
 
-	srv.setRoutes()
+	srv.setRoutes(c.Host)
 	return srv, nil
 }
 

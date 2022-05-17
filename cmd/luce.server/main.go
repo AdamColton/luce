@@ -26,6 +26,7 @@ type Config struct {
 		lfile.PathLength
 	}
 	TemplateNames server.TemplateNames
+	Host          string
 }
 
 func (c Config) SessionBytes() [][]byte {
