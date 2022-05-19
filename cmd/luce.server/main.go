@@ -59,13 +59,17 @@ func main() {
 	err = json.NewDecoder(r).Decode(conf)
 	lerr.Panic(err)
 
+	ss := memstore.NewMemStore(conf.SessionBytes()...)
+	ss.Options.Domain = conf.Host
+
 	srvConf := &server.Config{
 		Addr:          conf.Addr,
 		TemplateNames: conf.TemplateNames,
 		Socket:        conf.Socket,
 		ServiceSocket: conf.ServiceSocket,
 		UserStore:     bstore.Factory(conf.BoltFile, 0777, nil),
-		SessionStore:  memstore.NewMemStore(conf.SessionBytes()...),
+		SessionStore:  ss,
+		Host:          conf.Host,
 	}
 
 	srvConf.Templates, err = (&ltmpl.HTMLLoader{
