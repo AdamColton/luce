@@ -3,6 +3,8 @@ package lusers
 import (
 	"sort"
 
+	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/util/filter"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -13,7 +15,7 @@ type User struct {
 	Name           string
 	HashedPassword []byte
 	// Groups are storted for fast searching
-	Groups []string
+	Groups slice.Slice[string]
 }
 
 // SetPassword uses bcrypt to set a HashedPassword
@@ -36,13 +38,12 @@ func (u *User) In(group string) bool {
 	if u == nil {
 		return false
 	}
-	idx := sort.Search(len(u.Groups), func(i int) bool {
-		return u.Groups[i] >= group
-	})
-	if idx < 0 || idx >= len(u.Groups) {
-		return false
-	}
-	return u.Groups[idx] == group
+	idx := u.gidx(group)
+	return u.Groups.IdxCheck(idx) && u.Groups[idx] == group
+}
+
+func (u *User) gidx(group string) int {
+	return u.Groups.Search(filter.GTE(group))
 }
 
 func (u *User) sortGroups() {
@@ -61,15 +62,14 @@ func (u *User) OneRequired(groups []string) bool {
 		return false
 	}
 
-	ln := len(u.Groups)
 	var group string
-	fn := func(i int) bool {
-		return u.Groups[i] >= group
+	fn := func(g string) bool {
+		return g >= group
 	}
 
 	for _, group = range groups {
-		idx := sort.Search(ln, fn)
-		if idx >= 0 && idx < ln && u.Groups[idx] == group {
+		idx := u.Groups.Search(fn)
+		if u.Groups.IdxCheck(idx) && u.Groups[idx] == group {
 			return true
 		}
 	}

@@ -17,12 +17,16 @@ var hasUser = []byte{1}
 
 // AddUser to Group
 func (g *Group) AddUser(u *User) error {
-	err := g.Store.Put(u.ID, hasUser)
-	if err != nil {
-		return err
+	if !g.HasUser(u) {
+		err := g.Store.Put(u.ID, hasUser)
+		if err != nil {
+			return err
+		}
 	}
-	u.Groups = append(u.Groups, g.Name)
-	u.sortGroups()
+	if !u.In(g.Name) {
+		u.Groups = append(u.Groups, g.Name)
+		u.sortGroups()
+	}
 	return nil
 }
 
