@@ -2,6 +2,7 @@ package lusers
 
 import (
 	"bytes"
+	"sort"
 
 	"github.com/adamcolton/luce/store"
 )
@@ -30,4 +31,27 @@ func (g *Group) AddUser(u *User) error {
 
 func (g *Group) HasUser(u *User) bool {
 	return bytes.Equal(g.Store.Get(u.ID).Value, hasUser)
+}
+
+func (g *Group) RemoveUser(u *User) error {
+	if g.HasUser(u) {
+		err := g.Store.Delete(u.ID)
+		if err != nil {
+			return err
+		}
+	}
+	if u.In(g.Name) {
+		idx := sort.Search(len(u.Groups), func(i int) bool {
+			return u.Groups[i] >= g.Name
+		})
+		ln := len(u.Groups)
+		if idx >= 0 && idx < ln {
+			ln--
+			for ; idx < ln; idx++ {
+				u.Groups[idx] = u.Groups[idx+1]
+			}
+			u.Groups = u.Groups[:ln]
+		}
+	}
+	return nil
 }
