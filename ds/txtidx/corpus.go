@@ -9,31 +9,36 @@ import (
 const MaxUint32 uint32 = ^uint32(0)
 
 type Corpus struct {
-	Roots *Markov
-	IDs   map[WordID]*Word
-	Max   struct {
+	Roots         *Markov
+	IDs           map[WordID]*Word
+	Variants      map[string]VarID
+	VariantLookup map[VarID]variant
+	Max           struct {
 		WordID
 		DocID
+		VarID
 	}
 }
 
 func NewCorpus() *Corpus {
 	return &Corpus{
-		Roots: NewMarkov(),
-		IDs:   map[WordID]*Word{},
+		Roots:         NewMarkov(),
+		IDs:           map[WordID]*Word{},
+		Variants:      map[string]VarID{},
+		VariantLookup: map[VarID]variant{},
 	}
 }
 
 type sig struct{}
 
 type Word struct {
+	Word string
 	WordID
-	Variants  [][]byte
-	VByIDX    map[string]VIDX
 	Documents map[DocID]sig
 }
 
 type WordID uint32
+type VarID uint32
 type VIDX uint32
 
 type DocRef struct {
@@ -47,36 +52,41 @@ type VarRef struct {
 
 type Suffix []byte
 
-func (c *Corpus) Get(word string) (WordID, VIDX) {
-	wid, vidx := WordID(MaxUint32), VIDX(MaxUint32)
+func (c *Corpus) Get(word string) (WordID, VarID) {
+	wid, vid := WordID(MaxUint32), VarID(MaxUint32)
 	rt := root(word)
+	v := findVariant(rt, word)
+	tmpVid, found := c.Variants[string(v)]
+	if found {
+		vid = tmpVid
+	}
+
 	w := c.Roots.Find(rt)
 	if w != nil {
 		wid = w.WordID
-		v, found := w.VByIDX[word]
-		if found {
-			vidx = v
-		}
 	}
 
-	return wid, vidx
+	return wid, vid
 }
 
-func (c *Corpus) Upsert(word string) (WordID, VIDX) {
+func (c *Corpus) Upsert(word string) (WordID, VarID) {
 	rt := root(word)
 	w := c.Roots.Upsert(rt)
 	if w.WordID == WordID(MaxUint32) {
 		w.WordID = c.Max.WordID
+		w.Word = rt
 		c.Max.WordID++
 		c.IDs[w.WordID] = w
 	}
-	vidx, found := w.VByIDX[word]
+	v := findVariant(rt, word)
+	vid, found := c.Variants[string(v)]
 	if !found {
-		vidx = VIDX(len(w.Variants))
-		w.Variants = append(w.Variants, []byte(word))
-		w.VByIDX[word] = vidx
+		vid = c.Max.VarID
+		c.Max.VarID++
+		c.Variants[string(v)] = vid
+		c.VariantLookup[vid] = v
 	}
-	return w.WordID, vidx
+	return w.WordID, vid
 }
 
 // str must start with letterNumber but can have trailing non-letter number

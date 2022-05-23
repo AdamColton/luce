@@ -15,7 +15,7 @@ type DocWord struct {
 }
 
 type DocVar struct {
-	VIDX
+	VarID
 	Positions []uint32
 }
 
@@ -24,10 +24,12 @@ func (d *Document) String(c *Corpus) string {
 	copy(out, d.start)
 	for _, w := range d.Words {
 		cw := c.IDs[w.WordID]
-		for _, v := range w.Variants {
-			b := cw.Variants[v.VIDX]
-			for _, p := range v.Positions {
-				copy(out[p:], b)
+		for _, dv := range w.Variants {
+			v := c.VariantLookup[dv.VarID]
+			vstr := v.apply(cw.Word)
+
+			for _, p := range dv.Positions {
+				copy(out[p:], vstr)
 			}
 		}
 	}

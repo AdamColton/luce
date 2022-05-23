@@ -2,7 +2,7 @@ package txtidx
 
 type rIdx struct {
 	idx   int
-	vIdxs map[VIDX]int
+	vIdxs map[VarID]int
 }
 
 type preParser struct {
@@ -36,13 +36,13 @@ func (pp *preParser) build() *Document {
 }
 
 func (pp *preParser) buildWord(word string) {
-	wid, vidx := pp.Upsert(word)
+	wid, vid := pp.Upsert(word)
 	ri, found := pp.rootIdx[wid]
 	if !found {
 		pp.Corpus.IDs[wid].Documents[pp.DocID] = sig{}
 		ri = &rIdx{
 			idx:   len(pp.Words),
-			vIdxs: map[VIDX]int{},
+			vIdxs: map[VarID]int{},
 		}
 		pp.rootIdx[wid] = ri
 		pp.Words = append(pp.Words, DocWord{
@@ -50,12 +50,12 @@ func (pp *preParser) buildWord(word string) {
 		})
 	}
 	dw := &(pp.Words[ri.idx])
-	idx, found := ri.vIdxs[vidx]
+	idx, found := ri.vIdxs[vid]
 	if !found {
 		idx = len(dw.Variants)
-		ri.vIdxs[vidx] = idx
+		ri.vIdxs[vid] = idx
 		dw.Variants = append(dw.Variants, DocVar{
-			VIDX: vidx,
+			VarID: vid,
 		})
 	}
 	dv := &(dw.Variants[idx])
