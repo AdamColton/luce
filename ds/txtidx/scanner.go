@@ -40,6 +40,16 @@ func (s *scanner) str(start, end int) string {
 	return string(s.s[start:end])
 }
 
-type search struct {
-	words, exact []string
+func (s *scanner) parse(str string) ([]byte, []string) {
+	s.matchLetterNumber(true)
+	start := s.s[:s.idx]
+
+	var words []string
+	for !s.done() {
+		start := s.idx
+		s.matchLetterNumber(false)
+		s.matchLetterNumber(true)
+		words = append(words, s.str(start, s.idx))
+	}
+	return start, words
 }
