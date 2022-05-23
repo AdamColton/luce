@@ -35,3 +35,22 @@ func (d *Document) String(c *Corpus) string {
 	}
 	return string(out)
 }
+
+type DocSet struct {
+	docs map[DocID]sig
+}
+
+func newDocSet() *DocSet {
+	return &DocSet{
+		docs: map[DocID]sig{},
+	}
+}
+
+func (ds *DocSet) add(di DocID) {
+	ds.docs[di] = sig{}
+}
+
+func (ds *DocSet) Has(di DocID) bool {
+	_, found := ds.docs[di]
+	return found
+}

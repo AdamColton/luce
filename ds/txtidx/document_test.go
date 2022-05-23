@@ -7,7 +7,7 @@ import (
 )
 
 func TestDocumentString(t *testing.T) {
-	expected := "--- This is a test."
+	expected := "--- This is a Test "
 
 	c := NewCorpus()
 	c.Max.DocID = 12
@@ -18,9 +18,10 @@ func TestDocumentString(t *testing.T) {
 
 	assert.Equal(t, expected, d.String(c))
 
-	w := c.Roots.Find("is")
-	if assert.NotNil(t, w) {
-		_, hasDoc := w.Documents[d.DocID]
-		assert.True(t, hasDoc)
-	}
+	// 4 words but only 2 variants
+	// "is " and "a " have the same variant
+	// "This " and "Test " have the same variant
+	assert.Len(t, c.Variants, 2)
+
+	assert.True(t, c.Find("test").Has(d.DocID))
 }

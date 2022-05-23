@@ -34,7 +34,7 @@ type sig struct{}
 type Word struct {
 	Word string
 	WordID
-	Documents map[DocID]sig
+	Documents *DocSet
 }
 
 type WordID uint32
@@ -165,4 +165,13 @@ func (v variant) apply(rt string) string {
 
 	out = append(out, v[bIdx:]...)
 	return string(out)
+}
+
+func (c *Corpus) Find(word string) *DocSet {
+	w := c.Roots.Find(word)
+	if w == nil {
+		return nil
+	}
+
+	return w.Documents
 }

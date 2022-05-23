@@ -36,24 +36,24 @@ func (pp *preParser) build() *Document {
 }
 
 func (pp *preParser) buildWord(word string) {
-	wid, vid := pp.Upsert(word)
-	ri, found := pp.rootIdx[wid]
+	rootID, vid := pp.Upsert(word)
+	rootIdx, found := pp.rootIdx[rootID]
 	if !found {
-		pp.Corpus.IDs[wid].Documents[pp.DocID] = sig{}
-		ri = &rIdx{
+		pp.Corpus.IDs[rootID].Documents.add(pp.DocID)
+		rootIdx = &rIdx{
 			idx:   len(pp.Words),
 			vIdxs: map[VarID]int{},
 		}
-		pp.rootIdx[wid] = ri
+		pp.rootIdx[rootID] = rootIdx
 		pp.Words = append(pp.Words, DocWord{
-			WordID: wid,
+			WordID: rootID,
 		})
 	}
-	dw := &(pp.Words[ri.idx])
-	idx, found := ri.vIdxs[vid]
+	dw := &(pp.Words[rootIdx.idx])
+	idx, found := rootIdx.vIdxs[vid]
 	if !found {
 		idx = len(dw.Variants)
-		ri.vIdxs[vid] = idx
+		rootIdx.vIdxs[vid] = idx
 		dw.Variants = append(dw.Variants, DocVar{
 			VarID: vid,
 		})

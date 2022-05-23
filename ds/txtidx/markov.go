@@ -27,7 +27,7 @@ func (m *Markov) Upsert(str string) *Word {
 	if n.Word == nil {
 		n.Word = &Word{
 			WordID:    WordID(MaxUint32),
-			Documents: map[DocID]sig{},
+			Documents: newDocSet(),
 		}
 	}
 	return n.Word
