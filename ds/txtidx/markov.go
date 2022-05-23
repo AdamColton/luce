@@ -22,6 +22,21 @@ func (m *Markov) Find(str string) *Word {
 	return n.Word
 }
 
+func (m *Markov) FindAll(str string) []*Word {
+	rs := []rune(str)
+	if len(rs) == 0 {
+		return nil
+	}
+	var out []*Word
+	for _, r := range m.heads[rs[0]] {
+		n := r.Find(rs[1:])
+		if n != nil && n.Word != nil {
+			out = append(out, n.Word)
+		}
+	}
+	return out
+}
+
 func (m *Markov) Upsert(str string) *Word {
 	n := m.root.Upsert([]rune(str), m)
 	if n.Word == nil {

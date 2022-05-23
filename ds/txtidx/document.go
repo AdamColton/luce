@@ -76,6 +76,33 @@ func (ds *DocSet) Intersect(with *DocSet) *DocSet {
 	}
 }
 
+func (ds *DocSet) Union(with *DocSet) *DocSet {
+	out := map[DocID]sig{}
+	for di := range ds.docs {
+		out[di] = sig{}
+	}
+	for di := range with.docs {
+		out[di] = sig{}
+	}
+	return &DocSet{
+		docs: out,
+	}
+}
+
+func (ds *DocSet) Merge(with *DocSet) {
+	for di := range with.docs {
+		ds.docs[di] = sig{}
+	}
+}
+
+func (ds *DocSet) Copy() *DocSet {
+	out := &DocSet{
+		docs: map[DocID]sig{},
+	}
+	out.Merge(ds)
+	return out
+}
+
 func (ds *DocSet) Slice(c *Corpus) []string {
 	out := make([]string, 0, len(ds.docs))
 	for di := range ds.docs {

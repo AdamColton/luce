@@ -49,4 +49,11 @@ func TestMultiDoc(t *testing.T) {
 		"The sun was shining on the sea",
 	}
 	assert.Equal(t, expected, both)
+
+	ill := c.Find("ill").Slice(c)
+	expected = []string{
+		"To make the billows smooth and bright",
+	}
+	assert.Equal(t, expected, ill)
+
 }

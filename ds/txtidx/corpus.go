@@ -171,7 +171,7 @@ func (v variant) apply(rt string) string {
 
 func (c *Corpus) Find(words ...string) *DocSet {
 	if len(words) == 0 {
-		return nil
+		return newDocSet()
 	}
 	out := c.find(words[0])
 
@@ -185,11 +185,15 @@ func (c *Corpus) Find(words ...string) *DocSet {
 }
 
 func (c *Corpus) find(word string) *DocSet {
-	w := c.Roots.Find(root(word))
-	if w == nil {
-		return nil
+	ws := c.Roots.FindAll(root(word))
+	if len(ws) == 0 {
+		return newDocSet()
 	}
-	return w.Documents
+	out := ws[0].Documents.Copy()
+	for _, w := range ws[1:] {
+		out.Merge(w.Documents)
+	}
+	return out
 }
 
 func (c *Corpus) AddDoc(doc string) *Document {
