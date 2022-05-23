@@ -97,7 +97,8 @@ func (m *markov) upsertRecursive(s *seeker) (*word, bool) {
 		inc := s.n.word == nil
 		if inc {
 			s.n.word = &word{
-				wordIDX: wordIDX(MaxUint32),
+				wordIDX:   wordIDX(MaxUint32),
+				Documents: newDocSet(),
 			}
 		}
 		return s.n.word, inc

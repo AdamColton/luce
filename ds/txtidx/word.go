@@ -5,6 +5,7 @@ import "strings"
 type word struct {
 	str string
 	wordIDX
+	Documents *docSet
 }
 
 type wordIDX uint32

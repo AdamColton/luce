@@ -85,8 +85,8 @@ func (ds *docSet) copy() *docSet {
 	return out
 }
 
-func (ds *docSet) Delete(di DocID) {
-	delete(ds.docs, di)
+func (ds *docSet) Delete(di DocIDer) {
+	delete(ds.docs, di.ID())
 }
 
 func (ds *docSet) Pop() (DocID, bool) {
