@@ -7,7 +7,7 @@ import (
 const MaxUint32 uint32 = ^uint32(0)
 
 type Corpus struct {
-	Roots map[string]*Word
+	Roots *Markov
 	IDs   map[WordID]*Word
 	Max   struct {
 		WordID
@@ -17,7 +17,7 @@ type Corpus struct {
 
 func NewCorpus() *Corpus {
 	return &Corpus{
-		Roots: map[string]*Word{},
+		Roots: NewMarkov(),
 		IDs:   map[WordID]*Word{},
 	}
 }
@@ -46,8 +46,8 @@ type VarRef struct {
 func (c *Corpus) Get(word string) (WordID, VIDX) {
 	wid, vidx := WordID(MaxUint32), VIDX(MaxUint32)
 	rt := root(word)
-	w, found := c.Roots[rt]
-	if found {
+	w := c.Roots.Find(rt)
+	if w != nil {
 		wid = w.WordID
 		v, found := w.VByIDX[word]
 		if found {
@@ -60,15 +60,10 @@ func (c *Corpus) Get(word string) (WordID, VIDX) {
 
 func (c *Corpus) Upsert(word string) (WordID, VIDX) {
 	rt := root(word)
-	w, found := c.Roots[rt]
-	if !found {
-		w = &Word{
-			WordID:    c.Max.WordID,
-			VByIDX:    map[string]VIDX{},
-			Documents: map[DocID]sig{},
-		}
+	w := c.Roots.Upsert(rt)
+	if w.WordID == WordID(MaxUint32) {
+		w.WordID = c.Max.WordID
 		c.Max.WordID++
-		c.Roots[rt] = w
 		c.IDs[w.WordID] = w
 	}
 	vidx, found := w.VByIDX[word]

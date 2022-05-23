@@ -18,6 +18,9 @@ func TestDocumentString(t *testing.T) {
 
 	assert.Equal(t, expected, d.String(c))
 
-	_, hasDoc := c.Roots["is"].Documents[d.DocID]
-	assert.True(t, hasDoc)
+	w := c.Roots.Find("is")
+	if assert.NotNil(t, w) {
+		_, hasDoc := w.Documents[d.DocID]
+		assert.True(t, hasDoc)
+	}
 }
