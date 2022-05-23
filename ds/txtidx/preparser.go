@@ -28,6 +28,7 @@ func (pp *preParser) build() *Document {
 		Ln:    uint32(len(pp.start)),
 	}
 	pp.Max.DocID++
+	pp.Docs[pp.DocID] = pp.Document
 
 	for _, w := range pp.words {
 		pp.buildWord(w)

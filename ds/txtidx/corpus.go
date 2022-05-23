@@ -13,6 +13,7 @@ type Corpus struct {
 	IDs           map[WordID]*Word
 	Variants      map[string]VarID
 	VariantLookup map[VarID]variant
+	Docs          map[DocID]*Document
 	Max           struct {
 		WordID
 		DocID
@@ -26,6 +27,7 @@ func NewCorpus() *Corpus {
 		IDs:           map[WordID]*Word{},
 		Variants:      map[string]VarID{},
 		VariantLookup: map[VarID]variant{},
+		Docs:          map[DocID]*Document{},
 	}
 }
 
@@ -167,11 +169,31 @@ func (v variant) apply(rt string) string {
 	return string(out)
 }
 
-func (c *Corpus) Find(word string) *DocSet {
-	w := c.Roots.Find(word)
+func (c *Corpus) Find(words ...string) *DocSet {
+	if len(words) == 0 {
+		return nil
+	}
+	out := c.find(words[0])
+
+	for _, w := range words[1:] {
+		if out == nil {
+			break
+		}
+		out = out.Intersect(c.find(w))
+	}
+	return out
+}
+
+func (c *Corpus) find(word string) *DocSet {
+	w := c.Roots.Find(root(word))
 	if w == nil {
 		return nil
 	}
-
 	return w.Documents
+}
+
+func (c *Corpus) AddDoc(doc string) *Document {
+	pp := c.newPP()
+	pp.set(doc)
+	return pp.build()
 }
