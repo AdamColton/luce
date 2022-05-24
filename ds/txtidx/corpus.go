@@ -11,21 +11,19 @@ const MaxUint32 uint32 = ^uint32(0)
 type Corpus struct {
 	Roots         *Markov
 	Words         []*Word
-	Variants      map[string]VarID
-	VariantLookup map[VarID]variant
+	Variants      map[string]VarIDX
+	VariantLookup []variant
 	Docs          map[DocID]*Document
 	Max           struct {
 		DocID
-		VarID
 	}
 }
 
 func NewCorpus() *Corpus {
 	return &Corpus{
-		Roots:         NewMarkov(),
-		Variants:      map[string]VarID{},
-		VariantLookup: map[VarID]variant{},
-		Docs:          map[DocID]*Document{},
+		Roots:    NewMarkov(),
+		Variants: map[string]VarIDX{},
+		Docs:     map[DocID]*Document{},
 	}
 }
 
@@ -38,7 +36,7 @@ type Word struct {
 }
 
 type WordIDX uint32
-type VarID uint32
+type VarIDX uint32
 type VIDX uint32
 
 type DocRef struct {
@@ -52,8 +50,8 @@ type VarRef struct {
 
 type Suffix []byte
 
-func (c *Corpus) Get(word string) (WordIDX, VarID) {
-	wid, vid := WordIDX(MaxUint32), VarID(MaxUint32)
+func (c *Corpus) Get(word string) (WordIDX, VarIDX) {
+	wid, vid := WordIDX(MaxUint32), VarIDX(MaxUint32)
 	rt := root(word)
 	v := findVariant(rt, word)
 	tmpVid, found := c.Variants[string(v)]
@@ -69,7 +67,7 @@ func (c *Corpus) Get(word string) (WordIDX, VarID) {
 	return wid, vid
 }
 
-func (c *Corpus) Upsert(word string) (WordIDX, VarID) {
+func (c *Corpus) Upsert(word string) (WordIDX, VarIDX) {
 	rt := root(word)
 	w := c.Roots.Upsert(rt)
 	if w.WordIDX == WordIDX(MaxUint32) {
@@ -80,10 +78,9 @@ func (c *Corpus) Upsert(word string) (WordIDX, VarID) {
 	v := findVariant(rt, word)
 	vid, found := c.Variants[string(v)]
 	if !found {
-		vid = c.Max.VarID
-		c.Max.VarID++
+		vid = VarIDX(len(c.VariantLookup))
 		c.Variants[string(v)] = vid
-		c.VariantLookup[vid] = v
+		c.VariantLookup = append(c.VariantLookup, v)
 	}
 	return w.WordIDX, vid
 }

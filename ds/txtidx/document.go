@@ -15,7 +15,7 @@ type DocWord struct {
 }
 
 type DocVar struct {
-	VarID
+	VarIDX
 	Positions []uint32
 }
 
@@ -25,7 +25,7 @@ func (d *Document) String(c *Corpus) string {
 	for _, w := range d.Words {
 		cw := c.Words[w.WordIDX]
 		for _, dv := range w.Variants {
-			v := c.VariantLookup[dv.VarID]
+			v := c.VariantLookup[dv.VarIDX]
 			vstr := v.apply(cw.Word)
 
 			for _, p := range dv.Positions {
