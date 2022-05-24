@@ -13,9 +13,10 @@ type Corpus struct {
 	Words         []*Word
 	Variants      map[string]VarIDX
 	VariantLookup []variant
-	Docs          map[DocID]*Document
-	Max           struct {
-		DocID
+	Docs          []*Document
+	unused        struct {
+		docs  []DocIDX
+		words []WordIDX
 	}
 }
 
@@ -23,7 +24,6 @@ func NewCorpus() *Corpus {
 	return &Corpus{
 		Roots:    NewMarkov(),
 		Variants: map[string]VarIDX{},
-		Docs:     map[DocID]*Document{},
 	}
 }
 
@@ -61,9 +61,17 @@ func (c *Corpus) Upsert(word string) (WordIDX, VarIDX) {
 	rt := root(word)
 	w := c.Roots.Upsert(rt)
 	if w.WordIDX == WordIDX(MaxUint32) {
-		w.WordIDX = WordIDX(len(c.Words))
+		ln := len(c.unused.words)
+		if ln > 0 {
+			ln--
+			w.WordIDX = c.unused.words[ln]
+			c.unused.words = c.unused.words[:ln]
+			c.Words[w.WordIDX] = w
+		} else {
+			w.WordIDX = WordIDX(len(c.Words))
+			c.Words = append(c.Words, w)
+		}
 		w.Word = rt
-		c.Words = append(c.Words, w)
 	}
 	v := findVariant(rt, word)
 	vid, found := c.Variants[string(v)]
@@ -184,4 +192,37 @@ func (c *Corpus) AddDoc(doc string) *Document {
 	pp := c.newPP()
 	pp.set(doc)
 	return pp.build()
+}
+
+func (c *Corpus) allocDocIDX(d *Document) {
+	ln := len(c.unused.docs)
+	if ln > 0 {
+		ln--
+		d.DocIDX = c.unused.docs[ln]
+		c.unused.docs = c.unused.docs[:ln]
+		c.Docs[d.DocIDX] = d
+	} else {
+		d.DocIDX = DocIDX(len(c.Docs))
+		c.Docs = append(c.Docs, d)
+	}
+}
+
+func (c *Corpus) Delete(di DocIDX) {
+	d := c.Docs[di]
+	c.Docs[di] = nil
+	c.unused.docs = append(c.unused.docs, di)
+
+	for _, dw := range d.Words {
+		w := c.Words[dw.WordIDX]
+		w.Documents.Delete(di)
+		if w.Documents.Len() == 0 {
+			c.deleteWord(w)
+			c.unused.words = append(c.unused.words, w.WordIDX)
+		}
+	}
+}
+
+func (c *Corpus) deleteWord(w *Word) {
+	c.Words[w.WordIDX] = nil
+	c.Roots.deleteWord(w.Word)
 }

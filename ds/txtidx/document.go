@@ -2,12 +2,12 @@ package txtidx
 
 type Document struct {
 	Ln uint32
-	DocID
+	DocIDX
 	Words []DocWord
 	start []byte
 }
 
-type DocID uint32
+type DocIDX uint32
 
 type DocWord struct {
 	WordIDX
@@ -37,20 +37,20 @@ func (d *Document) String(c *Corpus) string {
 }
 
 type DocSet struct {
-	docs map[DocID]sig
+	docs map[DocIDX]sig
 }
 
 func newDocSet() *DocSet {
 	return &DocSet{
-		docs: map[DocID]sig{},
+		docs: map[DocIDX]sig{},
 	}
 }
 
-func (ds *DocSet) add(di DocID) {
+func (ds *DocSet) add(di DocIDX) {
 	ds.docs[di] = sig{}
 }
 
-func (ds *DocSet) Has(di DocID) bool {
+func (ds *DocSet) Has(di DocIDX) bool {
 	_, found := ds.docs[di]
 	return found
 }
@@ -60,7 +60,7 @@ func (ds *DocSet) Len() int {
 }
 
 func (ds *DocSet) Intersect(with *DocSet) *DocSet {
-	out := map[DocID]sig{}
+	out := map[DocIDX]sig{}
 	iter, cmpr := ds.docs, with.docs
 	if len(iter) > len(cmpr) {
 		iter, cmpr = cmpr, iter
@@ -77,7 +77,7 @@ func (ds *DocSet) Intersect(with *DocSet) *DocSet {
 }
 
 func (ds *DocSet) Union(with *DocSet) *DocSet {
-	out := map[DocID]sig{}
+	out := map[DocIDX]sig{}
 	for di := range ds.docs {
 		out[di] = sig{}
 	}
@@ -97,7 +97,7 @@ func (ds *DocSet) Merge(with *DocSet) {
 
 func (ds *DocSet) Copy() *DocSet {
 	out := &DocSet{
-		docs: map[DocID]sig{},
+		docs: map[DocIDX]sig{},
 	}
 	out.Merge(ds)
 	return out
@@ -108,5 +108,22 @@ func (ds *DocSet) Slice(c *Corpus) []string {
 	for di := range ds.docs {
 		out = append(out, c.Docs[di].String(c))
 	}
+	return out
+}
+
+func (ds *DocSet) Delete(di DocIDX) {
+	delete(ds.docs, di)
+}
+
+func (ds *DocSet) Pop() DocIDX {
+	if len(ds.docs) == 0 {
+		return DocIDX(MaxUint32)
+	}
+	var out DocIDX
+	for di := range ds.docs {
+		out = di
+		break
+	}
+	ds.Delete(out)
 	return out
 }

@@ -11,7 +11,6 @@ func TestDocumentString(t *testing.T) {
 	expected := "--- This is a Test "
 
 	c := NewCorpus()
-	c.Max.DocID = 12
 
 	d := c.AddDoc(expected)
 
@@ -22,7 +21,7 @@ func TestDocumentString(t *testing.T) {
 	// "This " and "Test " have the same variant
 	assert.Len(t, c.Variants, 2)
 
-	assert.True(t, c.Find("test").Has(d.DocID))
+	assert.True(t, c.Find("test").Has(d.DocIDX))
 }
 
 func TestMultiDoc(t *testing.T) {
@@ -67,4 +66,31 @@ func TestMarkov(t *testing.T) {
 
 	w3 := m.Find("test")
 	assert.True(t, w3.Documents.Has(123))
+}
+
+func TestDelete(t *testing.T) {
+	c := NewCorpus()
+	d0 := c.AddDoc("this is document 0 keyphrase")
+	assert.Equal(t, DocIDX(0), d0.DocIDX)
+
+	d1 := c.AddDoc("this is document 1")
+	assert.Equal(t, DocIDX(1), d1.DocIDX)
+
+	w := c.Roots.Find("keyphrase")
+	assert.True(t, w.Documents.Has(d0.DocIDX))
+	wid := w.WordIDX
+
+	c.Delete(d0.DocIDX)
+	assert.Nil(t, c.Docs[0])
+	assert.Nil(t, c.Words[wid])
+
+	w = c.Roots.Find("keyphrase")
+	assert.Nil(t, w)
+
+	d2 := c.AddDoc("this is document 2, reallocated DocIDX 0 keyphrase")
+	assert.Equal(t, DocIDX(0), d2.DocIDX)
+	assert.NotNil(t, c.Words[wid])
+
+	w = c.Roots.Find("keyphrase")
+	assert.True(t, w.Documents.Has(d2.DocIDX))
 }

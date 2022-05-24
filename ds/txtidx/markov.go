@@ -125,6 +125,44 @@ func (m *Markov) AppendAll(n *MarkovNode, buf []*Word) []*Word {
 	return buf
 }
 
+func (m *Markov) deleteWord(w string) {
+	rs := []rune(w)
+	m.recursiveDeleteWord(m.nodes[mkey{
+		r: rs[0],
+	}], rs[1:])
+}
+
+func (m *Markov) recursiveDeleteWord(n *MarkovNode, rs []rune) bool {
+	if n == nil {
+		return false
+	}
+	if len(rs) == 0 {
+		n.Word = nil
+		return len(n.children) == 0
+	}
+	k := mkey{
+		r:      rs[0],
+		nodeID: n.id,
+	}
+	shouldDelete := m.recursiveDeleteWord(m.nodes[k], rs[1:])
+	if shouldDelete {
+		delete(m.nodes, k)
+		ln := len(n.children)
+		if ln == 1 {
+			return true
+		}
+		ln--
+		for i, r := range n.children {
+			if r == rs[0] {
+				n.children[i] = n.children[ln]
+				n.children = n.children[:ln]
+				break
+			}
+		}
+	}
+	return false
+}
+
 type MarkovNode struct {
 	id       uint32
 	children []rune

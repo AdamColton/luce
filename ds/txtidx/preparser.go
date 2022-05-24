@@ -23,12 +23,10 @@ func (c *Corpus) newPP() *preParser {
 
 func (pp *preParser) build() *Document {
 	pp.Document = &Document{
-		DocID: pp.Max.DocID,
 		start: pp.start,
 		Ln:    uint32(len(pp.start)),
 	}
-	pp.Max.DocID++
-	pp.Docs[pp.DocID] = pp.Document
+	pp.Corpus.allocDocIDX(pp.Document)
 
 	for _, w := range pp.words {
 		pp.buildWord(w)
@@ -40,7 +38,7 @@ func (pp *preParser) buildWord(word string) {
 	rootID, vid := pp.Upsert(word)
 	rootIdx, found := pp.rootIdx[rootID]
 	if !found {
-		pp.Corpus.Words[rootID].Documents.add(pp.DocID)
+		pp.Corpus.Words[rootID].Documents.add(pp.DocIDX)
 		rootIdx = &rIdx{
 			idx:   len(pp.Document.Words),
 			vIdxs: map[VarIDX]int{},
