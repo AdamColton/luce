@@ -55,5 +55,16 @@ func TestMultiDoc(t *testing.T) {
 		"To make the billows smooth and bright",
 	}
 	assert.Equal(t, expected, ill)
+}
 
+func TestMarkov(t *testing.T) {
+	m := NewMarkov()
+	w := m.Upsert("test")
+	w.Documents.add(123)
+	w2 := m.Upsert("test")
+
+	assert.True(t, w2.Documents.Has(123))
+
+	w3 := m.Find("test")
+	assert.True(t, w3.Documents.Has(123))
 }

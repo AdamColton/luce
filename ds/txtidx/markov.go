@@ -1,25 +1,30 @@
 package txtidx
 
 type Markov struct {
-	root  *MarkovNode
 	heads map[rune][]*MarkovNode
+	nodes map[mkey]*MarkovNode
+	maxID uint32
+}
+
+type mkey struct {
+	nodeID uint32
+	r      rune
 }
 
 func NewMarkov() *Markov {
 	return &Markov{
-		root: &MarkovNode{
-			Next: map[rune]*MarkovNode{},
-		},
 		heads: map[rune][]*MarkovNode{},
+		nodes: map[mkey]*MarkovNode{},
 	}
 }
 
 func (m *Markov) Find(str string) *Word {
-	n := m.root.Find([]rune(str))
-	if n == nil {
+	s := newSeeker(str)
+	s.find(m.nodes)
+	if s.n == nil {
 		return nil
 	}
-	return n.Word
+	return s.n.Word
 }
 
 func (m *Markov) FindAll(str string) []*Word {
@@ -27,51 +32,101 @@ func (m *Markov) FindAll(str string) []*Word {
 	if len(rs) == 0 {
 		return nil
 	}
+
+	s := newSeeker(str)
+
 	var out []*Word
-	for _, r := range m.heads[rs[0]] {
-		n := r.Find(rs[1:])
-		if n != nil && n.Word != nil {
-			out = append(out, n.Word)
+	for _, n := range m.heads[s.rs[0]] {
+		s.n = n
+		s.idx = 1
+		s.find(m.nodes)
+		if s.n != nil {
+			out = m.AppendAll(s.n, out)
 		}
 	}
 	return out
 }
 
+type seeker struct {
+	rs  []rune
+	idx int
+	k   mkey
+	n   *MarkovNode
+}
+
+func newSeeker(str string) *seeker {
+	s := &seeker{
+		rs: []rune(str),
+	}
+	return s
+}
+
+func (s *seeker) moveNext() (notDone bool) {
+	notDone = s.idx < len(s.rs)
+	if notDone {
+		s.k.r = s.rs[s.idx]
+		if s.n != nil {
+			s.k.nodeID = s.n.id
+		}
+		s.idx++
+	}
+	return notDone
+}
+
+func (s *seeker) find(m map[mkey]*MarkovNode) {
+	for s.moveNext() {
+		s.n = m[s.k]
+		if s.n == nil {
+			return
+		}
+	}
+}
+
 func (m *Markov) Upsert(str string) *Word {
-	n := m.root.Upsert([]rune(str), m)
-	if n.Word == nil {
-		n.Word = &Word{
+	if len(str) == 0 {
+		panic("don't do that")
+	}
+	s := newSeeker(str)
+	for s.moveNext() {
+		next := m.nodes[s.k]
+		if next == nil {
+			if s.n != nil {
+				s.n.children = append(s.n.children, s.k.r)
+			}
+			m.maxID++
+			next = &MarkovNode{
+				id: m.maxID,
+			}
+			m.nodes[s.k] = next
+			m.heads[s.k.r] = append(m.heads[s.k.r], next)
+		}
+		s.n = next
+	}
+	if s.n.Word == nil {
+		s.n.Word = &Word{
 			WordID:    WordID(MaxUint32),
 			Documents: newDocSet(),
 		}
 	}
-	return n.Word
+	return s.n.Word
+}
+
+func (m *Markov) AppendAll(n *MarkovNode, buf []*Word) []*Word {
+	if n.Word != nil {
+		buf = append(buf, n.Word)
+	}
+	k := mkey{
+		nodeID: n.id,
+	}
+	for _, r := range n.children {
+		k.r = r
+		buf = m.AppendAll(m.nodes[k], buf)
+	}
+	return buf
 }
 
 type MarkovNode struct {
-	Next map[rune]*MarkovNode
+	id       uint32
+	children []rune
 	*Word
-}
-
-func (n *MarkovNode) Find(rs []rune) *MarkovNode {
-	if n == nil || len(rs) == 0 {
-		return n
-	}
-	return n.Next[rs[0]].Find(rs[1:])
-}
-
-func (n *MarkovNode) Upsert(rs []rune, root *Markov) *MarkovNode {
-	if len(rs) == 0 {
-		return n
-	}
-	r, rs := rs[0], rs[1:]
-	nn := n.Next[r]
-	if nn == nil {
-		nn = &MarkovNode{
-			Next: map[rune]*MarkovNode{},
-		}
-		n.Next[r] = nn
-		root.heads[r] = append(root.heads[r], nn)
-	}
-	return nn.Upsert(rs, root)
 }
