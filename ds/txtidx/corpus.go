@@ -37,16 +37,6 @@ type Word struct {
 
 type WordIDX uint32
 type VarIDX uint32
-type VIDX uint32
-
-type DocRef struct {
-	VarRefs []VarRef
-}
-
-type VarRef struct {
-	VIDX
-	Locs []uint32
-}
 
 type Suffix []byte
 
