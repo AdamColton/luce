@@ -104,7 +104,7 @@ func (m *Markov) Upsert(str string) *Word {
 	}
 	if s.n.Word == nil {
 		s.n.Word = &Word{
-			WordID:    WordID(MaxUint32),
+			WordIDX:   WordIDX(MaxUint32),
 			Documents: newDocSet(),
 		}
 	}

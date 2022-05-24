@@ -9,7 +9,7 @@ type preParser struct {
 	*Corpus
 	start   []byte
 	words   []string
-	rootIdx map[WordID]*rIdx
+	rootIdx map[WordIDX]*rIdx
 
 	*Document
 }
@@ -17,7 +17,7 @@ type preParser struct {
 func (c *Corpus) newPP() *preParser {
 	return &preParser{
 		Corpus:  c,
-		rootIdx: map[WordID]*rIdx{},
+		rootIdx: map[WordIDX]*rIdx{},
 	}
 }
 
@@ -40,17 +40,17 @@ func (pp *preParser) buildWord(word string) {
 	rootID, vid := pp.Upsert(word)
 	rootIdx, found := pp.rootIdx[rootID]
 	if !found {
-		pp.Corpus.IDs[rootID].Documents.add(pp.DocID)
+		pp.Corpus.Words[rootID].Documents.add(pp.DocID)
 		rootIdx = &rIdx{
-			idx:   len(pp.Words),
+			idx:   len(pp.Document.Words),
 			vIdxs: map[VarID]int{},
 		}
 		pp.rootIdx[rootID] = rootIdx
-		pp.Words = append(pp.Words, DocWord{
-			WordID: rootID,
+		pp.Document.Words = append(pp.Document.Words, DocWord{
+			WordIDX: rootID,
 		})
 	}
-	dw := &(pp.Words[rootIdx.idx])
+	dw := &(pp.Document.Words[rootIdx.idx])
 	idx, found := rootIdx.vIdxs[vid]
 	if !found {
 		idx = len(dw.Variants)

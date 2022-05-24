@@ -10,12 +10,11 @@ const MaxUint32 uint32 = ^uint32(0)
 
 type Corpus struct {
 	Roots         *Markov
-	IDs           map[WordID]*Word
+	Words         []*Word
 	Variants      map[string]VarID
 	VariantLookup map[VarID]variant
 	Docs          map[DocID]*Document
 	Max           struct {
-		WordID
 		DocID
 		VarID
 	}
@@ -24,7 +23,6 @@ type Corpus struct {
 func NewCorpus() *Corpus {
 	return &Corpus{
 		Roots:         NewMarkov(),
-		IDs:           map[WordID]*Word{},
 		Variants:      map[string]VarID{},
 		VariantLookup: map[VarID]variant{},
 		Docs:          map[DocID]*Document{},
@@ -35,11 +33,11 @@ type sig struct{}
 
 type Word struct {
 	Word string
-	WordID
+	WordIDX
 	Documents *DocSet
 }
 
-type WordID uint32
+type WordIDX uint32
 type VarID uint32
 type VIDX uint32
 
@@ -54,8 +52,8 @@ type VarRef struct {
 
 type Suffix []byte
 
-func (c *Corpus) Get(word string) (WordID, VarID) {
-	wid, vid := WordID(MaxUint32), VarID(MaxUint32)
+func (c *Corpus) Get(word string) (WordIDX, VarID) {
+	wid, vid := WordIDX(MaxUint32), VarID(MaxUint32)
 	rt := root(word)
 	v := findVariant(rt, word)
 	tmpVid, found := c.Variants[string(v)]
@@ -65,20 +63,19 @@ func (c *Corpus) Get(word string) (WordID, VarID) {
 
 	w := c.Roots.Find(rt)
 	if w != nil {
-		wid = w.WordID
+		wid = w.WordIDX
 	}
 
 	return wid, vid
 }
 
-func (c *Corpus) Upsert(word string) (WordID, VarID) {
+func (c *Corpus) Upsert(word string) (WordIDX, VarID) {
 	rt := root(word)
 	w := c.Roots.Upsert(rt)
-	if w.WordID == WordID(MaxUint32) {
-		w.WordID = c.Max.WordID
+	if w.WordIDX == WordIDX(MaxUint32) {
+		w.WordIDX = WordIDX(len(c.Words))
 		w.Word = rt
-		c.Max.WordID++
-		c.IDs[w.WordID] = w
+		c.Words = append(c.Words, w)
 	}
 	v := findVariant(rt, word)
 	vid, found := c.Variants[string(v)]
@@ -88,7 +85,7 @@ func (c *Corpus) Upsert(word string) (WordID, VarID) {
 		c.Variants[string(v)] = vid
 		c.VariantLookup[vid] = v
 	}
-	return w.WordID, vid
+	return w.WordIDX, vid
 }
 
 // str must start with letterNumber but can have trailing non-letter number

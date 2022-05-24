@@ -10,7 +10,7 @@ type Document struct {
 type DocID uint32
 
 type DocWord struct {
-	WordID
+	WordIDX
 	Variants []DocVar
 }
 
@@ -23,7 +23,7 @@ func (d *Document) String(c *Corpus) string {
 	out := make([]byte, d.Ln)
 	copy(out, d.start)
 	for _, w := range d.Words {
-		cw := c.IDs[w.WordID]
+		cw := c.Words[w.WordIDX]
 		for _, dv := range w.Variants {
 			v := c.VariantLookup[dv.VarID]
 			vstr := v.apply(cw.Word)
