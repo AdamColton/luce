@@ -1,11 +1,16 @@
 package huffman
 
-// Lookup finds the bits for a value in the tree. If T is comparable use
-// NewLookup to create a Lookup. If T is not comparable, then use
-// NewTranslateLookup and provide a function to translate from T to a comparable
-// type.
+import (
+	"github.com/adamcolton/luce/ds/lmap"
+)
+
+// Lookup is used during encoding to finds the bit representation for a value in
+// the tree. If T is comparable use NewLookup to create a Lookup. If T is not
+// comparable, then use NewTranslateLookup and provide a function to translate
+// from T to a comparable type.
 type Lookup[T any] interface {
 	Get(v T) *Bits
+	All() []T
 }
 
 // Encode data to bits using the lookup. Calling Tree.ReadAll on these bits will
@@ -41,13 +46,23 @@ func (l mapLookup[T]) Get(v T) *Bits {
 	return l[v]
 }
 
+func (l mapLookup[T]) All() []T {
+	// TODO: use buf
+	return lmap.Map[T, *Bits](l).Keys(nil)
+}
+
 type translateLookup[K comparable, T any] struct {
 	table    map[K]*Bits
+	all      []T
 	keyMaker func(T) K
 }
 
-func (l translateLookup[K, T]) Get(v T) *Bits {
+func (l *translateLookup[K, T]) Get(v T) *Bits {
 	return l.table[l.keyMaker(v)]
+}
+
+func (l *translateLookup[K, T]) All() []T {
+	return l.all
 }
 
 // NewTranslateLookup creates a lookup when T is not comparable. A translator
@@ -62,8 +77,9 @@ func NewTranslateLookup[K comparable, T any](t Tree[T], translator func(T) K) Lo
 	return l
 }
 
-func (l translateLookup[K, T]) insert(n *huffNode[T], b *Bits) {
+func (l *translateLookup[K, T]) insert(n *huffNode[T], b *Bits) {
 	if n.branch[0] == nil {
+		l.all = append(l.all, n.v)
 		l.table[l.keyMaker(n.v)] = b.Reset()
 		return
 	}
