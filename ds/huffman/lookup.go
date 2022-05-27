@@ -6,6 +6,7 @@ package huffman
 // type.
 type Lookup[T any] interface {
 	Get(v T) *Bits
+	All() []T
 }
 
 // Encode data to bits using the lookup. Calling Tree.ReadAll on these bits will
@@ -41,13 +42,26 @@ func (l mapLookup[T]) Get(v T) *Bits {
 	return l[v]
 }
 
+func (l mapLookup[T]) All() []T {
+	out := make([]T, 0, len(l))
+	for t := range l {
+		out = append(out, t)
+	}
+	return out
+}
+
 type translateLookup[K comparable, T any] struct {
 	table    map[K]*Bits
+	all      []T
 	keyMaker func(T) K
 }
 
-func (l translateLookup[K, T]) Get(v T) *Bits {
+func (l *translateLookup[K, T]) Get(v T) *Bits {
 	return l.table[l.keyMaker(v)]
+}
+
+func (l *translateLookup[K, T]) All() []T {
+	return l.all
 }
 
 // NewTranslateLookup creates a lookup when T is not comparable. A translator
@@ -62,8 +76,9 @@ func NewTranslateLookup[K comparable, T any](t Tree[T], translator func(T) K) Lo
 	return l
 }
 
-func (l translateLookup[K, T]) insert(n *huffNode[T], b *Bits) {
+func (l *translateLookup[K, T]) insert(n *huffNode[T], b *Bits) {
 	if n.branch[0] == nil {
+		l.all = append(l.all, n.v)
 		l.table[l.keyMaker(n.v)] = b.Reset()
 		return
 	}

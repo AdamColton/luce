@@ -1,6 +1,7 @@
 package huffman
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -58,13 +59,28 @@ func TestFromMap(t *testing.T) {
 	got := ht.ReadAll(enc)
 	assert.Equal(t, expected, got)
 	assert.True(t, enc.Ln < len(expected)*8)
+
+	var expectedRunes []rune
+	for r := range letters {
+		expectedRunes = append(expectedRunes, r)
+	}
+	sort.Slice(expectedRunes, func(i, j int) bool {
+		return expectedRunes[i] < expectedRunes[j]
+	})
+	gotRunes := l.All()
+	sort.Slice(gotRunes, func(i, j int) bool {
+		return gotRunes[i] < gotRunes[j]
+	})
+	assert.Equal(t, expectedRunes, gotRunes)
 }
 
 func TestTranslate(t *testing.T) {
 	data := make([]Frequency[[]byte], 0, len(letters))
+	var expectedSlices [][]byte
 	for r, c := range letters {
 		b := []byte(string(r))
 		data = append(data, Frequency[[]byte]{Val: b, Count: c})
+		expectedSlices = append(expectedSlices, b)
 	}
 	ht := New(data)
 	l := NewTranslateLookup(ht, func(b []byte) string {
@@ -99,4 +115,13 @@ func TestTranslate(t *testing.T) {
 	got := ht.ReadAll(enc)
 	assert.Equal(t, expected, got)
 	assert.True(t, enc.Ln < len(expected)*8)
+
+	sort.Slice(expectedSlices, func(i, j int) bool {
+		return string(expectedSlices[i]) < string(expectedSlices[j])
+	})
+	gotSlices := l.All()
+	sort.Slice(gotSlices, func(i, j int) bool {
+		return string(gotSlices[i]) < string(gotSlices[j])
+	})
+	assert.Equal(t, expectedSlices, gotSlices)
 }
