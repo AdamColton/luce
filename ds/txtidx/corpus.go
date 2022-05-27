@@ -1,5 +1,9 @@
 package txtidx
 
+import (
+	"strings"
+)
+
 const MaxUint32 uint32 = ^uint32(0)
 
 type Corpus struct {
@@ -47,6 +51,37 @@ func (c *Corpus) upsert(word string) (wordIDX, varIDX) {
 		c.variants = append(c.variants, v)
 	}
 	return w.wordIDX, vid
+}
+
+func (c *Corpus) Find(words ...string) DocSet {
+	return c.find(words...)
+}
+
+func (c *Corpus) find(words ...string) *docSet {
+	if len(words) == 0 {
+		return newDocSet()
+	}
+	out := c.findSingle(words[0])
+
+	for _, w := range words[1:] {
+		if out == nil {
+			break
+		}
+		out = out.intersect(c.findSingle(w))
+	}
+	return out
+}
+
+func (c *Corpus) findSingle(word string) *docSet {
+	ws := c.roots.findAll(root(word))
+	if len(ws) == 0 {
+		return newDocSet()
+	}
+	out := ws[0].Documents.copy()
+	for _, w := range ws[1:] {
+		out.merge(w.Documents)
+	}
+	return out
 }
 
 func (c *Corpus) AddDoc(doc string) Document {
@@ -98,6 +133,29 @@ func (c *Corpus) Update(id DocIDer, txt string) {
 	c.getDoc(id).update(c, txt)
 }
 
+func (c *Corpus) Search(search string) (DocSet, []string) {
+	s := newScanner(search).buildSearch()
+	ds := c.find(s.words...).copy()
+	var strs []string
+	if len(s.exact) > 0 {
+		for di := range ds.docs {
+			str := c.docs[di].toString(c)
+			for _, e := range s.exact {
+				if !strings.Contains(str, e) {
+					ds.Delete(di)
+					break
+				}
+			}
+			if ds.Has(di) {
+				strs = append(strs, str)
+			}
+		}
+	} else {
+		strs = c.GetDocs(ds)
+	}
+	return ds, strs
+}
+
 func (c *Corpus) GetDocs(docs DocSet) []string {
 	ds := docs.(*docSet)
 	out := make([]string, 0, ds.Len())
@@ -109,4 +167,8 @@ func (c *Corpus) GetDocs(docs DocSet) []string {
 
 func (c *Corpus) DocString(id DocIDer) string {
 	return c.getDoc(id).toString(c)
+}
+
+func (c *Corpus) Suggest(word string, max int) []string {
+	return c.roots.suggest(word, max)
 }
