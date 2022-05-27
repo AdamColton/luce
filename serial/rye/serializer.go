@@ -118,3 +118,12 @@ func (s *Serializer) Slice(data []byte) {
 func (s *Serializer) String(data string) {
 	s.Slice([]byte(data))
 }
+
+// CheckFree guarentees that there is at least ln free bytes after index,
+// appending more bytes if necessary.
+func (s *Serializer) CheckFree(ln int) {
+	d := ln - len(s.Data) + s.Idx
+	if d > 0 {
+		s.Data = append(s.Data, make([]byte, d)...)
+	}
+}
