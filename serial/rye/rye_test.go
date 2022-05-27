@@ -176,3 +176,12 @@ func TestDeserializerDone(t *testing.T) {
 	}
 	assert.Equal(t, "testing", string(out))
 }
+
+func TestSerializerCheckFree(t *testing.T) {
+	s := (&rye.Serializer{Size: 5}).Make()
+	assert.Len(t, s.Data, 5)
+	s.CheckFree(4)
+	assert.Len(t, s.Data, 5)
+	s.CheckFree(10)
+	assert.Len(t, s.Data, 10)
+}
