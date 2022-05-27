@@ -2,8 +2,6 @@ package txtidx
 
 import "sort"
 
-const MaxUint32 = ^uint32(0)
-
 type markov struct {
 	heads map[rune][]*markovNode
 	nodes map[mkey]*markovNode
