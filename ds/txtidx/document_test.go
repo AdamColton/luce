@@ -2,6 +2,7 @@ package txtidx
 
 import (
 	"io/ioutil"
+	"sort"
 	"testing"
 
 	"github.com/adamcolton/luce/ds/huffman"
@@ -22,6 +23,50 @@ func TestDocumentString(t *testing.T) {
 	// "is " and "a " have the same variant
 	// "This " and "Test " have the same variant
 	assert.Len(t, c.variantsByStr, 2)
+
+	assert.True(t, c.find("test").Has(d))
+}
+
+func TestMultiDoc(t *testing.T) {
+	c := NewCorpus()
+	c.AddDoc("The sun was shining on the sea")
+	c.AddDoc("Shining with all it's might")
+	c.AddDoc("And it did the very best it could")
+	c.AddDoc("To make the billows smooth and bright")
+	c.AddDoc("And this was very odd because")
+	c.AddDoc("It was the middle of the night")
+	c.AddDoc("The moon was shining skulkily")
+	c.AddDoc("Because she thought the sun")
+
+	the := c.find("the")
+	assert.Equal(t, 6, the.Len())
+
+	shining := c.find("shining")
+	assert.Equal(t, 3, shining.Len())
+
+	both := c.GetDocs(c.find("the", "shining"))
+	sort.Strings(both)
+	expected := []string{
+		"The moon was shining skulkily",
+		"The sun was shining on the sea",
+	}
+	assert.Equal(t, expected, both)
+	_, both = c.Search("the shining")
+	sort.Strings(both)
+	assert.Equal(t, expected, both)
+
+	ill := c.GetDocs(c.find("ill"))
+	expected = []string{
+		"To make the billows smooth and bright",
+	}
+	assert.Equal(t, expected, ill)
+
+	_, exact := c.Search(`"The sun"`)
+	expected = []string{
+		"The sun was shining on the sea",
+	}
+	assert.Equal(t, expected, exact)
+
 }
 
 func TestMarkov(t *testing.T) {

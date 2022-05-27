@@ -1,6 +1,7 @@
 package txtidx
 
 import (
+	"strings"
 	"unicode"
 	"unicode/utf8"
 )
@@ -38,6 +39,36 @@ func (s *scanner) done() bool {
 
 func (s *scanner) str(start, end int) string {
 	return string(s.s[start:end])
+}
+
+type search struct {
+	words, exact []string
+}
+
+func (s *scanner) buildSearch() search {
+	out := search{}
+	exactStart := -1
+	start := -1
+	for ; !s.done(); s.next() {
+		if s.r == '"' {
+			if exactStart == -1 {
+				exactStart = s.idx + 1
+			} else {
+				out.exact = append(out.exact, string(s.s[exactStart:s.idx]))
+				exactStart = -1
+			}
+		}
+		if s.isLetterNumber && start == -1 {
+			start = s.idx
+		} else if !s.isLetterNumber && start != -1 {
+			out.words = append(out.words, strings.ToLower(string(s.s[start:s.idx])))
+			start = -1
+		}
+	}
+	if start != -1 {
+		out.words = append(out.words, strings.ToLower(string(s.s[start:s.idx])))
+	}
+	return out
 }
 
 func (s *scanner) parse(str string) ([]byte, []string) {
