@@ -337,3 +337,12 @@ func TestSerializerString(t *testing.T) {
 	assert.Equal(t, len(str), s.Idx)
 	assert.Equal(t, str, string(s.Data))
 }
+
+func TestSerializerCheckFree(t *testing.T) {
+	s := (&Serializer{Size: 5}).Make()
+	assert.Len(t, s.Data, 5)
+	s.CheckFree(4)
+	assert.Len(t, s.Data, 5)
+	s.CheckFree(10)
+	assert.Len(t, s.Data, 10)
+}
