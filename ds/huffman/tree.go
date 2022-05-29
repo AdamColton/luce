@@ -4,12 +4,13 @@ import (
 	"sort"
 
 	"github.com/adamcolton/luce/ds/heap"
+	"github.com/adamcolton/luce/serial/rye"
 )
 
 // Tree represents a Huffman Coding.
 type Tree[T any] interface {
-	Read(b *Bits) T
-	ReadAll(b *Bits) []T
+	Read(b *rye.Bits) T
+	ReadAll(b *rye.Bits) []T
 }
 
 // Frequency is used for constructing a Huffman Coding.
