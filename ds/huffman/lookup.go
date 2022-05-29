@@ -1,37 +1,40 @@
 package huffman
 
-import "github.com/adamcolton/luce/ds/slice"
+import (
+	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/serial/rye"
+)
 
 // Lookup is used during encoding to finds the bit representation for a value in
 // the tree. If T is comparable use NewLookup to create a Lookup. If T is not
 // comparable, then use NewTranslateLookup and provide a function to translate
 // from T to a comparable type.
 type Lookup[T any] interface {
-	Get(v T) *Bits
+	Get(v T) *rye.Bits
 	All() []T
 }
 
 // Encode data to bits using the lookup. Calling Tree.ReadAll on these bits will
 // recover the original data.
-func Encode[T any](data []T, l Lookup[T]) *Bits {
-	b := &Bits{}
+func Encode[T any](data []T, l Lookup[T]) *rye.Bits {
+	b := &rye.Bits{}
 	for _, d := range data {
 		b.WriteBits(l.Get(d))
 	}
 	return b.Reset()
 }
 
-type mapLookup[T comparable] map[T]*Bits
+type mapLookup[T comparable] map[T]*rye.Bits
 
 // NewLookup creates a lookup on a Tree with a comparable type.
 func NewLookup[T comparable](t Tree[T]) Lookup[T] {
 	n := t.(*huffNode[T])
 	l := make(mapLookup[T])
-	l.insert(n, &Bits{})
+	l.insert(n, &rye.Bits{})
 	return l
 }
 
-func (l mapLookup[T]) insert(n *huffNode[T], b *Bits) {
+func (l mapLookup[T]) insert(n *huffNode[T], b *rye.Bits) {
 	if n.branch[0] == nil {
 		l[n.v] = b.Reset()
 		return
@@ -40,7 +43,7 @@ func (l mapLookup[T]) insert(n *huffNode[T], b *Bits) {
 	l.insert(n.branch[1], b.Write(1))
 }
 
-func (l mapLookup[T]) Get(v T) *Bits {
+func (l mapLookup[T]) Get(v T) *rye.Bits {
 	return l[v]
 }
 
@@ -49,12 +52,12 @@ func (l mapLookup[T]) All() []T {
 }
 
 type translateLookup[K comparable, T any] struct {
-	table    map[K]*Bits
+	table    map[K]*rye.Bits
 	all      []T
 	keyMaker func(T) K
 }
 
-func (l *translateLookup[K, T]) Get(v T) *Bits {
+func (l *translateLookup[K, T]) Get(v T) *rye.Bits {
 	return l.table[l.keyMaker(v)]
 }
 
@@ -67,14 +70,14 @@ func (l *translateLookup[K, T]) All() []T {
 func NewTranslateLookup[K comparable, T any](t Tree[T], translator func(T) K) Lookup[T] {
 	n := t.(*huffNode[T])
 	l := &translateLookup[K, T]{
-		table:    make(map[K]*Bits),
+		table:    make(map[K]*rye.Bits),
 		keyMaker: translator,
 	}
-	l.insert(n, &Bits{})
+	l.insert(n, &rye.Bits{})
 	return l
 }
 
-func (l *translateLookup[K, T]) insert(n *huffNode[T], b *Bits) {
+func (l *translateLookup[K, T]) insert(n *huffNode[T], b *rye.Bits) {
 	if n.branch[0] == nil {
 		l.all = append(l.all, n.v)
 		l.table[l.keyMaker(n.v)] = b.Reset()
