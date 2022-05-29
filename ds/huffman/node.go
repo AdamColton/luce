@@ -1,5 +1,7 @@
 package huffman
 
+import "github.com/adamcolton/luce/serial/rye"
+
 type huffNode[T any] struct {
 	branch [2]*huffNode[T]
 	v      T
@@ -33,7 +35,7 @@ func newBranch[T any](n0, n1 *huffNode[T], sum int) *root[T] {
 }
 
 // Read from b until a leaf is encountered, return the leaf value.
-func (n *huffNode[T]) Read(b *Bits) T {
+func (n *huffNode[T]) Read(b *rye.Bits) T {
 	if n.branch[0] == nil {
 		return n.v
 	}
@@ -41,7 +43,7 @@ func (n *huffNode[T]) Read(b *Bits) T {
 }
 
 // ReadAll bits, traversing the Huffman tree.
-func (n *huffNode[T]) ReadAll(b *Bits) []T {
+func (n *huffNode[T]) ReadAll(b *rye.Bits) []T {
 	var out []T
 	for b.Idx < b.Ln {
 		out = append(out, n.Read(b))
