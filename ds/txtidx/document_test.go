@@ -67,6 +67,12 @@ func TestMultiDoc(t *testing.T) {
 	}
 	assert.Equal(t, expected, exact)
 
+	ll := c.GetDocs(c.find("ll"))
+	expected = []string{
+		"Shining with all it's might",
+		"To make the billows smooth and bright",
+	}
+	assert.Equal(t, expected, ll)
 }
 
 func TestMarkov(t *testing.T) {

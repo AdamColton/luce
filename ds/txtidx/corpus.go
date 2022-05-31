@@ -138,7 +138,8 @@ func (c *Corpus) Search(search string) (DocSet, []string) {
 	ds := c.find(s.words...).copy()
 	var strs []string
 	if len(s.exact) > 0 {
-		for di := range ds.docs {
+		for _, idBits := range ds.t.All() {
+			di := DocID(idBits.ReadUint32())
 			str := c.docs[di].toString(c)
 			for _, e := range s.exact {
 				if !strings.Contains(str, e) {
@@ -159,7 +160,8 @@ func (c *Corpus) Search(search string) (DocSet, []string) {
 func (c *Corpus) GetDocs(docs DocSet) []string {
 	ds := docs.(*docSet)
 	out := make([]string, 0, ds.Len())
-	for di := range ds.docs {
+	for _, idBits := range ds.t.All() {
+		di := DocID(idBits.ReadUint32())
 		out = append(out, c.docs[di].toString(c))
 	}
 	return out
