@@ -1,12 +1,13 @@
 package txtidx
 
+import "github.com/adamcolton/luce/ds/bintrie"
+
 type DocSet interface {
 	Add(DocIDer)
 	Has(DocIDer) bool
-	Len() int
 	Intersect(DocSet) DocSet
 	Merge(with DocSet)
-	Pop() (id DocID, done bool)
+	Len() int
 }
 
 type DocIDer interface {
@@ -20,26 +21,27 @@ func (id DocID) ID() DocID {
 }
 
 type docSet struct {
-	docs map[DocID]sig
+	t bintrie.Trie
 }
 
 func newDocSet() *docSet {
 	return &docSet{
-		docs: map[DocID]sig{},
+		t: bintrie.New(),
 	}
 }
 
+func (ds *docSet) Len() int {
+	return ds.t.Size()
+}
+
 func (ds *docSet) Add(di DocIDer) {
-	ds.docs[di.ID()] = sig{}
+	id32 := uint32(di.ID())
+	ds.t.Insert(id32)
 }
 
 func (ds *docSet) Has(di DocIDer) bool {
-	_, found := ds.docs[di.ID()]
-	return found
-}
-
-func (ds *docSet) Len() int {
-	return len(ds.docs)
+	id32 := uint32(di.ID())
+	return ds.t.Has(id32)
 }
 
 func (ds *docSet) Intersect(with DocSet) DocSet {
@@ -47,19 +49,8 @@ func (ds *docSet) Intersect(with DocSet) DocSet {
 }
 
 func (ds *docSet) intersect(with *docSet) *docSet {
-	out := map[DocID]sig{}
-	iter, cmpr := ds.docs, with.docs
-	if len(iter) > len(cmpr) {
-		iter, cmpr = cmpr, iter
-	}
-	for di := range iter {
-		_, found := cmpr[di]
-		if found {
-			out[di] = sig{}
-		}
-	}
 	return &docSet{
-		docs: out,
+		t: bintrie.And(ds.t, with.t),
 	}
 }
 
@@ -68,9 +59,7 @@ func (ds *docSet) Merge(with DocSet) {
 }
 
 func (ds *docSet) merge(with *docSet) {
-	for di := range with.docs {
-		ds.docs[di] = sig{}
-	}
+	ds.t.InsertTrie(with.t)
 }
 
 func (ds *docSet) Copy() DocSet {
@@ -78,26 +67,12 @@ func (ds *docSet) Copy() DocSet {
 }
 
 func (ds *docSet) copy() *docSet {
-	out := &docSet{
-		docs: map[DocID]sig{},
+	return &docSet{
+		t: ds.t.Copy(),
 	}
-	out.merge(ds)
-	return out
 }
 
 func (ds *docSet) Delete(di DocIDer) {
-	delete(ds.docs, di.ID())
-}
-
-func (ds *docSet) Pop() (DocID, bool) {
-	if len(ds.docs) == 0 {
-		return DocID(MaxUint32), true
-	}
-	var out DocID
-	for di := range ds.docs {
-		out = di
-		break
-	}
-	ds.Delete(out)
-	return out, false
+	id32 := uint32(di.ID())
+	ds.t.Delete(id32)
 }
