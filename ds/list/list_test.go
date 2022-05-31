@@ -3,6 +3,7 @@ package list_test
 import (
 	"fmt"
 	"testing"
+	"unsafe"
 
 	"github.com/adamcolton/luce/ds/list"
 	"github.com/adamcolton/luce/util/iter"
@@ -83,4 +84,10 @@ func ExampleList_toSlice() {
 	fmt.Println(s)
 	// Output:
 	// [0 1 4 9 16]
+}
+
+func TestFoo(t *testing.T) {
+	u := uint16(55)
+	s := int(unsafe.Sizeof(u)) * 8
+	assert.Equal(t, 32, s)
 }

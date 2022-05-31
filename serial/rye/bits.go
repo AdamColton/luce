@@ -64,6 +64,14 @@ func (b *Bits) ReadUint(n byte) uint64 {
 	return u
 }
 
+func (b *Bits) ReadUint32() uint32 {
+	var u uint32
+	for i := byte(0); i < 32; i++ {
+		u |= uint32(b.Read()) << i
+	}
+	return u
+}
+
 // WriteUint u as n bits.
 func (b *Bits) WriteUint(u uint64, n byte) {
 	for i := byte(0); i < n; i++ {
