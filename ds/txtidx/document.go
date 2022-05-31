@@ -17,7 +17,7 @@ type document struct {
 	wt                 huffman.Tree[wordIDX]
 	vt                 huffman.Tree[varIDX]
 	wSingles, vSingles []byte
-	wEnc, vEnc         *huffman.Bits
+	wEnc, vEnc         *rye.Bits
 }
 
 func (d *document) ID() DocID {
@@ -52,7 +52,7 @@ func (hdu *docUnit[T]) add(u T) {
 	hdu.idxs = append(hdu.idxs, u)
 }
 
-func (hdu *docUnit[T]) encode() (huffman.Tree[T], *huffman.Bits, []byte) {
+func (hdu *docUnit[T]) encode() (huffman.Tree[T], *rye.Bits, []byte) {
 	var singleToken T = T(MaxUint32)
 	for u, c := range hdu.counts {
 		if c == 1 {

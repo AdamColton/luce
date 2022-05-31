@@ -4,7 +4,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/adamcolton/luce/ds/huffman"
+	"github.com/adamcolton/luce/serial/rye"
 )
 
 type varIDX uint32
@@ -16,7 +16,7 @@ func findVariant(root, str string) variant {
 	b := []byte(str)
 	suffix := str[len(root):]
 
-	caseData := &huffman.Bits{
+	caseData := &rye.Bits{
 		Data: make([]byte, 0, divUp(len(rs), 8)+len(suffix)),
 	}
 	for _, rr := range rs {
@@ -43,7 +43,7 @@ func divUp(a, b int) int {
 
 // todo: this should take a buffer
 func (v variant) apply(rt string) string {
-	b := &huffman.Bits{
+	b := &rye.Bits{
 		Data: v,
 	}
 	in := []byte(rt)

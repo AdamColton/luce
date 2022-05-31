@@ -1,6 +1,7 @@
-package huffman
+package rye
 
 import (
+	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,12 +16,13 @@ func TestBitUint(t *testing.T) {
 }
 
 func TestBitsRoundTrip(t *testing.T) {
-	data := letters
-	ht := MapNew(data)
-	l := NewLookup(ht)
-	var bs []*Bits
-	for _, r := range l.All() {
-		bs = append(bs, l.Get(r))
+	bs := make([]*Bits, 30)
+	for i := range bs {
+		bs[i] = &Bits{}
+		ln := rand.Intn(15) + 16
+		for j := 0; j < ln; j++ {
+			bs[i].Write(byte(rand.Intn(2)))
+		}
 	}
 
 	enc := EncodeBits(bs)

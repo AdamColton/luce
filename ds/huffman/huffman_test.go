@@ -4,6 +4,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/adamcolton/luce/serial/rye"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,12 +43,12 @@ func TestFromMap(t *testing.T) {
 	assert.NotNil(t, ht)
 
 	l := NewLookup(ht)
-	expectedBits := &Bits{
+	expectedBits := &rye.Bits{
 		Ln:   4,
 		Data: []byte{7},
 	}
 	assert.Equal(t, expectedBits, l.Get('A'))
-	expectedBits = &Bits{
+	expectedBits = &rye.Bits{
 		Ln:   9,
 		Data: []byte{52, 0},
 	}
@@ -86,12 +87,12 @@ func TestTranslate(t *testing.T) {
 	l := NewTranslateLookup(ht, func(b []byte) string {
 		return string(b)
 	})
-	expectedBits := &Bits{
+	expectedBits := &rye.Bits{
 		Ln:   4,
 		Data: []byte{7},
 	}
 	assert.Equal(t, expectedBits, l.Get([]byte("A")))
-	expectedBits = &Bits{
+	expectedBits = &rye.Bits{
 		Ln:   9,
 		Data: []byte{52, 0},
 	}
