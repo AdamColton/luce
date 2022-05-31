@@ -98,3 +98,22 @@ func TestInsertTrie(t *testing.T) {
 		assert.True(t, b.Has(u))
 	}
 }
+
+func TestUnion(t *testing.T) {
+	var a Trie = &node{}
+	ua := uint32(3141592)
+	a.Insert(ua)
+	var b Trie = &node{}
+	ub := uint32(6535897)
+	b.Insert(ub)
+
+	both := uint32(793238)
+	a.Insert(both)
+	b.Insert(both)
+
+	a.Union(b)
+	assert.Equal(t, 1, a.Size())
+	all := a.All()
+	assert.Equal(t, both, uint32(all[0].ReadUint(32)))
+
+}

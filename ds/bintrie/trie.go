@@ -10,6 +10,8 @@ type Trie interface {
 	Copy() Trie
 	Size() int
 	InsertTrie(t Trie)
+	Union(t Trie)
+
 	private()
 }
 

@@ -242,3 +242,29 @@ func (n *node) recurInsertTrie(n2 *node) {
 	}
 	n.updateSize()
 }
+
+func (n *node) Union(t Trie) {
+	n.recurUnion(t.(*node))
+}
+
+func (n *node) recurUnion(n2 *node) *node {
+	t := n.terminal && n2.terminal
+	and0 := n.branches[0] != nil && n2.branches[0] != nil
+	and1 := n.branches[1] != nil && n2.branches[1] != nil
+	if !t && !and0 && !and1 {
+		return nil
+	}
+	n.terminal = t
+	if and0 {
+		n.branches[0] = n.branches[0].recurUnion(n2.branches[0])
+	} else {
+		n.branches[0] = nil
+	}
+	if and1 {
+		n.branches[1] = n.branches[1].recurUnion(n2.branches[1])
+	} else {
+		n.branches[1] = nil
+	}
+	n.updateSize()
+	return n.nilCheck()
+}
