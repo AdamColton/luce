@@ -1,6 +1,7 @@
 package bintrie
 
 import (
+	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -116,4 +117,30 @@ func TestUnion(t *testing.T) {
 	all := a.All()
 	assert.Equal(t, both, uint32(all[0].ReadUint(32)))
 
+}
+
+func TestMulti(t *testing.T) {
+	inAll := make([]uint32, 10)
+	for i := range inAll {
+		inAll[i] = rand.Uint32()
+	}
+
+	tries := make(Multi, 10)
+	for i := range tries {
+		t := New()
+		for _, u := range inAll {
+			t.Insert(u)
+			t.Insert(uint32(i))
+		}
+		tries[i] = t
+	}
+
+	for _, u := range inAll {
+		assert.True(t, tries.Has(u))
+	}
+
+	for i := range tries {
+		assert.True(t, tries.Has(uint32(i)))
+	}
+	assert.False(t, tries.Has(uint32(len(tries))))
 }
