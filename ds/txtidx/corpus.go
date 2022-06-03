@@ -57,31 +57,24 @@ func (c *Corpus) Find(words ...string) DocSet {
 	return c.find(words...)
 }
 
-func (c *Corpus) find(words ...string) *docSet {
-	if len(words) == 0 {
+func (c *Corpus) find(terms ...string) *docSet {
+	if len(terms) == 0 {
 		return newDocSet()
 	}
-	out := c.findSingle(words[0])
 
-	for _, w := range words[1:] {
+	out := c.findSingle(terms[0])
+
+	for _, w := range terms[1:] {
 		if out == nil {
 			break
 		}
-		out = out.intersect(c.findSingle(w))
+		out.intersectMerge(c.findSingle(w))
 	}
 	return out
 }
 
 func (c *Corpus) findSingle(word string) *docSet {
-	ws := c.roots.findAll(root(word))
-	if len(ws) == 0 {
-		return newDocSet()
-	}
-	out := ws[0].Documents.copy()
-	for _, w := range ws[1:] {
-		out.merge(w.Documents)
-	}
-	return out
+	return c.roots.findAll(root(word)).docSetUnion()
 }
 
 func (c *Corpus) AddDoc(doc string) Document {
@@ -138,8 +131,7 @@ func (c *Corpus) Search(search string) (DocSet, []string) {
 	ds := c.find(s.words...).copy()
 	var strs []string
 	if len(s.exact) > 0 {
-		for _, idBits := range ds.t.All() {
-			di := DocID(idBits.ReadUint32())
+		for _, di := range ds.t.Slice() {
 			str := c.docs[di].toString(c)
 			for _, e := range s.exact {
 				if !strings.Contains(str, e) {
@@ -160,8 +152,7 @@ func (c *Corpus) Search(search string) (DocSet, []string) {
 func (c *Corpus) GetDocs(docs DocSet) []string {
 	ds := docs.(*docSet)
 	out := make([]string, 0, ds.Len())
-	for _, idBits := range ds.t.All() {
-		di := DocID(idBits.ReadUint32())
+	for _, di := range ds.t.Slice() {
 		out = append(out, c.docs[di].toString(c))
 	}
 	return out

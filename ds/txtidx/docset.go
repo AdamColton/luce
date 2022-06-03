@@ -1,12 +1,15 @@
 package txtidx
 
-import "github.com/adamcolton/luce/ds/bintrie"
+import (
+	"github.com/adamcolton/luce/ds/lset"
+)
 
 type DocSet interface {
 	Add(DocIDer)
 	Has(DocIDer) bool
 	Intersect(DocSet) DocSet
 	Merge(with DocSet)
+	Union(with DocSet) DocSet
 	Len() int
 }
 
@@ -21,27 +24,25 @@ func (id DocID) ID() DocID {
 }
 
 type docSet struct {
-	t bintrie.Trie
+	t *lset.Set[DocID]
 }
 
 func newDocSet() *docSet {
 	return &docSet{
-		t: bintrie.New(),
+		t: lset.New[DocID](),
 	}
 }
 
 func (ds *docSet) Len() int {
-	return ds.t.Size()
+	return ds.t.Len()
 }
 
 func (ds *docSet) Add(di DocIDer) {
-	id32 := uint32(di.ID())
-	ds.t.Insert(id32)
+	ds.t.Add(di.ID())
 }
 
 func (ds *docSet) Has(di DocIDer) bool {
-	id32 := uint32(di.ID())
-	return ds.t.Has(id32)
+	return ds.t.Contains(di.ID())
 }
 
 func (ds *docSet) Intersect(with DocSet) DocSet {
@@ -50,7 +51,25 @@ func (ds *docSet) Intersect(with DocSet) DocSet {
 
 func (ds *docSet) intersect(with *docSet) *docSet {
 	return &docSet{
-		t: bintrie.And(ds.t, with.t),
+		t: lset.And(ds.t, with.t),
+	}
+}
+
+func (ds *docSet) IntersectMerge(with DocSet) {
+	ds.intersectMerge(with.(*docSet))
+}
+
+func (ds *docSet) intersectMerge(with *docSet) {
+	ds.t = lset.And(ds.t, with.t)
+}
+
+func (ds *docSet) Union(with DocSet) DocSet {
+	return ds.union(with.(*docSet))
+}
+
+func (ds *docSet) union(with *docSet) *docSet {
+	return &docSet{
+		t: lset.Or(ds.t, with.t),
 	}
 }
 
@@ -59,7 +78,7 @@ func (ds *docSet) Merge(with DocSet) {
 }
 
 func (ds *docSet) merge(with *docSet) {
-	ds.t.InsertTrie(with.t)
+	ds.t.AddAll(with.t)
 }
 
 func (ds *docSet) Copy() DocSet {
@@ -73,6 +92,5 @@ func (ds *docSet) copy() *docSet {
 }
 
 func (ds *docSet) Delete(di DocIDer) {
-	id32 := uint32(di.ID())
-	ds.t.Delete(id32)
+	ds.t.Remove(di.ID())
 }
