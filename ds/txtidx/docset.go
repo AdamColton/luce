@@ -7,6 +7,7 @@ type DocSet interface {
 	Has(DocIDer) bool
 	Intersect(DocSet) DocSet
 	Merge(with DocSet)
+	Union(with DocSet) DocSet
 	Len() int
 }
 
@@ -51,6 +52,24 @@ func (ds *docSet) Intersect(with DocSet) DocSet {
 func (ds *docSet) intersect(with *docSet) *docSet {
 	return &docSet{
 		t: bintrie.And(ds.t, with.t),
+	}
+}
+
+func (ds *docSet) IntersectMerge(with DocSet) {
+	ds.intersectMerge(with.(*docSet))
+}
+
+func (ds *docSet) intersectMerge(with *docSet) {
+	ds.t.Union(with.t)
+}
+
+func (ds *docSet) Union(with DocSet) DocSet {
+	return ds.union(with.(*docSet))
+}
+
+func (ds *docSet) union(with *docSet) *docSet {
+	return &docSet{
+		t: bintrie.Or(ds.t, with.t),
 	}
 }
 

@@ -29,7 +29,7 @@ func (m *markov) find(str string) (*word, *markovNode) {
 	return s.n.word, s.n
 }
 
-func (m *markov) findAll(str string) []*word {
+func (m *markov) findAll(str string) words {
 	rs := []rune(str)
 	if len(rs) == 0 {
 		return nil

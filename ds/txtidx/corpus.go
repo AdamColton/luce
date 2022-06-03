@@ -57,31 +57,24 @@ func (c *Corpus) Find(words ...string) DocSet {
 	return c.find(words...)
 }
 
-func (c *Corpus) find(words ...string) *docSet {
-	if len(words) == 0 {
+func (c *Corpus) find(terms ...string) *docSet {
+	if len(terms) == 0 {
 		return newDocSet()
 	}
-	out := c.findSingle(words[0])
 
-	for _, w := range words[1:] {
+	out := c.findSingle(terms[0])
+
+	for _, w := range terms[1:] {
 		if out == nil {
 			break
 		}
-		out = out.intersect(c.findSingle(w))
+		out.intersectMerge(c.findSingle(w))
 	}
 	return out
 }
 
 func (c *Corpus) findSingle(word string) *docSet {
-	ws := c.roots.findAll(root(word))
-	if len(ws) == 0 {
-		return newDocSet()
-	}
-	out := ws[0].Documents.copy()
-	for _, w := range ws[1:] {
-		out.merge(w.Documents)
-	}
-	return out
+	return c.roots.findAll(root(word)).docSetUnion()
 }
 
 func (c *Corpus) AddDoc(doc string) Document {

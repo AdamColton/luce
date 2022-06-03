@@ -2,12 +2,16 @@ package bintrie
 
 import "github.com/adamcolton/luce/serial/rye"
 
-type Trie interface {
-	Insert(uint32)
+type TrieReader interface {
 	Has(uint32) bool
-	Delete(uint32)
 	All() []*rye.Bits
 	Copy() Trie
+}
+
+type Trie interface {
+	TrieReader
+	Insert(uint32)
+	Delete(uint32)
 	Size() int
 	InsertTrie(t Trie)
 	Union(t Trie)
