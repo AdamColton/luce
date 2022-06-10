@@ -3,7 +3,6 @@ package txtidx
 import "sort"
 
 type markov struct {
-	heads map[rune][]*markovNode
 	nodes map[mkey]*markovNode
 	maxID uint32
 }
@@ -15,7 +14,6 @@ type mkey struct {
 
 func newMarkov() *markov {
 	return &markov{
-		heads: map[rune][]*markovNode{},
 		nodes: map[mkey]*markovNode{},
 	}
 }
@@ -34,19 +32,13 @@ func (m *markov) findAll(str string) words {
 	if len(rs) == 0 {
 		return nil
 	}
-
 	s := newSeeker(str)
-
-	var out []*word
-	for _, n := range m.heads[s.rs[0]] {
-		s.n = n
-		s.idx = 1
-		s.find(m.nodes)
-		if s.n != nil {
-			out = m.appendAll(s.n, out)
-		}
+	s.find(m.nodes)
+	if s.n == nil {
+		return nil
 	}
-	return out
+
+	return m.appendAll(s.n, nil)
 }
 
 type seeker struct {
@@ -117,7 +109,6 @@ func (m *markov) upsertRecursive(s *seeker) (*word, bool) {
 			id: m.maxID,
 		}
 		m.nodes[s.k] = next
-		m.heads[s.k.r] = append(m.heads[s.k.r], next)
 	}
 	s.n = next
 	w, inc := m.upsertRecursive(s)

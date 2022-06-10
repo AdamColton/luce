@@ -55,7 +55,7 @@ func TestMultiDoc(t *testing.T) {
 	sort.Strings(both)
 	assert.Equal(t, expected, both)
 
-	ill := c.GetDocs(c.find("ill"))
+	ill := c.GetDocs(c.find("smoo"))
 	expected = []string{
 		"To make the billows smooth and bright",
 	}
@@ -67,10 +67,10 @@ func TestMultiDoc(t *testing.T) {
 	}
 	assert.Equal(t, expected, exact)
 
-	ll := c.GetDocs(c.find("ll"))
+	ll := c.GetDocs(c.find("mi"))
 	expected = []string{
 		"Shining with all it's might",
-		"To make the billows smooth and bright",
+		"It was the middle of the night",
 	}
 	assert.Equal(t, expected, ll)
 }
