@@ -11,6 +11,7 @@ type DocSet interface {
 	Merge(with DocSet)
 	Union(with DocSet) DocSet
 	Len() int
+	IDs() []DocID
 }
 
 type DocIDer interface {
@@ -93,4 +94,8 @@ func (ds *docSet) copy() *docSet {
 
 func (ds *docSet) Delete(di DocIDer) {
 	ds.t.Remove(di.ID())
+}
+
+func (ds *docSet) IDs() []DocID {
+	return ds.t.Slice()
 }

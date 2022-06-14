@@ -1,7 +1,7 @@
 package txtidx
 
 import (
-	"io/ioutil"
+	"os"
 	"sort"
 	"testing"
 
@@ -68,9 +68,10 @@ func TestMultiDoc(t *testing.T) {
 	assert.Equal(t, expected, exact)
 
 	ll := c.GetDocs(c.find("mi"))
+	sort.StringSlice(ll).Sort()
 	expected = []string{
-		"Shining with all it's might",
 		"It was the middle of the night",
+		"Shining with all it's might",
 	}
 	assert.Equal(t, expected, ll)
 }
@@ -122,7 +123,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestCompression(t *testing.T) {
-	f, err := ioutil.ReadFile("/home/adam/Projects/homestead/workshop/workshop.wiki")
+	f, err := os.ReadFile("/home/adam/Projects/homestead/workshop/workshop.wiki")
 	assert.NoError(t, err)
 
 	c := NewCorpus()
