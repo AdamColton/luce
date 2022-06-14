@@ -9,6 +9,7 @@ type DocSet interface {
 	Merge(with DocSet)
 	Union(with DocSet) DocSet
 	Len() int
+	IDs() []DocID
 }
 
 type DocIDer interface {
@@ -94,4 +95,13 @@ func (ds *docSet) copy() *docSet {
 func (ds *docSet) Delete(di DocIDer) {
 	id32 := uint32(di.ID())
 	ds.t.Delete(id32)
+}
+
+func (ds *docSet) IDs() []DocID {
+	all := ds.t.All()
+	out := make([]DocID, len(all))
+	for i, b := range all {
+		out[i] = DocID(b.ReadUint32())
+	}
+	return out
 }
