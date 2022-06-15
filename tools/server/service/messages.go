@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/adamcolton/luce/serial"
 	"github.com/adamcolton/luce/serial/type32"
 	"github.com/adamcolton/luce/util/luceio"
 	"github.com/adamcolton/luce/util/lusers"
@@ -58,6 +59,17 @@ func (r *Request) Response(body []byte) *Response {
 		Body:   body,
 		Status: http.StatusOK,
 	}
+}
+
+// SerializeResponse uses the provided Serializer and data to create a Response
+// to the Request.
+func (r *Request) SerializeResponse(s serial.Serializer, data any, buf []byte) (*Response, error) {
+	body, err := s.Serialize(data, buf)
+	if err != nil {
+		return r.ResponseErr(err, 500), err
+	}
+	return r.Response(body), nil
+
 }
 
 // ResponseTemplate populates the body of the response using the provided
