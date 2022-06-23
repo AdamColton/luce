@@ -62,6 +62,23 @@ func main() {
 			Action:  socketclient,
 			Usage:   "Connect to a unixsocket",
 		},
+		{
+			Name:    "filevars",
+			Aliases: []string{"fv"},
+			Action:  filevars,
+			Usage:   "generates a go file with input files set to variables",
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:  "o",
+					Usage: "Set the name of the output file",
+					Value: "filevars",
+				},
+				&cli.StringFlag{
+					Name:  "p",
+					Usage: "package name",
+				},
+			},
+		},
 	}
 
 	c.Run(os.Args)
