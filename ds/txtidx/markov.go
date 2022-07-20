@@ -201,32 +201,39 @@ func (mn *markovNode) sort() {
 	})
 }
 
-func (m *markov) suggest(word string, max int) []string {
+func (m *markov) suggest(word string, max int) []Suggestion {
 	_, n := m.find(word)
 	n.sort()
 	if ln := len(n.children); ln < max || max < 0 {
 		max = ln
 	}
-	out := make([]string, max)
+	out := make([]Suggestion, max)
 	for i := range n.children[:max] {
 		out[i] = m.expand(n, i)
 	}
 	return out
 }
 
-func (m *markov) expand(n *markovNode, cIdx int) string {
+func (m *markov) expand(n *markovNode, cIdx int) Suggestion {
 	k := mkey{
 		nodeID: n.id,
 		r:      n.children[cIdx].r,
 	}
-	out := m.expandRecursive(m.nodes[k], 1)
+	out, terminals := m.expandRecursive(m.nodes[k], 1)
 	out[0] = k.r
-	return string(out)
+	return Suggestion{
+		Word:      string(out),
+		Terminals: terminals,
+	}
 }
 
-func (m *markov) expandRecursive(n *markovNode, d int) []rune {
+func (m *markov) expandRecursive(n *markovNode, d int) ([]rune, []int) {
 	if len(n.children) == 0 {
-		return make([]rune, d)
+		var terminals []int
+		if n.word != nil {
+			terminals = []int{d}
+		}
+		return make([]rune, d), terminals
 	}
 	n.sort()
 	k := mkey{
@@ -234,7 +241,10 @@ func (m *markov) expandRecursive(n *markovNode, d int) []rune {
 		r:      n.children[0].r,
 	}
 	next := m.nodes[k]
-	out := m.expandRecursive(next, d+1)
+	out, terminals := m.expandRecursive(next, d+1)
 	out[d] = n.children[0].r
-	return out
+	if n.word != nil {
+		terminals = append(terminals, d)
+	}
+	return out, terminals
 }

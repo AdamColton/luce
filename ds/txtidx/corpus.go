@@ -164,6 +164,11 @@ func (c *Corpus) DocString(id DocIDer) string {
 	return c.getDoc(id).toString(c)
 }
 
-func (c *Corpus) Suggest(word string, max int) []string {
+type Suggestion struct {
+	Word      string
+	Terminals []int
+}
+
+func (c *Corpus) Suggest(word string, max int) []Suggestion {
 	return c.roots.suggest(word, max)
 }

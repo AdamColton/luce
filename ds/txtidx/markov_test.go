@@ -61,5 +61,11 @@ func TestSuggest(t *testing.T) {
 	m.upsert("anop")
 
 	s := m.suggest("a", -1)
-	assert.Equal(t, []string{"bcde", "ghij", "klm", "nop"}, s)
+	expected := []Suggestion{
+		{Word: "bcde", Terminals: []int{4, 3}},
+		{Word: "ghij", Terminals: []int{4, 3}},
+		{Word: "klm", Terminals: []int{3}},
+		{Word: "nop", Terminals: []int{3}},
+	}
+	assert.Equal(t, expected, s)
 }
