@@ -28,11 +28,10 @@ func (m *markov) find(str string) (*word, *markovNode) {
 }
 
 func (m *markov) findAll(str string) words {
-	rs := []rune(str)
-	if len(rs) == 0 {
+	s := newSeeker(str)
+	if s == nil {
 		return nil
 	}
-	s := newSeeker(str)
 	s.find(m.nodes)
 	if s.n == nil {
 		return nil
@@ -49,8 +48,12 @@ type seeker struct {
 }
 
 func newSeeker(str string) *seeker {
+	rs := []rune(str)
+	if len(rs) == 0 {
+		return nil
+	}
 	s := &seeker{
-		rs: []rune(str),
+		rs: rs,
 	}
 	return s
 }
