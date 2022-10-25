@@ -98,6 +98,8 @@ func (s *SumWriter) WriterTo(w io.WriterTo) (int64, error) {
 }
 
 // Fprint wraps a call to Fprintf.
+// TODO: This should REALLY be Printf - which is only going to break a million
+// things.
 func (s *SumWriter) Fprint(format string, args ...interface{}) (int, error) {
 	return fmt.Fprintf(s, format, args...)
 }
