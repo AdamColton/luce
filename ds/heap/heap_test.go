@@ -22,6 +22,11 @@ func TestHeap(t *testing.T) {
 	copy(M.Data, vals)
 	M.Sort()
 
+	h := &Heap[int]{
+		Data: make([]int, len(vals)),
+	}
+	copy(h.Data, vals)
+
 	sort.Slice(vals, func(i, j int) bool {
 		return vals[i] < vals[j]
 	})
@@ -36,5 +41,23 @@ func TestHeap(t *testing.T) {
 
 	for _, v := range vals {
 		assert.Equal(t, v, M.Pop())
+	}
+
+	less := func(i, j int) bool {
+		if i%2 == 0 && j%2 == 1 {
+			return true
+		} else if i%2 == 1 && j%2 == 0 {
+			return false
+		}
+		return i < j
+	}
+	h.SetLess(less)
+	h.Sort()
+
+	sort.Slice(vals, func(i, j int) bool {
+		return less(vals[i], vals[j])
+	})
+	for _, v := range vals {
+		assert.Equal(t, v, h.Pop())
 	}
 }
