@@ -33,6 +33,14 @@ func NewMax[T Ordered]() *Heap[T] {
 	return h
 }
 
+// SetLess using a function to compare the types directly instead of comparing
+// based in indice.
+func (h *Heap[T]) SetLess(less func(i, j T) bool) {
+	h.Less = func(i, j int) bool {
+		return less(h.Data[i], h.Data[j])
+	}
+}
+
 // Push a value onto the heap.
 func (h *Heap[T]) Push(v T) {
 	h.Data = append(h.Data, v)
