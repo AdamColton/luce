@@ -14,8 +14,32 @@ func (f Filter[T]) Slice(vals []T) []T {
 	return out
 }
 
-// Chan runs a go routine listening on ch and any int that passes the
-// Int is passed to the channel that is returned.
+// SliceInPlace reorders the slice so all the elements passing the filter are at
+// the start of the slice and all elements failing the filter are at the end.
+// It returns two subslices, the first for passing, the second for failing.
+// No guarentees are made about the order of the subslices.
+func (f Filter[T]) SliceInPlace(vals []T) ([]T, []T) {
+	ln := len(vals)
+	if ln == 0 {
+		return vals, nil
+	}
+	start := 0
+	end := ln - 1
+	for {
+		for ; start < ln && f(vals[start]); start++ {
+		}
+		for ; end >= 0 && !f(vals[end]); end-- {
+		}
+		if start > end {
+			break
+		}
+		vals[start], vals[end] = vals[end], vals[start]
+	}
+	return vals[:start], vals[start:]
+}
+
+// Chan runs a go routine listening on ch and any int that passes the Int is
+// passed to the channel that is returned.
 func (f Filter[T]) Chan(ch <-chan T, buf int) <-chan T {
 	out := make(chan T, buf)
 	go func() {
@@ -29,24 +53,21 @@ func (f Filter[T]) Chan(ch <-chan T, buf int) <-chan T {
 	return out
 }
 
-// Or builds a new Int that will return true if either underlying
-// Int is true.
+// Or builds a new Int that will return true if either underlying Int is true.
 func (f Filter[T]) Or(f2 Filter[T]) Filter[T] {
 	return func(val T) bool {
 		return f(val) || f2(val)
 	}
 }
 
-// And builds a new Int that will return true if both underlying
-// Ints are true.
+// And builds a new Int that will return true if both underlying Ints are true.
 func (f Filter[T]) And(f2 Filter[T]) Filter[T] {
 	return func(val T) bool {
 		return f(val) && f2(val)
 	}
 }
 
-// Not builds a new Int that will return true if the underlying
-// Int is false.
+// Not builds a new Int that will return true if the underlying Int is false.
 func (f Filter[T]) Not() Filter[T] {
 	return func(val T) bool {
 		return !f(val)
@@ -73,4 +94,82 @@ func (c Checker[T]) Panic(val T) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// MapKeyFilter applys a Filter to the keys of a map.
+type MapKeyFilter[K comparable, V any] Filter[K]
+
+// KeySlice returns all the keys in the map for which the underlying filter is
+// true.
+func (mkf MapKeyFilter[K, V]) KeySlice(m map[K]V) []K {
+	var out []K
+	for k := range m {
+		if mkf(k) {
+			out = append(out, k)
+		}
+	}
+	return out
+}
+
+// ValSlice returns all the values in the map for which the underlying filter is
+// true for the corresponding key.
+func (mkf MapKeyFilter[K, V]) ValSlice(m map[K]V) []V {
+	var out []V
+	for k, v := range m {
+		if mkf(k) {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
+// Map creates a new map populated with all the key/value pairs for with the
+// underlying filter is true for the key.
+func (mkf MapKeyFilter[K, V]) Map(m map[K]V) map[K]V {
+	out := make(map[K]V)
+	for k, v := range m {
+		if mkf(k) {
+			out[k] = v
+		}
+	}
+	return out
+}
+
+// MapValueFilter applys a Filter to the values of a map.
+type MapValueFilter[K comparable, V any] Filter[V]
+
+// KeySlice returns all the keys in the map for which the underlying filter is
+// true for the corresponding value.
+func (mvf MapValueFilter[K, V]) KeySlice(m map[K]V) []K {
+	var out []K
+	for k, v := range m {
+		if mvf(v) {
+			out = append(out, k)
+		}
+	}
+	return out
+}
+
+// ValSlice returns all the values in the map for which the underlying filter is
+// true.
+func (mvf MapValueFilter[K, V]) ValSlice(m map[K]V) []V {
+	var out []V
+	for _, v := range m {
+		if mvf(v) {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
+// Map creates a new map populated with all the key/value pairs for with the
+// underlying filter is true for the value.
+func (mvf MapValueFilter[K, V]) Map(m map[K]V) map[K]V {
+	out := make(map[K]V)
+	for k, v := range m {
+		if mvf(v) {
+			out[k] = v
+		}
+	}
+	return out
 }
