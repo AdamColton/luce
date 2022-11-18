@@ -134,3 +134,42 @@ func (mkf MapKeyFilter[K, V]) Map(m map[K]V) map[K]V {
 	}
 	return out
 }
+
+// MapValueFilter applys a Filter to the values of a map.
+type MapValueFilter[K comparable, V any] Filter[V]
+
+// KeySlice returns all the keys in the map for which the underlying filter is
+// true for the corresponding value.
+func (mvf MapValueFilter[K, V]) KeySlice(m map[K]V) []K {
+	var out []K
+	for k, v := range m {
+		if mvf(v) {
+			out = append(out, k)
+		}
+	}
+	return out
+}
+
+// ValSlice returns all the values in the map for which the underlying filter is
+// true.
+func (mvf MapValueFilter[K, V]) ValSlice(m map[K]V) []V {
+	var out []V
+	for _, v := range m {
+		if mvf(v) {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
+// Map creates a new map populated with all the key/value pairs for with the
+// underlying filter is true for the value.
+func (mvf MapValueFilter[K, V]) Map(m map[K]V) map[K]V {
+	out := make(map[K]V)
+	for k, v := range m {
+		if mvf(v) {
+			out[k] = v
+		}
+	}
+	return out
+}
