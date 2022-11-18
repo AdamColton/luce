@@ -150,3 +150,34 @@ func TestMapKeyFilter(t *testing.T) {
 	}
 	assert.Equal(t, expected, got)
 }
+
+func TestMapValueFilter(t *testing.T) {
+	f := filter.MapValueFilter[string, int](func(i int) bool { return i%2 == 0 })
+	m := map[string]int{
+		"1": 1,
+		"2": 2,
+		"3": 3,
+		"4": 4,
+		"5": 5,
+		"6": 6,
+		"7": 7,
+		"8": 8,
+	}
+
+	ks := f.KeySlice(m)
+	sort.StringSlice(ks).Sort()
+	assert.Equal(t, slice.Slice[string]{"2", "4", "6", "8"}, ks)
+
+	vs := f.ValSlice(m)
+	sort.IntSlice(vs).Sort()
+	assert.Equal(t, slice.Slice[int]{2, 4, 6, 8}, vs)
+
+	got := f.Map(m)
+	expected := map[string]int{
+		"2": 2,
+		"4": 4,
+		"6": 6,
+		"8": 8,
+	}
+	assert.Equal(t, expected, got)
+}
