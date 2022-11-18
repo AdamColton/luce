@@ -41,6 +41,30 @@ func (f Filter[T]) Slice(vals []T) slice.Slice[T] {
 	})
 }
 
+// SliceInPlace reorders the slice so all the elements passing the filter are at
+// the start of the slice and all elements failing the filter are at the end.
+// It returns two subslices, the first for passing, the second for failing.
+// No guarentees are made about the order of the subslices.
+func (f Filter[T]) SliceInPlace(vals []T) (passing, failing slice.Slice[T]) {
+	ln := len(vals)
+	if ln == 0 {
+		return vals, nil
+	}
+	start := 0
+	end := ln - 1
+	for {
+		for ; start < ln && f(vals[start]); start++ {
+		}
+		for ; end >= 0 && !f(vals[end]); end-- {
+		}
+		if start > end {
+			break
+		}
+		vals[start], vals[end] = vals[end], vals[start]
+	}
+	return vals[:start], vals[start:]
+}
+
 // Chan runs a go routine listening on ch and any int that passes the Int is
 // passed to the channel that is returned.
 func (f Filter[T]) Chan(pipe channel.Pipe[T]) channel.Pipe[T] {
