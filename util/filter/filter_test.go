@@ -1,6 +1,7 @@
 package filter_test
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/adamcolton/luce/util/filter"
@@ -56,4 +57,35 @@ func TestSliceInPlace(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMapKeyFilter(t *testing.T) {
+	f := filter.MapKeyFilter[int, string](func(i int) bool { return i%2 == 0 })
+	m := map[int]string{
+		1: "1",
+		2: "2",
+		3: "3",
+		4: "4",
+		5: "5",
+		6: "6",
+		7: "7",
+		8: "8",
+	}
+
+	ks := f.KeySlice(m)
+	sort.IntSlice(ks).Sort()
+	assert.Equal(t, []int{2, 4, 6, 8}, ks)
+
+	vs := f.ValSlice(m)
+	sort.StringSlice(vs).Sort()
+	assert.Equal(t, []string{"2", "4", "6", "8"}, vs)
+
+	got := f.Map(m)
+	expected := map[int]string{
+		2: "2",
+		4: "4",
+		6: "6",
+		8: "8",
+	}
+	assert.Equal(t, expected, got)
 }
