@@ -100,3 +100,42 @@ func (f Filter[T]) Check(errFn func(T) error) Checker[T] {
 func (c Checker[T]) Panic(val T) {
 	lerr.Panic(c(val))
 }
+
+// MapKeyFilter applys a Filter to the keys of a map.
+type MapKeyFilter[K comparable, V any] Filter[K]
+
+// KeySlice returns all the keys in the map for which the underlying filter is
+// true.
+func (mkf MapKeyFilter[K, V]) KeySlice(m map[K]V) slice.Slice[K] {
+	var out []K
+	for k := range m {
+		if mkf(k) {
+			out = append(out, k)
+		}
+	}
+	return out
+}
+
+// ValSlice returns all the values in the map for which the underlying filter is
+// true for the corresponding key.
+func (mkf MapKeyFilter[K, V]) ValSlice(m map[K]V) slice.Slice[V] {
+	var out []V
+	for k, v := range m {
+		if mkf(k) {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
+// Map creates a new map populated with all the key/value pairs for with the
+// underlying filter is true for the key.
+func (mkf MapKeyFilter[K, V]) Map(m map[K]V) map[K]V {
+	out := make(map[K]V)
+	for k, v := range m {
+		if mkf(k) {
+			out[k] = v
+		}
+	}
+	return out
+}
