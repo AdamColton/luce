@@ -191,3 +191,16 @@ func (mvf MapValueFilter[K, V]) Map(m map[K]V) map[K]V {
 	}
 	return out
 }
+
+// Purge all values from the map where the filter is false for the value.
+func (mvf MapValueFilter[K, V]) Purge(m map[K]V) {
+	var remove []K
+	for k, v := range m {
+		if !mvf(v) {
+			remove = append(remove, k)
+		}
+	}
+	for _, k := range remove {
+		delete(m, k)
+	}
+}
