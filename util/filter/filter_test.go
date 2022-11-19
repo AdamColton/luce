@@ -88,6 +88,9 @@ func TestMapKeyFilter(t *testing.T) {
 		8: "8",
 	}
 	assert.Equal(t, expected, got)
+
+	f.Purge(m)
+	assert.Equal(t, expected, m)
 }
 
 func TestMapValueFilter(t *testing.T) {
