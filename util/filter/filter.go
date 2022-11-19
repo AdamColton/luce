@@ -140,6 +140,19 @@ func (mkf MapKeyFilter[K, V]) Map(m map[K]V) map[K]V {
 	return out
 }
 
+// Purge all values from the map where the filter is false for the key.
+func (mkf MapKeyFilter[K, V]) Purge(m map[K]V) {
+	var remove []K
+	for k := range m {
+		if !mkf(k) {
+			remove = append(remove, k)
+		}
+	}
+	for _, k := range remove {
+		delete(m, k)
+	}
+}
+
 // MapValueFilter applys a Filter to the values of a map.
 type MapValueFilter[K comparable, V any] Filter[V]
 
