@@ -24,3 +24,8 @@ func (s Slice[T]) Clone(cp int) Slice[T] {
 	copy(out, s)
 	return out
 }
+
+// Swap swaps two values in the slice.
+func (s Slice[T]) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
