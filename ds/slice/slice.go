@@ -6,3 +6,8 @@ func Clone[T any](s []T) []T {
 	copy(out, s)
 	return out
 }
+
+// Swaps two values in the slice.
+func Swap[T any](s []T, i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
