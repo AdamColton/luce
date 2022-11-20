@@ -1,9 +1,21 @@
 package slice
 
+import "github.com/adamcolton/luce/math/cmpr"
+
 // Slice is a wrapper that provides helper methods
 type Slice[T any] []T
 
 // New is syntactic sugar to infer the type
 func New[T any](s []T) Slice[T] {
 	return s
+}
+
+// Clone a slice. The capacity can be set with cp. If cp is less than the length
+// of s, that length will be used as the capacity.
+func (s Slice[T]) Clone(cp int) Slice[T] {
+	ln := len(s)
+	cp = cmpr.Max(cp, ln)
+	out := make([]T, ln, cp)
+	copy(out, s)
+	return out
 }
