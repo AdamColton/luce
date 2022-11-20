@@ -19,3 +19,12 @@ func (s Slice[T]) Clone() Slice[T] {
 func (s Slice[T]) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
+
+// Keys returns the keys of a map as a slice
+func Keys[K comparable, V any](m map[K]V) Slice[K] {
+	out := make([]K, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	return out
+}

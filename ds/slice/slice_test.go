@@ -1,6 +1,7 @@
 package slice_test
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/adamcolton/luce/ds/slice"
@@ -21,4 +22,21 @@ func TestSwap(t *testing.T) {
 	assert.Equal(t, 1, data[0])
 	assert.Equal(t, 3, data[1])
 
+}
+
+func TestKeys(t *testing.T) {
+	data := map[int]string{
+		1: "1",
+		2: "2",
+		3: "3",
+		4: "4",
+		5: "5",
+		6: "6",
+	}
+	got := slice.Keys(data)
+	sort.Slice(got, func(i, j int) bool {
+		return got[i] < got[j]
+	})
+	expected := slice.Slice[int]{1, 2, 3, 4, 5, 6}
+	assert.Equal(t, expected, got)
 }
