@@ -29,3 +29,12 @@ func Vals[K comparable, V any](m map[K]V) []V {
 	}
 	return out
 }
+
+// Unique returns a slice with all the unique elements of the slice passed in.
+func Unique[T comparable](s []T) []T {
+	set := make(map[T]struct{})
+	for _, t := range s {
+		set[t] = struct{}{}
+	}
+	return Keys(set)
+}
