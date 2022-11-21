@@ -59,3 +59,14 @@ func TestLess(t *testing.T) {
 	expected := []int{9, 8, 7, 6, 5, 4, 3, 2, 1}
 	assert.Equal(t, expected, i)
 }
+
+func TestUnique(t *testing.T) {
+	data := []int{3, 1, 4, 1, 5, 9}
+	got := slice.Unique(data)
+	expected := slice.Slice[int]{3, 1, 4, 5, 9}
+	l := slice.LT[int]()
+	l.Sort(got)
+	l.Sort(expected)
+	assert.Equal(t, expected, got)
+
+}
