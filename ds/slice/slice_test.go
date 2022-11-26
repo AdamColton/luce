@@ -1,7 +1,6 @@
 package slice_test
 
 import (
-	"sort"
 	"testing"
 
 	"github.com/adamcolton/luce/ds/slice"
@@ -34,9 +33,7 @@ func TestKeys(t *testing.T) {
 		6: "6",
 	}
 	got := slice.Keys(data)
-	sort.Slice(got, func(i, j int) bool {
-		return got[i] < got[j]
-	})
+	slice.LT[int]().Sort(got)
 	expected := slice.Slice[int]{1, 2, 3, 4, 5, 6}
 	assert.Equal(t, expected, got)
 }
@@ -51,9 +48,14 @@ func TestVals(t *testing.T) {
 		6: "6",
 	}
 	got := slice.Vals(data)
-	sort.Slice(got, func(i, j int) bool {
-		return got[i] < got[j]
-	})
+	slice.LT[string]().Sort(got)
 	expected := slice.Slice[string]{"1", "2", "3", "4", "5", "6"}
 	assert.Equal(t, expected, got)
+}
+
+func TestLess(t *testing.T) {
+	i := []int{6, 7, 9, 2, 3, 4, 1, 5, 8}
+	slice.GT[int]().Sort(i)
+	expected := []int{9, 8, 7, 6, 5, 4, 3, 2, 1}
+	assert.Equal(t, expected, i)
 }
