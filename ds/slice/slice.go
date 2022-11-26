@@ -1,6 +1,10 @@
 package slice
 
-import "github.com/adamcolton/luce/util/iter"
+import (
+	"sync"
+
+	"github.com/adamcolton/luce/util/iter"
+)
 
 // Slice is a wrapper that provides helper methods
 type Slice[T any] []T
@@ -57,4 +61,19 @@ func (s Slice[T]) IterFactory() (i iter.Iter[T], t T, done bool) {
 	i = NewIter(s)
 	t, done = i.Cur()
 	return
+}
+
+// ForAll runs a Go routine for each element in s, passing it into fn. A
+// WaitGroup is returned that will finish when all Go routines return.
+func (s Slice[T]) ForAll(fn func(idx int, t T)) *sync.WaitGroup {
+	var wg sync.WaitGroup
+	wg.Add(len(s))
+	wrap := func(idx int, t T) {
+		fn(idx, t)
+		wg.Add(-1)
+	}
+	for i, t := range s {
+		go wrap(i, t)
+	}
+	return &wg
 }
