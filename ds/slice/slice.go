@@ -20,3 +20,12 @@ func Keys[K comparable, V any](m map[K]V) []K {
 	}
 	return out
 }
+
+// Vals returns the values of a map as a slice.
+func Vals[K comparable, V any](m map[K]V) []V {
+	out := make([]V, 0, len(m))
+	for _, v := range m {
+		out = append(out, v)
+	}
+	return out
+}
