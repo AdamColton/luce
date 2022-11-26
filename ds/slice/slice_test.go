@@ -59,3 +59,14 @@ func TestIter(t *testing.T) {
 	assert.Equal(t, 100, i)
 	assert.False(t, done)
 }
+
+func TestForAll(t *testing.T) {
+	s := slice.Slice[int]{0, 1, 2, 3, 4, 5}
+	c := 0
+	fn := func(idx int, i int) {
+		assert.Equal(t, idx, i)
+		c++
+	}
+	s.ForAll(fn).Wait()
+	assert.Len(t, s, c)
+}
