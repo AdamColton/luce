@@ -1,5 +1,7 @@
 package slice
 
+import "github.com/adamcolton/luce/util/liter"
+
 // Slice is a wrapper that provides helper methods
 type Slice[T any] []T
 
@@ -18,4 +20,8 @@ func (s Slice[T]) Clone() Slice[T] {
 // Swaps two values in the slice.
 func (s Slice[T]) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
+}
+
+func (s Slice[T]) Iter()liter.Wrapper[T] {
+	return NewIter(s)
 }
