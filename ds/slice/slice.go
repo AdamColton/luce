@@ -1,5 +1,7 @@
 package slice
 
+import "github.com/adamcolton/luce/util/iter"
+
 type Slice[T any] []T
 
 func New[T any](s []T) Slice[T] {
@@ -43,4 +45,8 @@ func Unique[T comparable](s []T) Slice[T] {
 		set[t] = struct{}{}
 	}
 	return Keys(set)
+}
+
+func (s Slice[T]) Iter() iter.Wrapper[T] {
+	return NewIter(s)
 }
