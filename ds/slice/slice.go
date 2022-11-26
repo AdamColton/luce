@@ -1,6 +1,9 @@
 package slice
 
-import "github.com/adamcolton/luce/math/cmpr"
+import (
+	"github.com/adamcolton/luce/math/cmpr"
+	"github.com/adamcolton/luce/util/liter"
+)
 
 // Slice is a generic slice type that provides helper methods.
 type Slice[T any] []T
@@ -28,4 +31,9 @@ func (s Slice[T]) Clone(cp int) Slice[T] {
 // Swap swaps two values in the slice.
 func (s Slice[T]) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
+}
+
+// Iter returns a liter.Wrapper for the slice.
+func (s Slice[T]) Iter() liter.Wrapper[T] {
+	return NewIter(s)
 }
