@@ -40,3 +40,20 @@ func TestKeys(t *testing.T) {
 	expected := slice.Slice[int]{1, 2, 3, 4, 5, 6}
 	assert.Equal(t, expected, got)
 }
+
+func TestVals(t *testing.T) {
+	data := map[int]string{
+		1: "1",
+		2: "2",
+		3: "3",
+		4: "4",
+		5: "5",
+		6: "6",
+	}
+	got := slice.Vals(data)
+	sort.Slice(got, func(i, j int) bool {
+		return got[i] < got[j]
+	})
+	expected := slice.Slice[string]{"1", "2", "3", "4", "5", "6"}
+	assert.Equal(t, expected, got)
+}
