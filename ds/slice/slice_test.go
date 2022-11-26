@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/util/iter"
+	"github.com/adamcolton/luce/util/upgrade"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,4 +30,26 @@ func TestLess(t *testing.T) {
 	slice.GT[int]().Sort(i)
 	expected := []int{9, 8, 7, 6, 5, 4, 3, 2, 1}
 	assert.Equal(t, expected, i)
+}
+
+func TestIter(t *testing.T) {
+	s := slice.Slice[int]{3, 1, 4, 1, 5, 9, 2, 6, 5, 3}
+	it := s.Iter()
+	forFn := func(i, idx int) {
+		assert.Equal(t, s[idx], i)
+	}
+	c := iter.ForIdx[int](it, forFn)
+	assert.Len(t, s, c)
+
+	st, _ := upgrade.To[iter.Starter[int]](it)
+	st.Start()
+	iter.Seek[int](it, func(i int) bool {
+		assert.True(t, i < 4)
+		return i == 3
+	})
+
+	s[0] = 100
+	i, done := st.Start()
+	assert.Equal(t, 100, i)
+	assert.False(t, done)
 }
