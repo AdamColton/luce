@@ -23,3 +23,14 @@ func TestSwap(t *testing.T) {
 	assert.Equal(t, 3, data[1])
 
 }
+
+func TestLess(t *testing.T) {
+	i := []int{6, 7, 9, 2, 3, 4, 1, 5, 8}
+	slice.GT[int]().Sort(i)
+	expected := []int{9, 8, 7, 6, 5, 4, 3, 2, 1}
+	assert.Equal(t, expected, i)
+
+	slice.LT[int]().Sort(i)
+	expected = []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
+	assert.Equal(t, expected, i)
+}
