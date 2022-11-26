@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/util/iter"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -76,5 +77,33 @@ func TestUnique(t *testing.T) {
 	l.Sort(got)
 	l.Sort(expected)
 	assert.Equal(t, expected, got)
+
+}
+
+func TestIter(t *testing.T) {
+	s := []int{0, 1, 2, 3, 4, 5}
+	it := slice.NewIter(s)
+	c := 0
+	doFn := func(i int) bool {
+		assert.Equal(t, c, i)
+		c++
+		return false
+	}
+	iter.Do[int](it, doFn)
+	assert.Len(t, s, c)
+
+	it.I = 0
+	c = 0
+	iter.Do[int](it, func(i int) bool {
+		assert.Equal(t, c, it.Idx())
+		c++
+		assert.True(t, i < 4)
+		return i == 3
+	})
+
+	s[0] = 100
+	i, done := it.Start()
+	assert.Equal(t, 100, i)
+	assert.False(t, done)
 
 }
