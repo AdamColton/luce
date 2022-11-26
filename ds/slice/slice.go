@@ -1,5 +1,9 @@
 package slice
 
+import (
+	"sync"
+)
+
 // Clone a slice.
 func Clone[T any](s []T) []T {
 	out := make([]T, len(s))
@@ -37,4 +41,19 @@ func Unique[T comparable](s []T) []T {
 		set[t] = struct{}{}
 	}
 	return Keys(set)
+}
+
+// ForAll runs a Go routine for each element in s, passing it into fn. A
+// WaitGroup is returned that will finish when all Go routines return.
+func ForAll[T any](s []T, fn func(idx int, t T)) *sync.WaitGroup {
+	var wg sync.WaitGroup
+	wg.Add(len(s))
+	wrap := func(idx int, t T) {
+		fn(idx, t)
+		wg.Add(-1)
+	}
+	for i, t := range s {
+		go wrap(i, t)
+	}
+	return &wg
 }
