@@ -1,6 +1,7 @@
 package slice
 
 import (
+	"sort"
 	"sync"
 )
 
@@ -68,4 +69,31 @@ func ForAll[T any](s []T, fn func(idx int, t T)) *sync.WaitGroup {
 		go wrap(i, t)
 	}
 	return &wg
+}
+
+// Remove values at given indicies by swapping them with values from the end
+// and truncating the slice. Values less than zero or greater than the length
+// of the list are ignored. Note that idxs is reordered so if that is a slice
+// passed in and the order is important, pass in a copy.
+func Remove[T any](s []T, idxs ...int) []T {
+	sort.Sort(sort.Reverse(sort.IntSlice(idxs)))
+	ln := len(s)
+	prev := ln
+	// Depending on variations in the implementation there are two things that
+	// can make this behave in unintended ways. Duplicate values cause a double
+	// swap. And it could be possible for a value near the end of the list to
+	// removed, but then swapped with a value earlier in the list, reintroducing
+	// it. Also, negative values are not allowed.
+	//
+	// To avoid both, idxs is sorted in descending order and prev tracks the
+	// the last value. The "idx < prev" comparison guarentees both that there
+	// are no duplicates and that idx is less than the length of the list.
+	for _, idx := range idxs {
+		if idx >= 0 && idx < prev {
+			ln--
+			Swap(s, idx, ln)
+			prev = idx
+		}
+	}
+	return s[:ln]
 }

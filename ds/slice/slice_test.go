@@ -128,3 +128,15 @@ func TestAppendNotDefault(t *testing.T) {
 	expected := []string{"Start", "Foo", "Bar", "Baz"}
 	assert.Equal(t, expected, got)
 }
+
+func TestRemove(t *testing.T) {
+	data := []int{3, 1, 4, 1, 5, 9}
+	data = slice.Remove(data, 5, 1, 3)
+	expected := []int{3, 5, 4}
+	assert.Equal(t, expected, data)
+
+	data = []int{3, 1, 4, 1, 5, 9}
+	data = slice.Remove(data, 0, 0, -1, 100)
+	expected = []int{9, 1, 4, 1, 5}
+	assert.Equal(t, expected, data)
+}
