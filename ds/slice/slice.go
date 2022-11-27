@@ -1,6 +1,7 @@
 package slice
 
 import (
+	"reflect"
 	"sync"
 
 	"github.com/adamcolton/luce/util/iter"
@@ -40,6 +41,17 @@ func Vals[K comparable, V any](m map[K]V) Slice[V] {
 		out = append(out, v)
 	}
 	return out
+}
+
+// AppendNotZero will append any values from ts that are not the zero
+// value for the type. Particularly useful for appending not nil values.
+func (s Slice[T]) AppendNotZero(ts ...T) []T {
+	for _, t := range ts {
+		if !reflect.ValueOf(t).IsZero() {
+			s = append(s, t)
+		}
+	}
+	return s
 }
 
 // Unique returns a slice with all the unique elements of the slice passed in.
