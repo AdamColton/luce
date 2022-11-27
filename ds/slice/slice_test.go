@@ -122,3 +122,15 @@ func TestAppendNotZero(t *testing.T) {
 	expectedAny := []any{1, 2.0, "test"}
 	assert.Equal(t, expectedAny, gotAny)
 }
+
+func TestRemove(t *testing.T) {
+	data := slice.Slice[int]{3, 1, 4, 1, 5, 9}
+	data = data.Remove(5, 1, 3)
+	expected := slice.Slice[int]{3, 5, 4}
+	assert.Equal(t, expected, data)
+
+	data = slice.Slice[int]{3, 1, 4, 1, 5, 9}
+	data = data.Remove(0, 0, -1, 100)
+	expected = slice.Slice[int]{9, 1, 4, 1, 5}
+	assert.Equal(t, expected, data)
+}
