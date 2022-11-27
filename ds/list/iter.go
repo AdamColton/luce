@@ -1,7 +1,5 @@
 package list
 
-// TEST
-
 type Iter[T any] struct {
 	List[T]
 	Cur int
