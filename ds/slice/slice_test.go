@@ -112,3 +112,13 @@ func TestForAll(t *testing.T) {
 	s.ForAll(fn).Wait()
 	assert.Len(t, s, c)
 }
+
+func TestAppendNotZero(t *testing.T) {
+	got := slice.Slice[string]{"Start"}.AppendNotZero("", "Foo", "", "Bar", "Baz", "")
+	expected := []string{"Start", "Foo", "Bar", "Baz"}
+	assert.Equal(t, expected, got)
+
+	gotAny := slice.Slice[any]{}.AppendNotZero(1, 0, 2.0, 0.0, "", "test")
+	expectedAny := []any{1, 2.0, "test"}
+	assert.Equal(t, expectedAny, gotAny)
+}
