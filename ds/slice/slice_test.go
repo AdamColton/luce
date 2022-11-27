@@ -1,6 +1,7 @@
 package slice_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/adamcolton/luce/ds/slice"
@@ -62,4 +63,21 @@ func TestIter(t *testing.T) {
 	i, done := st.Start()
 	assert.Equal(t, 100, i)
 	assert.False(t, done)
+}
+
+func TestAppendNotZero(t *testing.T) {
+	got := slice.Slice[string]{"Start"}.AppendNotZero("", "Foo", "", "Bar", "Baz", "")
+	expected := []string{"Start", "Foo", "Bar", "Baz"}
+	assert.Equal(t, expected, got)
+
+	gotAny := slice.Slice[any]{}.AppendNotZero(1, 0, 2.0, 0.0, "", "test")
+	expectedAny := []any{1, 2.0, "test"}
+	assert.Equal(t, expectedAny, gotAny)
+}
+
+func TestAppendNotZeroInterface(t *testing.T) {
+	var s slice.Slice[fmt.Stringer]
+	var n fmt.Stringer
+	s = s.AppendNotZero(n)
+	assert.Len(t, s, 0)
 }
