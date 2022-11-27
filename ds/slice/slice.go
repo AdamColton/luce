@@ -1,6 +1,7 @@
 package slice
 
 import (
+	"reflect"
 	"sync"
 
 	"github.com/adamcolton/luce/util/liter"
@@ -24,6 +25,18 @@ func (s Slice[T]) Clone() Slice[T] {
 // Swaps two values in the slice.
 func (s Slice[T]) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
+}
+
+// AppendNotZero will append any values from ts that are not the zero
+// value for the type. Particularly useful for appending not nil values.
+func (s Slice[T]) AppendNotZero(ts ...T) []T {
+	for _, t := range ts {
+		v := reflect.ValueOf(t)
+		if v.Kind() != reflect.Invalid && !v.IsZero() {
+			s = append(s, t)
+		}
+	}
+	return s
 }
 
 func (s Slice[T]) Iter() liter.Wrapper[T] {
