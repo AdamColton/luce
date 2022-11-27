@@ -34,6 +34,18 @@ func Vals[K comparable, V any](m map[K]V) []V {
 	return out
 }
 
+// AppendNotDefault will append any values from ts that are not the default
+// value for the type. Particularly useful for appending not nil values.
+func AppendNotDefault[T comparable](s []T, ts ...T) []T {
+	var d T
+	for _, t := range ts {
+		if d != t {
+			s = append(s, t)
+		}
+	}
+	return s
+}
+
 // Unique returns a slice with all the unique elements of the slice passed in.
 func Unique[T comparable](s []T) []T {
 	set := make(map[T]struct{})

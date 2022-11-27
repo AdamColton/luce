@@ -122,3 +122,9 @@ func TestForAll(t *testing.T) {
 	slice.ForAll(s, fn).Wait()
 	assert.Len(t, s, c)
 }
+
+func TestAppendNotDefault(t *testing.T) {
+	got := slice.AppendNotDefault([]string{"Start"}, "", "Foo", "", "Bar", "Baz", "")
+	expected := []string{"Start", "Foo", "Bar", "Baz"}
+	assert.Equal(t, expected, got)
+}
