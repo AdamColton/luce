@@ -43,3 +43,15 @@ func TestReduceCapacity(t *testing.T) {
 	assert.Equal(t, 3, cap(sub))
 	assert.Equal(t, 5, cap(buf))
 }
+
+func TestSplit(t *testing.T) {
+	buf := slice.BufferEmpty[float64](15, nil)
+	a, b := slice.BufferSplit(5, buf)
+
+	assert.Equal(t, 5, cap(a))
+	assert.Equal(t, 10, cap(b))
+
+	c, d := slice.BufferSplit(12, b)
+	assert.Equal(t, 12, cap(c))
+	assert.Equal(t, 10, cap(d))
+}
