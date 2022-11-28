@@ -1,5 +1,7 @@
 package list
 
+import "github.com/adamcolton/luce/ds/slice"
+
 type Generator[T any] struct {
 	Fn     func(int) T
 	Length int
@@ -23,7 +25,7 @@ func (r Reverse[T]) AtIdx(idx int) T {
 
 func (r Reverse[T]) Slice(buf []T) []T {
 	ln := r.Len()
-	out := AllocBuf(buf, ln)
+	out := slice.BufferEmpty(ln, buf)
 	ln--
 	for i := 0; i <= ln; i++ {
 		out = append(out, r.List.AtIdx(ln-i))

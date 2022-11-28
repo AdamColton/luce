@@ -1,5 +1,7 @@
 package list
 
+import "github.com/adamcolton/luce/ds/slice"
+
 type SliceList[T any] []T
 
 func (sl SliceList[T]) AtIdx(idx int) T {
@@ -19,16 +21,9 @@ func ToSlice[T any](l List[T], buf []T) []T {
 		return s.Slice(buf)
 	}
 	ln := l.Len()
-	out := AllocBuf(buf, ln)
+	out := slice.BufferEmpty(ln, buf)
 	for i := 0; i < ln; i++ {
 		out = append(out, l.AtIdx(i))
 	}
 	return out
-}
-
-func AllocBuf[T any](buf []T, ln int) []T {
-	if cap(buf) >= ln {
-		return buf[:0]
-	}
-	return make([]T, 0, ln)
 }
