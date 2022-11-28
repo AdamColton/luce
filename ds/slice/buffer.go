@@ -13,3 +13,13 @@ func (buf Buffer[T]) Empty(c int) Slice[T] {
 	}
 	return make([]T, 0, c)
 }
+
+// Slice returns a Slice with length c. If the buffer has capacity c, it will be
+// used and its values are left as they were, otherwise a new zeroed slice is
+// created.
+func (buf Buffer[T]) Slice(c int) Slice[T] {
+	if cap(buf) >= c {
+		return Slice[T](buf[:c])
+	}
+	return make([]T, c)
+}
