@@ -23,3 +23,17 @@ func (buf Buffer[T]) Slice(c int) Slice[T] {
 	}
 	return make([]T, c)
 }
+
+// Zeros returns a Slice with length c with all values set to the zero value. If
+// the buffer has capacity c, it will be used otherwise a new one is created.
+func (buf Buffer[T]) Zeros(c int) Slice[T] {
+	if cap(buf) >= c {
+		var zero T
+		buf = buf[:c]
+		for i := range buf {
+			buf[i] = zero
+		}
+		return Slice[T](buf)
+	}
+	return make([]T, c)
+}
