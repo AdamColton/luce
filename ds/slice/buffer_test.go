@@ -34,3 +34,14 @@ func TestBufferZeros(t *testing.T) {
 	s = buf.Zeros(6)
 	assert.Equal(t, slice.Slice[float64]{0, 0, 0, 0, 0, 0}, s)
 }
+
+func TestReduceCapacity(t *testing.T) {
+	buf := slice.Buffer[float64]{1, 2, 3, 4, 5}
+	sub := buf[:3]
+	assert.Equal(t, 5, cap(sub))
+	s := buf.ReduceCapacity(3)
+	assert.Equal(t, 3, cap(s))
+	assert.Equal(t, 5, cap(buf))
+	s = buf.ReduceCapacity(10)
+	assert.Equal(t, 5, cap(s))
+}

@@ -37,3 +37,18 @@ func (buf Buffer[T]) Zeros(c int) Slice[T] {
 	}
 	return make([]T, c)
 }
+
+// ReduceCapacity sets the capacity to c, if that is lower than the current
+// capacity. This can be useful when splitting a buffer to prevent use of the
+// first part of the buffer from overflowing into the second part. The length is
+// reduced to c if it is greater.
+func (buf Buffer[T]) ReduceCapacity(c int) Slice[T] {
+	if c < cap(buf) {
+		ln := len(buf)
+		if c < ln {
+			ln = c
+		}
+		return Slice[T](buf[:ln:c])
+	}
+	return Slice[T](buf)
+}
