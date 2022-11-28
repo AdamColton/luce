@@ -18,3 +18,11 @@ func TestBufferEmpty(t *testing.T) {
 	buf = buf.Buffer().Empty(12)
 	assert.True(t, cap(buf) >= 12)
 }
+
+func TestBufferSlice(t *testing.T) {
+	buf := (slice.Buffer[float64]{3, 1, 4})[:0]
+	s := buf.Slice(2)
+
+	assert.Equal(t, slice.Slice[float64]{3, 1}, s)
+	assert.Equal(t, slice.Slice[float64]{0, 0, 0, 0}, buf.Slice(4))
+}
