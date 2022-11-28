@@ -50,3 +50,13 @@ func (buf Buffer[T]) ReduceCapacity(c int) Slice[T] {
 	}
 	return Slice[T](buf)
 }
+
+// BufferSplit a buffer returns two buffers from one. The frist buffer will have
+// capacity c. The second buffer will have the remainder. If the provided buffer
+// does not have a capacity a new buffer is created.
+func (buf Buffer[T]) Split(c int) (Slice[T], Buffer[T]) {
+	if cap(buf) < c {
+		return make([]T, 0, c), buf
+	}
+	return buf[:0].ReduceCapacity(c), buf[c:c]
+}
