@@ -29,7 +29,7 @@ func TestTable(t *testing.T) {
 
 	tab2 := table.New[int]()
 	for i, v := range tab.Data {
-		tab2.Add(i.Row, i.Col, v)
+		tab2.Add(i, v)
 	}
 	assert.Equal(t, tab.Size, tab2.Size)
 }
