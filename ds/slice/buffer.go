@@ -8,3 +8,12 @@ func BufferEmpty[T any](c int, buf []T) []T {
 	}
 	return make([]T, 0, c)
 }
+
+// BufferSlice returns a buffer with length c. If the provided buffer has
+// capacity, it will be used otherwise a new one is created.
+func BufferSlice[T any](c int, buf []T) []T {
+	if cap(buf) >= c {
+		return buf[:c]
+	}
+	return make([]T, c)
+}
