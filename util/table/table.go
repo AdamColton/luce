@@ -5,6 +5,17 @@ type Index struct {
 	Row, Col int
 }
 
+func (i *Index) Next() Index {
+	cp := *i
+	i.Col++
+	return cp
+}
+
+func (i *Index) NextRow() {
+	i.Row++
+	i.Col = 0
+}
+
 // UpdateSize assumes i is a size and i2 is a position. If i2 would imply a
 // larger size, i is updated.
 func (i Index) UpdateSize(i2 Index) Index {
@@ -64,10 +75,9 @@ func New[T any]() *Table[T] {
 }
 
 // Add (or overwrite) a cell value.
-func (t *Table[T]) Add(r, c int, cell T) {
-	i := Index{r, c}
-	t.Data[i] = cell
-	t.Size = t.Size.UpdateSize(i)
+func (t *Table[T]) Add(idx Index, cell T) {
+	t.Data[idx] = cell
+	t.Size = t.Size.UpdateSize(idx)
 }
 
 // Iter for iterating over the table.
@@ -103,7 +113,7 @@ func (ti *TableIter[T]) Next() (T, bool) {
 func (ti *TableIter[T]) Write(cell T) bool {
 	i, done := ti.Iter.Next()
 	if !done {
-		ti.Table.Add(i.Row, i.Col, cell)
+		ti.Table.Add(i, cell)
 	}
 	return done
 }
