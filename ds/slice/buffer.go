@@ -1,5 +1,10 @@
 package slice
 
+import (
+	"reflect"
+	"unsafe"
+)
+
 type Buffer[T any] []T
 
 // BufferEmpty returns a zero length buffer with at least capacity c. If the
@@ -32,4 +37,16 @@ func (buf Buffer[T]) Zeros(c int) Slice[T] {
 		return Slice[T](buf)
 	}
 	return make([]T, c)
+}
+
+// ReduceCapacity sets the capacity to a lower value. This can be useful when
+// splitting a buffer to prevent use of the first part of the buffer from
+// overflowing into the second part.
+func (buf Buffer[T]) ReduceCapacity(c int) Slice[T] {
+	if c < cap(buf) {
+		pv := reflect.ValueOf(&buf)
+		sh := (*reflect.SliceHeader)(unsafe.Pointer(pv.Pointer()))
+		sh.Cap = c
+	}
+	return Slice[T](buf)
 }
