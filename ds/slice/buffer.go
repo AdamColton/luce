@@ -52,3 +52,14 @@ func (buf Buffer[T]) ReduceCapacity(c int) Slice[T] {
 	}
 	return Slice[T](buf)
 }
+
+// Split a buffer, returning two from one. The first will have length 0 and
+// capacity c. The second will have the remainder. If the buffer does not have
+// capacity c, a new slice with capacity c is returned and the buffer is
+// returned unchanged as the second value.
+func (buf Buffer[T]) Split(c int) (Slice[T], Buffer[T]) {
+	if cap(buf) < c {
+		return make([]T, 0, c), buf
+	}
+	return buf[:0].ReduceCapacity(c), buf[c:c]
+}
