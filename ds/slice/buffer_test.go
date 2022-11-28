@@ -26,3 +26,11 @@ func TestBufferSlice(t *testing.T) {
 	assert.Equal(t, []float64{3, 1}, buf)
 	assert.Equal(t, []float64{0, 0, 0, 0}, slice.BufferSlice(4, buf))
 }
+
+func TestBufferZeros(t *testing.T) {
+	buf := ([]float64{3, 1, 4, 1, 5})[:3]
+	buf = slice.BufferZeros(5, buf)
+	assert.Equal(t, []float64{0, 0, 0, 0, 0}, buf)
+	buf = slice.BufferZeros(6, buf)
+	assert.Equal(t, []float64{0, 0, 0, 0, 0, 0}, buf)
+}
