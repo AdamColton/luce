@@ -33,3 +33,12 @@ func (f Factory[T]) Concurrent(fn func(t T, idx int)) *sync.WaitGroup {
 	i, t, done := f()
 	return concurrent(i, t, done, fn)
 }
+
+// Channel creates a new Iter from the factory and creates a chan with size buf
+// and places each value from Iter on the channel until Done is true. The
+// channel is filled from a Go routine so all the values need to be consumed or
+// the routine will never close.
+func (f Factory[T]) Channel(buf int) <-chan T {
+	i, t, done := f()
+	return channel(i, t, done, buf)
+}
