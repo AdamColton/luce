@@ -85,6 +85,12 @@ func TestIter(t *testing.T) {
 	var st iter.Starter[int]
 	upgrade.Upgrade(it, &st)
 	st.Start()
+	c = slice.IterFactory(s).ForIdx(forFn)
+	assert.Len(t, s, c)
+	c = iter.Factory[int](s.IterFactory).ForIdx(forFn)
+	assert.Len(t, s, c)
+
+	st.Start()
 	iter.Seek[int](it, func(i int) bool {
 		assert.True(t, i < 4)
 		return i == 3
