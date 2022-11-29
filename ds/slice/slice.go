@@ -37,3 +37,11 @@ func (s Slice[T]) Swap(i, j int) {
 func (s Slice[T]) Iter() liter.Wrapper[T] {
 	return NewIter(s)
 }
+
+// IterFactory fulfills liter.Factory. It returns a new iterator over the slice
+// and its first value.
+func (s Slice[T]) IterFactory() (i liter.Iter[T], t T, done bool) {
+	i = NewIter(s)
+	t, done = i.Cur()
+	return
+}
