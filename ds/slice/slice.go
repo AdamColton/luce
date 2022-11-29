@@ -52,3 +52,9 @@ func Unique[T comparable](s []T) Slice[T] {
 func (s Slice[T]) Iter() iter.Wrapper[T] {
 	return NewIter(s)
 }
+
+func (s Slice[T]) IterFactory() (i iter.Iter[T], t T, done bool) {
+	i = NewIter(s)
+	t, done = i.Cur()
+	return
+}
