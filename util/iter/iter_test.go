@@ -229,3 +229,15 @@ func TestFactoryConcurrent(t *testing.T) {
 	wg.Wait()
 	assert.Len(t, s, int(c))
 }
+
+func TestFactoryChannel(t *testing.T) {
+	s := []int{3, 1, 4, 1, 5, 9}
+	var sf iter.Factory[int] = sliceFactory(s)
+
+	idx := 0
+	for i := range sf.Channel(0) {
+		assert.Equal(t, s[idx], i)
+		idx++
+	}
+	assert.Len(t, s, idx)
+}
