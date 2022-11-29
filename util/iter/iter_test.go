@@ -166,3 +166,16 @@ func TestFactoryForIdx(t *testing.T) {
 	c := sf.ForIdx(fn)
 	assert.Len(t, s, c)
 }
+
+func TestFactoryConcurrent(t *testing.T) {
+	s := []int{3, 1, 4, 1, 5, 9}
+	var sf iter.Factory[int] = sliceFactory(s)
+	var c int32
+	wg := sf.Concurrent(func(i, idx int) {
+		assert.Equal(t, s[idx], i)
+		atomic.AddInt32(&c, 1)
+	})
+
+	wg.Wait()
+	assert.Len(t, s, int(c))
+}
