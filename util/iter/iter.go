@@ -27,3 +27,10 @@ func Concurrent[T any](i Iter[T], fn func(t T, idx int)) *sync.WaitGroup {
 	idx := i.Idx()
 	return concurrent(i, t, done, idx, fn)
 }
+
+// Channel creates a chan with size buf and places each value from Iter on the
+// channel until Done is true. This does not reset the iterator.
+func Channel[T any](i Iter[T], buf int) <-chan T {
+	t, done := i.Cur()
+	return channel(i, t, done, buf)
+}

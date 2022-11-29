@@ -24,3 +24,13 @@ func concurrent[T any](i Iter[T], t T, done bool, idx int, fn func(t T, idx int)
 	}
 	return &wg
 }
+
+func channel[T any](i Iter[T], t T, done bool, buf int) <-chan T {
+	ch := make(chan T, buf)
+	go func() {
+		for ; !done; t, done = i.Next() {
+			ch <- t
+		}
+	}()
+	return ch
+}
