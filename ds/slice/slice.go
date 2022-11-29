@@ -97,3 +97,16 @@ func Remove[T any](s []T, idxs ...int) []T {
 	}
 	return s[:ln]
 }
+
+// Pop returns the last element of the slice and the slice resized to remove
+// that element. If the size of the slice is zero, the zero value for the type
+// is returned.
+func Pop[T any](s []T) (T, []T) {
+	ln := len(s)
+	if ln == 0 {
+		var t T
+		return t, s
+	}
+	ln--
+	return s[ln], s[:ln]
+}

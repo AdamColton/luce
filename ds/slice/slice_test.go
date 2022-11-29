@@ -140,3 +140,15 @@ func TestRemove(t *testing.T) {
 	expected = []int{9, 1, 4, 1, 5}
 	assert.Equal(t, expected, data)
 }
+
+func TestPop(t *testing.T) {
+	data := []int{3, 1, 4, 1, 5, 9}
+	i, got := slice.Pop(data)
+	assert.Equal(t, 9, i)
+	assert.Equal(t, data[:5], got)
+
+	data = nil
+	i, got = slice.Pop(data)
+	assert.Equal(t, 0, i)
+	assert.Nil(t, got)
+}
