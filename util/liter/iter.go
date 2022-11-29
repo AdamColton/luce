@@ -23,3 +23,12 @@ type Iter[T any] interface {
 type Starter[T any] interface {
 	Start() (t T, done bool)
 }
+
+// Seek calls fn sequentially for each value Iter returns, starting with the
+// current one, until fn returns true. It returns the Iter positioned on that
+// value, or nil if the iterator is done first. This does not reset the
+// iterator.
+func Seek[T any](i Iter[T], fn func(t T) bool) Iter[T] {
+	t, done := i.Cur()
+	return seek(i, t, done, fn)
+}
