@@ -109,3 +109,39 @@ func TestIterChannel(t *testing.T) {
 	}
 	assert.Len(t, s.Slice, idx)
 }
+
+func sliceFactory[T any](slice []T) iter.Factory[T] {
+	return func() (i iter.Iter[T], t T, done bool) {
+		i = &sliceIter[T]{
+			Slice: slice,
+		}
+		t, done = i.Cur()
+		return
+	}
+}
+
+func TestFactorySeek(t *testing.T) {
+	s := []int{3, 1, 4, 1, 5, 9}
+	var sf iter.Factory[int] = sliceFactory(s)
+	idx := 0
+	fn := func(i int) bool {
+		assert.Equal(t, s[idx], i)
+		idx++
+		return false
+	}
+	it := sf.Seek(fn)
+	assert.Len(t, s, idx)
+	assert.Nil(t, it)
+
+	it = sf.Seek(func(i int) bool {
+		return i == 4
+	})
+	i, done := it.Cur()
+	assert.Equal(t, 4, i)
+	assert.False(t, done)
+
+	idx = it.Idx()
+	it = iter.Seek(it, fn)
+	assert.Len(t, s, idx)
+	assert.Nil(t, it)
+}
