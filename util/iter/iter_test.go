@@ -1,6 +1,7 @@
 package iter_test
 
 import (
+	"sync/atomic"
 	"testing"
 
 	"github.com/adamcolton/luce/util/iter"
@@ -81,4 +82,17 @@ func TestIterForIdx(t *testing.T) {
 	}
 	c := iter.ForIdx[int](si, fn)
 	assert.Len(t, s, c)
+}
+
+func TestIterConcurrent(t *testing.T) {
+	s := &sliceIter[int]{
+		Slice: []int{3, 1, 4, 1, 5, 9},
+	}
+	var c int32
+	wg := iter.Concurrent[int](s, func(i, idx int) {
+		assert.Equal(t, s.Slice[idx], i)
+		atomic.AddInt32(&c, 1)
+	})
+	wg.Wait()
+	assert.Len(t, s.Slice, int(c))
 }
