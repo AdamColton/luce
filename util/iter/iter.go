@@ -8,3 +8,10 @@ type Iter[T any] interface {
 	Done() bool
 	Idx() int
 }
+
+// Seek calls fn sequentially for each value Iter returns until Done is true.
+// This does not reset the iterator.
+func Seek[T any](i Iter[T], fn func(t T) bool) Iter[T] {
+	t, done := i.Cur()
+	return seek(i, t, done, fn)
+}
