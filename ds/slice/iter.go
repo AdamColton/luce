@@ -1,5 +1,7 @@
 package slice
 
+import "github.com/adamcolton/luce/util/iter"
+
 // Iter wraps a slice to fulfill iter.Iter.
 type Iter[T any] struct {
 	Slice []T
@@ -52,4 +54,13 @@ func (i *Iter[T]) Done() bool {
 // Idx fulfills iter.Iter. It returns the current value of I.
 func (i *Iter[T]) Idx() int {
 	return i.I
+}
+
+// IterFactory fulfills iter.Factory.
+func IterFactory[T any](s []T) iter.Factory[T] {
+	return func() (i iter.Iter[T], t T, done bool) {
+		i = NewIter(s)
+		t, done = i.Cur()
+		return
+	}
 }

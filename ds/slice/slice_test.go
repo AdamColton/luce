@@ -92,6 +92,10 @@ func TestIter(t *testing.T) {
 	iter.For[int](it, forFn)
 	assert.Len(t, s, c)
 
+	c = 0
+	slice.IterFactory(s).For(forFn)
+	assert.Len(t, s, c)
+
 	it.I = 0
 	c = 0
 	iter.Seek[int](it, func(i int) bool {
