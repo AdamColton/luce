@@ -2,6 +2,7 @@ package iter_test
 
 import (
 	"fmt"
+	"sync/atomic"
 	"testing"
 
 	"github.com/adamcolton/luce/util/iter"
@@ -116,4 +117,32 @@ func TestIterForIdx(t *testing.T) {
 	}
 	c := iter.ForIdx[int](si, fn)
 	assert.Len(t, s, c)
+}
+
+func TestIterConcurrent(t *testing.T) {
+	s := &sliceIter[int]{
+		Slice: make([]int, 1000),
+	}
+	for i := range s.Slice {
+		s.Slice[i] = i
+	}
+	c := atomic.Int32{}
+	fn := func(i, idx int) {
+		assert.Equal(t, s.Slice[idx], i)
+		c.Add(1)
+	}
+	iter.Concurrent(s, fn).Wait()
+	assert.Len(t, s.Slice, int(c.Load()))
+
+	c.Store(0)
+	iter.Concurrent(s, fn).Wait()
+	assert.Equal(t, 0, int(c.Load()))
+
+	s.idx = 0
+	iter.Concurrent(s, func(i, idx int) {
+		s.Slice[idx] -= i
+	}).Wait()
+	for _, i := range s.Slice {
+		assert.Equal(t, 0, i)
+	}
 }
