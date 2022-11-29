@@ -1,5 +1,7 @@
 package liter
 
+import "sync"
+
 // Iter interface allows for a standard set of tools for iterating over a
 // collection. To correctly implement an Iter, it should be initialized in a
 // valid state so that this for loop would visit all the values:
@@ -49,4 +51,14 @@ type EachFn[T any] = func(idx int, t T, done *bool)
 func Each[T any](i Iter[T], fn EachFn[T]) int {
 	t, done := i.Cur()
 	return each(i, t, done, fn)
+}
+
+// Concurrent calls fn in a Go routine for each value Iter returns until Done is
+// true. Values are handed out one at a time, so each is passed to fn once, but
+// fn can be running for several values at once. Setting done to true stops any
+// more values from being handed out. The returned WaitGroup will reach zero
+// when all Go routines return. This does not reset the iterator.
+func Concurrent[T any](i Iter[T], fn EachFn[T]) *sync.WaitGroup {
+	t, done := i.Cur()
+	return concurrent(i, t, done, fn)
 }
