@@ -1,5 +1,7 @@
 package liter
 
+import "sync"
+
 // Factory creates an iterator.
 type Factory[T any] func() (iter Iter[T], t T, done bool)
 
@@ -21,4 +23,12 @@ func (f Factory[T]) For(fn func(t T)) {
 func (f Factory[T]) Each(fn EachFn[T]) {
 	i, t, done := f()
 	each(i, t, done, fn)
+}
+
+// Concurrent creates a new Iter from the factory and calls fn in a Go routine
+// for each value Iter returns until Done is true. The returned WaitGroup will
+// reach zero when all Go routines return.
+func (f Factory[T]) Concurrent(fn EachFn[T]) *sync.WaitGroup {
+	i, t, done := f()
+	return concurrent(i, t, done, fn)
 }

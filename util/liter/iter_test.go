@@ -239,3 +239,30 @@ func TestFactoryForIdx(t *testing.T) {
 	sf.Each(each)
 	assert.Equal(t, 5, c)
 }
+
+func TestFactoryConcurrent(t *testing.T) {
+	s := &sliceIter[int]{
+		Slice: make([]int, 1000),
+	}
+	for i := range s.Slice {
+		s.Slice[i] = i + 100 // just to make sure they're not equal and can't be flipped
+	}
+	var sf liter.Factory[int] = sliceFactory(s.Slice)
+	var c int32
+	wg := sf.Concurrent(func(idx, i int, done *bool) {
+		assert.Equal(t, s.Slice[idx], i)
+		atomic.AddInt32(&c, 1)
+	})
+	wg.Wait()
+	assert.Len(t, s.Slice, int(c))
+
+	c = 0
+	stop := len(s.Slice) / 2
+	wg = sf.Concurrent(func(idx, i int, done *bool) {
+		*done = idx > stop
+		assert.Equal(t, s.Slice[idx], i)
+		atomic.AddInt32(&c, 1)
+	})
+	wg.Wait()
+	assert.InDelta(t, stop, c, 50)
+}
