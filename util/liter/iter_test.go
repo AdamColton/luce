@@ -2,6 +2,7 @@ package liter_test
 
 import (
 	"fmt"
+	"sync/atomic"
 	"testing"
 
 	"github.com/adamcolton/luce/util/liter"
@@ -121,4 +122,46 @@ func TestIterForIdx(t *testing.T) {
 	}
 	liter.Each(si, each)
 	assert.Equal(t, 5, c)
+}
+
+func TestIterConcurrent(t *testing.T) {
+	s := &sliceIter[int]{
+		Slice: make([]int, 1000),
+	}
+	for i := range s.Slice {
+		// Just to make sure they're not equal which would risk false positives
+		// when comparing the values.
+		s.Slice[i] = i + 100
+	}
+	c := atomic.Int32{}
+	fn := func(idx, i int, done *bool) {
+		assert.Equal(t, s.Slice[idx], i)
+		c.Add(1)
+	}
+	liter.Concurrent(s, fn).Wait()
+	assert.Len(t, s.Slice, int(c.Load()))
+
+	c.Store(0)
+	liter.Concurrent(s, fn).Wait()
+	assert.Equal(t, 0, int(c.Load()))
+
+	s.idx = 0
+	stop := len(s.Slice) / 2
+	c.Store(0)
+	fn = func(idx, i int, done *bool) {
+		*done = idx > stop
+		assert.Equal(t, s.Slice[idx], i)
+		c.Add(1)
+	}
+	liter.Concurrent(s, fn).Wait()
+	ci := int(c.Load())
+	assert.InDelta(t, stop, ci, 50)
+
+	s.idx = 0
+	liter.Concurrent(s, func(idx, i int, done *bool) {
+		s.Slice[idx] -= i
+	}).Wait()
+	for _, i := range s.Slice {
+		assert.Equal(t, 0, i)
+	}
 }
