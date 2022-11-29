@@ -55,3 +55,14 @@ func concurrent[T any](i Iter[T], t T, iterDone bool, fn EachFn[T]) *sync.WaitGr
 		}
 	})
 }
+
+func channel[T any](i Iter[T], t T, done bool, buf int) <-chan T {
+	ch := make(chan T, buf)
+	go func() {
+		for ; !done; t, done = i.Next() {
+			ch <- t
+		}
+		close(ch)
+	}()
+	return ch
+}
