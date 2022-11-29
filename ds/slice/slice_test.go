@@ -50,6 +50,16 @@ func TestIter(t *testing.T) {
 
 	st, _ := upgrade.To[liter.Starter[int]](it)
 	st.Start()
+
+	c = 0
+	slice.IterFactory(s).Each(forFn)
+	assert.Len(t, s, c)
+
+	c = 0
+	liter.Factory[int](s.IterFactory).Each(forFn)
+	assert.Len(t, s, c)
+
+	st.Start()
 	liter.Seek(it, func(i int) bool {
 		assert.True(t, i < 4)
 		return i == 3
