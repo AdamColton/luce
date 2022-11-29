@@ -5,6 +5,8 @@
 //	for t,done := i.Cur(); !done; t,done = i.Next(){...}
 package liter
 
+import "sync"
+
 // Iter interface allows for a standard set of tools for iterating over a
 // collection.
 type Iter[T any] interface {
@@ -41,4 +43,12 @@ type EachFn[T any] = func(idx int, t T, done *bool)
 func Each[T any](i Iter[T], fn EachFn[T]) int {
 	t, done := i.Cur()
 	return each(i, t, done, fn)
+}
+
+// Concurrent calls fn in a Go routine for each value Iter returns until Done is
+// true. The returned WaitGroup will reach zero when all Go routines return.
+// This does not reset the iterator.
+func Concurrent[T any](i Iter[T], fn EachFn[T]) *sync.WaitGroup {
+	t, done := i.Cur()
+	return concurrent(i, t, done, fn)
 }
