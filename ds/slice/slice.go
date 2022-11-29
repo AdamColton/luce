@@ -25,3 +25,9 @@ func (s Slice[T]) Swap(i, j int) {
 func (s Slice[T]) Iter()liter.Wrapper[T] {
 	return NewIter(s)
 }
+
+func (s Slice[T]) IterFactory() (i liter.Iter[T], t T, done bool) {
+	i = NewIter(s)
+	t, done = i.Cur()
+	return
+}
