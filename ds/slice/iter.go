@@ -55,3 +55,12 @@ func (i *Iter[T]) Done() bool {
 func (i *Iter[T]) Idx() int {
 	return i.I
 }
+
+// IterFactory fulfills iter.Factory.
+func IterFactory[T any](s []T) iter.Factory[T] {
+	return func() (i iter.Iter[T], t T, done bool) {
+		i = NewIter(s)
+		t, done = i.Cur()
+		return
+	}
+}
