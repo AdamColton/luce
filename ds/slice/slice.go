@@ -108,3 +108,15 @@ func (s Slice[T]) Pop() (T, Slice[T]) {
 	ln--
 	return s[ln], s[:ln]
 }
+
+// Shift returns the first element of the slice and the slice resized to remove
+// that element. If the size of the slice is zero, the zero value for the type
+// is returned.
+func (s Slice[T]) Shift() (T, Slice[T]) {
+	ln := len(s)
+	if ln == 0 {
+		var t T
+		return t, s
+	}
+	return s[0], s[1:ln]
+}
