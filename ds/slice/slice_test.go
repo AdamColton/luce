@@ -146,3 +146,15 @@ func TestPop(t *testing.T) {
 	assert.Equal(t, 0, i)
 	assert.Nil(t, got)
 }
+
+func TestShift(t *testing.T) {
+	data := slice.Slice[int]{3, 1, 4, 1, 5, 9}
+	i, got := data.Shift()
+	assert.Equal(t, 3, i)
+	assert.Equal(t, data[1:6], got)
+
+	data = nil
+	i, got = data.Shift()
+	assert.Equal(t, 0, i)
+	assert.Nil(t, got)
+}
