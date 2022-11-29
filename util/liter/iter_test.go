@@ -146,3 +146,16 @@ func TestIterConcurrent(t *testing.T) {
 		assert.Equal(t, 0, i)
 	}
 }
+
+func TestIterChannel(t *testing.T) {
+	s := &sliceIter[int]{
+		Slice: []int{3, 1, 4, 1, 5, 9},
+	}
+
+	idx := 0
+	for i := range liter.Channel[int](s, 0) {
+		assert.Equal(t, s.Slice[idx], i)
+		idx++
+	}
+	assert.Len(t, s.Slice, idx)
+}
