@@ -87,3 +87,16 @@ func (s Slice[T]) Remove(idxs ...int) Slice[T] {
 func (s Slice[T]) Buffer() Buffer[T] {
 	return Buffer[T](s)
 }
+
+// Pop returns the last element of the slice and the slice resized to remove
+// that element. If the size of the slice is zero, the zero value for the type
+// is returned.
+func (s Slice[T]) Pop() (T, Slice[T]) {
+	ln := len(s)
+	if ln == 0 {
+		var t T
+		return t, s
+	}
+	ln--
+	return s[ln], s[:ln]
+}
