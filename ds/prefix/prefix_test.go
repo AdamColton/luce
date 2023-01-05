@@ -4,8 +4,11 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/ds/prefix"
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/stretchr/testify/assert"
 )
+
+var lt = slice.LT[string]()
 
 func TestBasic(t *testing.T) {
 	p := prefix.New()
@@ -33,4 +36,16 @@ func TestBasic(t *testing.T) {
 	assert.Equal(t, "ab", n.Gram())
 	assert.Equal(t, 1, n.ChildrenCount())
 	assert.Equal(t, []rune{'c'}, n.Children())
+}
+
+func TestAllWords(t *testing.T) {
+	words := []string{"abcd", "abce", "abcf", "bbcd"}
+	p := prefix.New()
+	for _, w := range words {
+		p.Upsert(w)
+	}
+
+	got := p.Find("").AllWords().Strings().ToSlice(nil)
+	lt.Sort(got)
+	assert.Equal(t, words, got)
 }
