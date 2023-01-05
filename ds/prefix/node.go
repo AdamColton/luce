@@ -1,6 +1,7 @@
 package prefix
 
 import (
+	"github.com/adamcolton/luce/ds/list"
 	"github.com/adamcolton/luce/ds/lmap"
 )
 
@@ -16,6 +17,19 @@ type Node interface {
 	IsWord() bool
 	// Gram returns the string this node represents
 	Gram() string
+	// AllWords returns all child nodes (including self) that are a word.
+	AllWords() Nodes
+}
+
+// Nodes is a slice of Nodes
+type Nodes []Node
+
+// Strings returns a list.Wrapper for getting the strings from nodes.
+func (ns Nodes) Strings() list.Wrapper[string] {
+	return list.Transformer[Node, string]{
+		List: list.Slice(ns).List,
+		Fn:   Node.Gram,
+	}.Wrap()
 }
 
 type node struct {
@@ -58,4 +72,16 @@ func (n *node) Child(r rune) Node {
 func (n *node) Children() []rune {
 	// TODO: use buf
 	return n.children.Keys(nil)
+}
+
+func (n *node) AllWords() Nodes {
+	var out Nodes
+	if n.isWord {
+		out = append(out, n)
+	}
+	n.children.Each(func(r rune, child *node) (done bool) {
+		out = append(out, child.AllWords()...)
+		return false
+	})
+	return out
 }
