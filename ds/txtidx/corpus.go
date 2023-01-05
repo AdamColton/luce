@@ -2,13 +2,16 @@ package txtidx
 
 import (
 	"strings"
+
+	"github.com/adamcolton/luce/ds/prefix"
 )
 
 const MaxUint32 uint32 = ^uint32(0)
 
 type Corpus struct {
-	roots         *markov
+	roots         *prefix.Prefix
 	words         []*word
+	wordsByStr    map[string]*word
 	variantsByStr map[string]varIDX
 	variants      []variant
 	docs          []*document
@@ -20,17 +23,23 @@ type Corpus struct {
 
 func NewCorpus() *Corpus {
 	return &Corpus{
-		roots:         newMarkov(),
-		variantsByStr: map[string]varIDX{},
+		roots:         prefix.New(),
+		wordsByStr:    make(map[string]*word),
+		variantsByStr: make(map[string]varIDX),
 	}
 }
 
 type sig struct{}
 
-func (c *Corpus) upsert(word string) (wordIDX, varIDX) {
-	rt := root(word)
-	w := c.roots.upsert(rt)
-	if w.wordIDX == wordIDX(MaxUint32) {
+func (c *Corpus) upsert(wrd string) (wordIDX, varIDX) {
+	rt := root(wrd)
+	w := c.wordsByStr[rt]
+	if w == nil {
+		w = &word{
+			str:       rt,
+			Documents: newDocSet(),
+		}
+		c.roots.Upsert(rt)
 		ln := len(c.unused.words)
 		if ln > 0 {
 			ln--
@@ -41,9 +50,8 @@ func (c *Corpus) upsert(word string) (wordIDX, varIDX) {
 			w.wordIDX = wordIDX(len(c.words))
 			c.words = append(c.words, w)
 		}
-		w.str = rt
 	}
-	v := findVariant(rt, word)
+	v := findVariant(rt, wrd)
 	vid, found := c.variantsByStr[string(v)]
 	if !found {
 		vid = varIDX(len(c.variants))
