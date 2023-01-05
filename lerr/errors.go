@@ -30,3 +30,16 @@ func (m Many) Add(err error) Many {
 	}
 	return append(m, err)
 }
+
+// Get returns nil if there are no errors. If there is one error, that is
+// returned and if there are multiple, Many is returned.
+func (m Many) Get() error {
+	ln := len(m)
+	if ln == 0 {
+		return nil
+	}
+	if ln == 1 {
+		return m[0]
+	}
+	return m
+}
