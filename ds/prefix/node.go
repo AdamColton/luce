@@ -17,6 +17,7 @@ type Node interface {
 	IsWord() bool
 	// Gram returns the string this node represents
 	Gram() string
+	Suggest(max int) []Suggestion
 	// AllWords returns all child nodes (including self) that are a word.
 	AllWords() Nodes
 }
@@ -79,9 +80,8 @@ func (n *node) AllWords() Nodes {
 	if n.isWord {
 		out = append(out, n)
 	}
-	n.children.Each(func(r rune, child *node) (done bool) {
+	n.children.Each(func(r rune, child *node, done *bool) {
 		out = append(out, child.AllWords()...)
-		return false
 	})
 	return out
 }
