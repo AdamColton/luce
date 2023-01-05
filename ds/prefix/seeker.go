@@ -20,6 +20,7 @@ func (s *seeker) moveNext(insert bool) (done bool) {
 				n.r = r
 				n.parent = s.n
 				s.n.children[r] = n
+				s.p.starts[r] = append(s.p.starts[r], n)
 			}
 		}
 		s.n = n
