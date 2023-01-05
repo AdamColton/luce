@@ -1,6 +1,9 @@
 package prefix
 
-import "github.com/adamcolton/luce/ds/slice"
+import (
+	"github.com/adamcolton/luce/ds/list"
+	"github.com/adamcolton/luce/ds/slice"
+)
 
 // Node in a prefix tree.
 type Node interface {
@@ -14,6 +17,17 @@ type Node interface {
 	IsWord() bool
 	// Gram returns the string this node represents
 	Gram() string
+	// AllWords returns all child nodes (including self) that are a word.
+	AllWords() Nodes
+}
+
+type Nodes []Node
+
+func (ns Nodes) Strings() list.Wrapper[string] {
+	return list.Transformer[Node, string]{
+		List: list.Slice(ns).List,
+		Fn:   Node.Gram,
+	}.Wrap()
 }
 
 type node struct {
@@ -55,4 +69,15 @@ func (n *node) Child(r rune) Node {
 
 func (n *node) Children() []rune {
 	return slice.Keys(n.children)
+}
+
+func (n *node) AllWords() Nodes {
+	var out []Node
+	if n.isWord {
+		out = append(out, n)
+	}
+	for _, c := range n.children {
+		out = append(out, c.AllWords()...)
+	}
+	return out
 }
