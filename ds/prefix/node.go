@@ -21,6 +21,10 @@ type Node interface {
 	IsWord() bool
 	// Gram returns the string this node represents
 	Gram() string
+	// Suggest returns up to max Suggestions for continuing this gram. There is
+	// one for each of the children with the most descendants; it follows the
+	// child with the most descendants at every step.
+	Suggest(max int) []Suggestion
 	// AllWords returns all child nodes (including self) that are a word.
 	AllWords() Nodes
 }
