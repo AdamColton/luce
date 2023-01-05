@@ -206,4 +206,5 @@ func (hd *document) update(c *Corpus, str string) {
 	for wIdx := range wordsBefore {
 		c.deleteDocWord(hd, c.words[wIdx])
 	}
+	c.roots.Purge()
 }

@@ -76,19 +76,6 @@ func TestMultiDoc(t *testing.T) {
 	assert.Equal(t, expected, ll)
 }
 
-func TestMarkov(t *testing.T) {
-	m := newMarkov()
-	w := m.upsert("test")
-	id := DocID(123)
-	w.Documents.Add(id)
-	w2 := m.upsert("test")
-
-	assert.True(t, w2.Documents.Has(id))
-
-	w3, _ := m.find("test")
-	assert.True(t, w3.Documents.Has(id))
-}
-
 func TestDelete(t *testing.T) {
 	c := NewCorpus()
 	d0 := c.AddDoc("this is document 0 keyphrase")
@@ -97,7 +84,8 @@ func TestDelete(t *testing.T) {
 	d1 := c.AddDoc("this is document 1")
 	assert.Equal(t, DocID(1), d1.ID())
 
-	w, _ := c.roots.find("keyphrase")
+	w := c.wordsByStr["keyphrase"]
+
 	assert.True(t, w.Documents.Has(d0.ID()))
 	wid := w.wordIDX
 
@@ -105,20 +93,20 @@ func TestDelete(t *testing.T) {
 	assert.Nil(t, c.docs[0])
 	assert.Nil(t, c.words[wid])
 
-	w, _ = c.roots.find("keyphrase")
+	w = c.wordsByStr["keyphrase"]
 	assert.Nil(t, w)
 
 	d2 := c.AddDoc("this is document 2, reallocated DocIDX 0 keyphrase")
 	assert.Equal(t, DocID(0), d2.ID())
 	assert.NotNil(t, c.words[wid])
 
-	w, _ = c.roots.find("keyphrase")
+	w = c.wordsByStr["keyphrase"]
 	assert.True(t, w.Documents.Has(d2.ID()))
 
 	str := "this is document 2.1 - it has been updated"
 	c.Update(d2, str)
 	assert.Equal(t, c.DocString(d2), str)
-	w, _ = c.roots.find("keyphrase")
+	w = c.wordsByStr["keyphrase"]
 	assert.Nil(t, w)
 }
 

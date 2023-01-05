@@ -3,14 +3,16 @@ package txtidx
 import (
 	"strings"
 
+	"github.com/adamcolton/luce/ds/prefix"
 	"github.com/adamcolton/luce/util/lstr"
 )
 
 const MaxUint32 uint32 = ^uint32(0)
 
 type Corpus struct {
-	roots         *markov
+	roots         *prefix.Prefix
 	words         []*word
+	wordsByStr    map[string]*word
 	variantsByStr map[string]varIDX
 	variants      []variant
 	docs          []*document
@@ -22,17 +24,24 @@ type Corpus struct {
 
 func NewCorpus() *Corpus {
 	return &Corpus{
-		roots:         newMarkov(),
-		variantsByStr: map[string]varIDX{},
+		roots:         prefix.New(),
+		wordsByStr:    make(map[string]*word),
+		variantsByStr: make(map[string]varIDX),
 	}
 }
 
 type sig struct{}
 
-func (c *Corpus) upsert(word string) (wordIDX, varIDX) {
-	rt := root(word)
-	w := c.roots.upsert(rt)
-	if w.wordIDX == wordIDX(MaxUint32) {
+func (c *Corpus) upsert(wrd string) (wordIDX, varIDX) {
+	rt := root(wrd)
+	w := c.wordsByStr[rt]
+	if w == nil {
+		w = &word{
+			str:       rt,
+			Documents: newDocSet(),
+		}
+		c.roots.Upsert(rt)
+		c.wordsByStr[rt] = w
 		ln := len(c.unused.words)
 		if ln > 0 {
 			ln--
@@ -43,9 +52,8 @@ func (c *Corpus) upsert(word string) (wordIDX, varIDX) {
 			w.wordIDX = wordIDX(len(c.words))
 			c.words = append(c.words, w)
 		}
-		w.str = rt
 	}
-	v := findVariant(rt, word)
+	v := findVariant(rt, wrd)
 	vid, found := c.variantsByStr[string(v)]
 	if !found {
 		vid = varIDX(len(c.variants))
@@ -76,7 +84,18 @@ func (c *Corpus) find(terms ...string) *docSet {
 }
 
 func (c *Corpus) findSingle(word string) *docSet {
-	return c.roots.findAll(root(word)).docSetUnion()
+	var ws words
+	for _, n := range c.roots.Contains(root(word)) {
+		for _, w := range n.AllWords() {
+			g := w.Gram()
+			w := c.wordsByStr[g]
+			if w == nil {
+				panic("expected word")
+			}
+			ws = append(ws, w)
+		}
+	}
+	return ws.docSetUnion()
 }
 
 func (c *Corpus) AddDoc(doc string) Document {
@@ -105,13 +124,15 @@ func (c *Corpus) Delete(di DocIDer) {
 	for _, wIdx := range d.words() {
 		c.deleteDocWord(id, c.words[wIdx])
 	}
+	c.roots.Purge()
 }
 
 func (c *Corpus) deleteDocWord(di DocIDer, w *word) {
 	w.Documents.Delete(di)
 	if w.Documents.Len() == 0 {
 		c.words[w.wordIDX] = nil
-		c.roots.deleteWord(w.str)
+		delete(c.wordsByStr, w.str)
+		c.roots.Remove(w.str)
 		c.unused.words = append(c.unused.words, w.wordIDX)
 	}
 }
@@ -165,6 +186,6 @@ func (c *Corpus) DocString(id DocIDer) string {
 	return c.getDoc(id).toString(c)
 }
 
-func (c *Corpus) Suggest(word string, max int) []string {
-	return c.roots.suggest(word, max)
+func (c *Corpus) Suggest(word string, max int) []prefix.Suggestion {
+	return c.roots.Find(word).Suggest(max)
 }
