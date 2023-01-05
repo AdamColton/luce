@@ -27,3 +27,13 @@ func (s *seeker) moveNext(insert bool) (done bool) {
 	}
 	return
 }
+
+func (s *seeker) movePrev() (n *node, done bool) {
+	n = s.n
+	done = s.idx <= 0
+	if !done {
+		s.idx--
+		s.n = s.n.parent
+	}
+	return
+}
