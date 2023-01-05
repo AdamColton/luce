@@ -3,7 +3,10 @@ package prefix
 // == projects.Code.luce.prefix ==
 
 import (
+	"github.com/adamcolton/luce/ds/list"
 	"github.com/adamcolton/luce/ds/lmap"
+	"github.com/adamcolton/luce/ds/morph"
+	"github.com/adamcolton/luce/ds/slice"
 )
 
 // Node in a prefix tree.
@@ -18,6 +21,18 @@ type Node interface {
 	IsWord() bool
 	// Gram returns the string this node represents
 	Gram() string
+	// AllWords returns all child nodes (including self) that are a word.
+	AllWords() Nodes
+}
+
+// Nodes is a slice of Nodes
+type Nodes []Node
+
+var gramTransform = morph.NewValAll(Node.Gram)
+
+// Strings returns a list.Wrapper for getting the strings from nodes.
+func (ns Nodes) Strings() list.Wrapper[string] {
+	return gramTransform.List(slice.New(ns))
 }
 
 type node struct {
@@ -61,4 +76,15 @@ func (n *node) Children() []rune {
 	// [ ] prefix.Node.Children buf
 	//	accept a buffer
 	return n.children.Keys(nil)
+}
+
+func (n *node) AllWords() Nodes {
+	var out Nodes
+	if n.isWord {
+		out = append(out, n)
+	}
+	n.children.Each(func(r rune, child *node, done *bool) {
+		out = append(out, child.AllWords()...)
+	})
+	return out
 }
