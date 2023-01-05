@@ -44,3 +44,20 @@ func (p *Prefix) Upsert(word string) (n Node, insert bool) {
 	n = s.n
 	return
 }
+
+// Find a node by it's gram. If there are no prefixes starting with the gram,
+// nil is returned.
+func (p *Prefix) Find(gram string) Node {
+	n := p.find(gram).n
+	if n == nil {
+		return nil
+	}
+	return n
+}
+
+func (p *Prefix) find(gram string) *seeker {
+	s := p.seeker(gram)
+	for done := false; !done; done = s.moveNext(false) {
+	}
+	return s
+}
