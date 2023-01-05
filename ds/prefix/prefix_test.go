@@ -1,6 +1,7 @@
 package prefix_test
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/adamcolton/luce/ds/prefix"
@@ -52,4 +53,26 @@ func TestAllWords(t *testing.T) {
 	got := ls.Slice(nil)
 	lt.Sort(got)
 	assert.Equal(t, words, got)
+}
+
+func TestContaining(t *testing.T) {
+	p := prefix.New()
+	words := []string{"afoo", "bfoo", "ccfoo", "ddfoodd", "fooe", "fbar", "barg"}
+	for _, w := range words {
+		p.Upsert(w)
+	}
+
+	got := p.Containing("foo").Strings().Slice(nil)
+	sort.Strings(got)
+
+	expected := []string{"afoo", "bfoo", "ccfoo", "ddfoo", "foo"}
+	assert.Equal(t, expected, got)
+
+	assert.Nil(t, p.Containing(""))
+
+	p.Upsert("test")
+	got = p.Containing("t").Strings().Slice(nil)
+	lt.Sort(got)
+	expected = []string{"t", "test"}
+	assert.Equal(t, expected, got)
 }
