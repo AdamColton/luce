@@ -76,3 +76,24 @@ func TestContaining(t *testing.T) {
 	expected = []string{"t", "test"}
 	assert.Equal(t, expected, got)
 }
+
+func TestSuggest(t *testing.T) {
+	p := prefix.New()
+	p.Upsert("abcd")
+	p.Upsert("abcde")
+	p.Upsert("abce")
+	p.Upsert("ace")
+	p.Upsert("adgf")
+	p.Upsert("adg")
+	p.Upsert("abc")
+
+	n := p.Find("a")
+	s := n.Suggest(2)
+	assert.Len(t, s, 2)
+
+	expected := []string{"abcde", "abcd", "abc"}
+	assert.Equal(t, expected, s[0].Words("a").ToSlice(nil))
+
+	expected = []string{"adgf", "adg"}
+	assert.Equal(t, expected, s[1].Words("a").ToSlice(nil))
+}
