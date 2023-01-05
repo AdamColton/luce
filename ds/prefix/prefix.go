@@ -4,15 +4,19 @@
 // then the tree contains the gram 'tes' but it will not be a word.
 package prefix
 
+import "github.com/adamcolton/luce/ds/slice"
+
 // Prefix is the root of a prefix tree
 type Prefix struct {
-	root *node
+	root   *node
+	starts map[rune]slice.Slice[*node]
 }
 
 // New Prefix tree.
 func New() *Prefix {
 	return &Prefix{
-		root: newNode(),
+		root:   newNode(),
+		starts: make(map[rune]slice.Slice[*node]),
 	}
 }
 
@@ -56,4 +60,26 @@ func (p *Prefix) find(gram string) *seeker {
 	for done := false; !done; done = s.moveNext(false) {
 	}
 	return s
+}
+
+// Containing returns all nodes in the tree containing the specified gram,
+// even if they do not begin with the specified gram.
+func (p *Prefix) Containing(gram string) Nodes {
+	rs := []rune(gram)
+	if len(rs) == 0 {
+		return nil
+	}
+	s := &seeker{
+		runes: rs[1:],
+		p:     p,
+	}
+	var out slice.Slice[Node]
+	for _, n := range p.starts[rs[0]] {
+		s.idx = 0
+		s.n = n
+		for done := false; !done; done = s.moveNext(false) {
+		}
+		out = out.AppendNotZero(s.n)
+	}
+	return Nodes(out)
 }
