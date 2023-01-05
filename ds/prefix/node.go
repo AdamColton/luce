@@ -18,6 +18,7 @@ type Node interface {
 	IsWord() bool
 	// Gram returns the string this node represents
 	Gram() string
+	Suggest(max int) []Suggestion
 	// AllWords returns all child nodes (including self) that are a word.
 	AllWords() Nodes
 }
