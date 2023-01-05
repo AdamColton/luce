@@ -1,13 +1,14 @@
-package prefix
+package prefix_test
 
 import (
 	"testing"
 
+	"github.com/adamcolton/luce/ds/prefix"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestBasic(t *testing.T) {
-	p := New()
+	p := prefix.New()
 
 	n, insert := p.Upsert("")
 	assert.Nil(t, n)
@@ -21,7 +22,7 @@ func TestBasic(t *testing.T) {
 	_, insert = p.Upsert("abc")
 	assert.False(t, insert)
 
-	n = p.root.children.GetVal('a')
+	n = p.Find("a")
 	assert.False(t, n.IsWord())
 	assert.Equal(t, "a", n.Gram())
 	assert.Equal(t, 1, n.ChildrenCount())
@@ -32,4 +33,7 @@ func TestBasic(t *testing.T) {
 	assert.Equal(t, "ab", n.Gram())
 	assert.Equal(t, 1, n.ChildrenCount())
 	assert.Equal(t, []rune{'c'}, n.Children())
+
+	n = p.Find("aaaa")
+	assert.Nil(t, n)
 }
