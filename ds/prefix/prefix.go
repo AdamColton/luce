@@ -6,6 +6,7 @@ import "github.com/adamcolton/luce/ds/slice"
 type Prefix struct {
 	root   *node
 	starts map[rune]slice.Slice[*node]
+	purge  map[rune]bool
 }
 
 // New Prefix tree.
@@ -13,6 +14,7 @@ func New() *Prefix {
 	return &Prefix{
 		root:   newNode(),
 		starts: make(map[rune]slice.Slice[*node]),
+		purge:  make(map[rune]bool),
 	}
 }
 
@@ -65,6 +67,11 @@ func (p *Prefix) find(gram string) *seeker {
 // Containing returns all nodes in the tree containing the specified gram,
 // even if they do not begin with the specified gram.
 func (p *Prefix) Containing(gram string) Nodes {
+
+	if len(p.purge) > 0 {
+		p.Purge()
+	}
+
 	rs := []rune(gram)
 	if len(rs) == 0 {
 		return nil
@@ -73,8 +80,10 @@ func (p *Prefix) Containing(gram string) Nodes {
 		runes: rs[1:],
 		p:     p,
 	}
+
 	var out slice.Slice[Node]
-	for _, n := range p.starts[rs[0]] {
+	starts := p.starts[rs[0]]
+	for _, n := range starts {
 		s.idx = 0
 		s.n = n
 		for done := false; !done; done = s.moveNext(false) {
@@ -82,4 +91,55 @@ func (p *Prefix) Containing(gram string) Nodes {
 		out = out.AppendNotZero(s.n)
 	}
 	return Nodes(out)
+}
+
+// Remove a word from the tree. It does nothing if the word is not in the tree.
+// The nodes that no longer lead to a word are cut off; Containing drops them
+// from its index the next time it is used, see Purge.
+func (p *Prefix) Remove(word string) {
+	s := p.find(word)
+	if s.n == nil || !s.n.isWord {
+		return
+	}
+	s.n.isWord = false
+	for n, done := s.movePrev(); !done; n, done = s.movePrev() {
+		if n.children.Len() > 0 || n.isWord {
+			break
+		}
+		n.parent.children.Delete(s.runes[s.idx])
+		n.parent = nil
+	}
+	for _, r := range s.runes {
+		p.purge[r] = true
+	}
+
+}
+
+// Purge drops the nodes that Remove cut off from the index that Containing
+// searches. Containing calls it when there is something to purge.
+func (p *Prefix) Purge() {
+	purged := make([]rune, 0, len(p.purge))
+	for r := range p.purge {
+		purged = append(purged, r)
+		nodes := p.starts[r]
+		changed := false
+		for i := 0; i < len(nodes); i++ {
+			n := nodes[i]
+			if n.parent == nil {
+				nodes = nodes.Remove(i)
+				i--
+				changed = true
+			}
+		}
+		if changed {
+			if len(nodes) == 0 {
+				delete(p.starts, r)
+			} else {
+				p.starts[r] = nodes
+			}
+		}
+	}
+	for _, r := range purged {
+		delete(p.purge, r)
+	}
 }
