@@ -63,7 +63,7 @@ func TestIter(t *testing.T) {
 	fs := Paths{"foo.txt", "bar.txt"}
 	c := 0
 	i, done := fs.Iterator()
-	for ; !done; done = i.Next() {
+	for ; !done; _, done = i.Next() {
 		c++
 		assert.Equal(t, fs[i.(*pathsIterator).Index], string(i.Data()))
 		assert.False(t, i.Done())
@@ -73,7 +73,7 @@ func TestIter(t *testing.T) {
 	assert.Equal(t, len(fs), c)
 
 	c = 0
-	for done = i.Reset(); !done; done = i.Next() {
+	for done = i.Reset(); !done; _, done = i.Next() {
 		c++
 		assert.Equal(t, fs[i.(*pathsIterator).Index], string(i.Data()))
 		assert.False(t, i.Done())

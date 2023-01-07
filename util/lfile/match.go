@@ -46,11 +46,13 @@ func MustRegexMatch(findFile, findDir, skipDir string) Match {
 	return m
 }
 
+// MatchRoot combines a Match instance with a Root. It fulfills IteratorSource.
 type MatchRoot struct {
 	Match
 	Root string
 }
 
+// Root to Match against, return MatchRoot which fulfills IteratorSource.
 func (m Match) Root(root string) MatchRoot {
 	return MatchRoot{
 		Match: m,
@@ -65,8 +67,11 @@ type matchRootIter struct {
 	done  bool
 	data  []byte
 	info  os.FileInfo
+	idx   int
 }
 
+// Iterator fulfills IteratorSource returning an Iterator to iterate over all
+// the matches starting from the root.
 func (mr MatchRoot) Iterator() (i Iterator, done bool) {
 	mri := &matchRootIter{
 		MatchRoot: mr,
@@ -74,7 +79,11 @@ func (mr MatchRoot) Iterator() (i Iterator, done bool) {
 	return mri, mri.Reset()
 }
 
-func (mri *matchRootIter) Next() bool {
+func (mri *matchRootIter) Idx() int {
+	return mri.idx
+}
+
+func (mri *matchRootIter) Next() (string, bool) {
 	mri.data = nil
 	ln := len(mri.files) - 1
 	var path string
@@ -85,6 +94,11 @@ func (mri *matchRootIter) Next() bool {
 	}
 	updatePath()
 	var done bool
+	defer func() {
+		if !mri.done {
+			mri.idx++
+		}
+	}()
 	for mri.done = ln < 0; !mri.done; mri.done = ln < 0 {
 		doAppend := true
 		if mri.info == nil {
@@ -103,7 +117,7 @@ func (mri *matchRootIter) Next() bool {
 		updatePath()
 		continue
 	}
-	return mri.done
+	return mri.Path(), mri.done
 }
 
 func (mri *matchRootIter) checkFilters(path string) (done, doAppend bool) {
@@ -146,6 +160,10 @@ func (mri *matchRootIter) Done() bool {
 	return mri.done
 }
 
+func (mri *matchRootIter) Cur() (path string, done bool) {
+	return mri.Path(), mri.done
+}
+
 func (mri *matchRootIter) Data() []byte {
 	if mri.data == nil && !mri.done {
 		mri.data, mri.err = ReadFile(mri.path())
@@ -168,6 +186,7 @@ func (mri *matchRootIter) Reset() bool {
 	mri.appendFiles(mri.Root)
 	mri.done = mri.done || len(mri.files) == 0
 	mri.Next()
+	mri.idx = 0
 
 	return mri.done
 }

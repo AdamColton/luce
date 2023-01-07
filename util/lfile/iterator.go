@@ -1,6 +1,10 @@
 package lfile
 
-import "os"
+import (
+	"os"
+
+	"github.com/adamcolton/luce/util/iter"
+)
 
 // IteratorSource can generate an Iterator.
 type IteratorSource interface {
@@ -9,11 +13,10 @@ type IteratorSource interface {
 
 // Iterator over a set of files and directories.
 type Iterator interface {
+	iter.Iter[string]
 	Path() string
-	Done() bool
 	Data() []byte
 	Err() error
-	Next() (done bool)
 	Stat() os.FileInfo
 	Reset() (done bool)
 }
