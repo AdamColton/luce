@@ -9,7 +9,7 @@ type IterHandler interface {
 // the IterHandler for each value in the iterator.
 func RunHandlerSource(ii IteratorSource, ih IterHandler) error {
 	i, done := ii.Iterator()
-	for ; !done; done = i.Next() {
+	for ; !done; _, done = i.Next() {
 		ih.HandleIter(i)
 	}
 	return i.Err()
@@ -18,7 +18,7 @@ func RunHandlerSource(ii IteratorSource, ih IterHandler) error {
 // RunHandler will creat an Iter from Iterator and call the HandleIter method on
 // the IterHandler for each value in the iterator.
 func RunHandler(i Iterator, ih IterHandler) error {
-	for done := i.Reset(); !done; done = i.Next() {
+	for done := i.Reset(); !done; _, done = i.Next() {
 		ih.HandleIter(i)
 	}
 	return i.Err()

@@ -35,6 +35,14 @@ func (i *pathsIterator) Path() string {
 func (i *pathsIterator) Done() bool {
 	return i.done
 }
+func (i *pathsIterator) Cur() (path string, done bool) {
+	return i.filename, i.done
+}
+
+func (i *pathsIterator) Idx() int {
+	return i.Index
+}
+
 func (i *pathsIterator) Data() []byte {
 	if i.data == nil && i.err == nil {
 		i.data, i.err = ReadFile(i.filename)
@@ -48,9 +56,9 @@ func (i *pathsIterator) Err() error {
 
 // Next moves to the next file. Returned bool will be true when iteration is
 // done.
-func (i *pathsIterator) Next() (done bool) {
+func (i *pathsIterator) Next() (path string, done bool) {
 	i.Index++
-	return i.update()
+	return i.filename, i.update()
 }
 
 // Reset the Iter to the start and set the autoload value.
