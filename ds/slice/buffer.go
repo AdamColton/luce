@@ -1,5 +1,9 @@
 package slice
 
+import (
+	"github.com/adamcolton/luce/util/upgrade"
+)
+
 // Buffer is used to provide a slice for re-use avoiding excessive allocation.
 type Buffer[T any] []T
 
@@ -10,6 +14,18 @@ func (buf Buffer[T]) Empty(c int) Slice[T] {
 		return Slice[T](buf[:0])
 	}
 	return make([]T, 0, c)
+}
+
+// BufferLener returns a zero length buffer. If i fulfils Lener, the capacity of
+// the buffer will be at least that returned by Len. If not, the buffer is used
+// with the size set to zero.
+func (buf Buffer[T]) Lener(i interface{}) Slice[T] {
+	ln := 0
+	var ler Lener
+	if upgrade.Upgrade(i, &ler) {
+		ln = ler.Len()
+	}
+	return buf.Empty(ln)
 }
 
 // BufferSlice returns a buffer with length c. If the provided buffer has
