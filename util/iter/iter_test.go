@@ -75,3 +75,33 @@ func ExampleSeek() {
 	// Output:
 	// Value: 4 Idx: 2
 }
+
+func TestIterFor(t *testing.T) {
+	expected := "hello"
+	si := &sliceIter[byte]{
+		Slice: []byte(expected),
+	}
+	out := ""
+	fn := func(b byte) {
+		out += string(b)
+	}
+	iter.For[byte](si, fn)
+	assert.Equal(t, expected, out)
+}
+
+func ExampleFor() {
+	si := &sliceIter[int]{
+		Slice: []int{3, 1, 4, 1, 5, 9},
+	}
+	fn := func(i int) {
+		fmt.Println(i)
+	}
+	iter.For[int](si, fn)
+	// Output:
+	// 3
+	// 1
+	// 4
+	// 1
+	// 5
+	// 9
+}
