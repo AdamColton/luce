@@ -3,6 +3,8 @@ package slice
 import (
 	"reflect"
 	"unsafe"
+
+	"github.com/adamcolton/luce/util/upgrade"
 )
 
 // BufferEmpty returns a zero length buffer with at least capacity c. If the
@@ -12,6 +14,18 @@ func BufferEmpty[T any](c int, buf []T) []T {
 		return buf[:0]
 	}
 	return make([]T, 0, c)
+}
+
+// BufferLener returns a zero length buffer. If i fulfils Lener, the capacity of
+// the buffer will be at least that returned by Len. If not, the buffer is used
+// with the size set to zero.
+func BufferLener[T any](i interface{}, buf []T) []T {
+	ln := 0
+	var ler Lener
+	if upgrade.Upgrade(i, &ler) {
+		ln = ler.Len()
+	}
+	return BufferEmpty(ln, buf)
 }
 
 // BufferSlice returns a buffer with length c. If the provided buffer has

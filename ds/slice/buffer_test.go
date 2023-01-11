@@ -19,6 +19,22 @@ func TestBufferEmpty(t *testing.T) {
 	assert.True(t, cap(buf) >= 12)
 }
 
+type mockLener int
+
+func (m mockLener) Len() int {
+	return int(m)
+}
+
+func TestBufferLener(t *testing.T) {
+	var buf []float64
+	buf = slice.BufferLener("not a Lener", buf)
+	assert.Equal(t, 0, cap(buf))
+
+	l := mockLener(10)
+	buf = slice.BufferLener(l, buf)
+	assert.Equal(t, 10, cap(buf))
+}
+
 func TestBufferSlice(t *testing.T) {
 	buf := ([]float64{3, 1, 4})[:0]
 	buf = slice.BufferSlice(2, buf)
