@@ -124,3 +124,42 @@ func TestShift(t *testing.T) {
 	assert.Equal(t, 0, i)
 	assert.Nil(t, got)
 }
+
+type genIter struct {
+	idx int
+}
+
+func (g *genIter) Next() (t int, done bool) {
+	if !g.Done() {
+		g.idx++
+	}
+	return g.idx, g.Done()
+}
+func (g *genIter) Cur() (t int, done bool) { return g.idx, g.Done() }
+func (g *genIter) Done() bool              { return g.idx >= 10 }
+func (g *genIter) Idx() int                { return g.idx }
+
+type genIterLen struct {
+	*genIter
+}
+
+func (g *genIterLen) Len() int { return 10 }
+
+func TestIterSlice(t *testing.T) {
+	s := []int{3, 1, 4, 1, 5, 9}
+	it := slice.NewIter(s)
+	got := slice.IterSlice[int](it, nil)
+	assert.Equal(t, s, got)
+
+	got = slice.IterSlice[int](it, make([]int, 0, len(s)))
+	assert.Equal(t, s, got)
+	s[0] = 4
+	assert.NotEqual(t, s, got)
+
+	got = slice.IterSlice[int](&genIter{}, nil)
+	expected := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+	assert.Equal(t, expected, got)
+
+	got = slice.IterSlice[int](&genIterLen{&genIter{}}, nil)
+	assert.Equal(t, expected, got)
+}
