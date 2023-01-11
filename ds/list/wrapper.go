@@ -3,6 +3,7 @@ package list
 import (
 	"reflect"
 
+	"github.com/adamcolton/luce/util/iter"
 	"github.com/adamcolton/luce/util/upgrade"
 )
 
@@ -23,4 +24,22 @@ func Wrap[T any](l List[T]) Wrapper[T] {
 // given Type.
 func (w Wrapper[T]) Upgrade(t reflect.Type) interface{} {
 	return upgrade.Wrapped(w.List, t)
+}
+
+// Iter creates an iter.Iter backed by list L.
+func (w Wrapper[T]) Iter() iter.Wrapper[T] {
+	return iter.Wrapper[T]{&Iter[T]{List: w.List}}
+}
+
+// IterFactory creates an iter.Factory that generates a *list.Iter backed by
+// list L.
+func (w Wrapper[T]) IterFactory() iter.Factory[T] {
+	return func() (it iter.Iter[T], t T, done bool) {
+		it = &Iter[T]{
+			List: w.List,
+			I:    -1,
+		}
+		t, done = it.Next()
+		return
+	}
 }
