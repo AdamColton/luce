@@ -58,3 +58,16 @@ func TestIterDo(t *testing.T) {
 	assert.Len(t, s.Slice, idx)
 	assert.Nil(t, it)
 }
+
+func TestIterFor(t *testing.T) {
+	s := []int{3, 1, 4, 1, 5, 9}
+	c := 0
+	fn := func(i, idx int) {
+		assert.Equal(t, s[idx], i)
+		c++
+	}
+	iter.For[int](&sliceIter[int]{
+		Slice: s,
+	}, fn)
+	assert.Len(t, s, c)
+}

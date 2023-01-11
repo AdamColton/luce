@@ -15,3 +15,11 @@ func Seek[T any](i Iter[T], fn func(t T) bool) Iter[T] {
 	t, done := i.Cur()
 	return seek(i, t, done, fn)
 }
+
+// For calls fn sequentially for each value Iter. This does not reset the
+// iterator.
+func For[T any](i Iter[T], fn func(t T, idx int)) {
+	t, done := i.Cur()
+	idx := i.Idx()
+	fr(i, t, done, idx, fn)
+}
