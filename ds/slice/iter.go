@@ -1,6 +1,9 @@
 package slice
 
-import "github.com/adamcolton/luce/util/iter"
+import (
+	"github.com/adamcolton/luce/util/iter"
+	"github.com/adamcolton/luce/util/upgrade"
+)
 
 // Iter wraps a slice to fulfill iter.Iter.
 type Iter[T any] struct {
@@ -56,6 +59,15 @@ func (i *Iter[T]) Idx() int {
 	return i.I
 }
 
+// Slice fulfills Slicer. If a buffer is provided, a copy is made. If no buffer
+// is provided, the underlying slice is returned.
+func (i *Iter[T]) Slice(buf []T) []T {
+	if cap(buf) > 0 {
+		return append(buf[:0], i.S...)
+	}
+	return i.S
+}
+
 // IterFactory fulfills iter.Factory.
 func IterFactory[T any](s []T) iter.Factory[T] {
 	return func() (i iter.Iter[T], t T, done bool) {
@@ -63,4 +75,16 @@ func IterFactory[T any](s []T) iter.Factory[T] {
 		t, done = i.Cur()
 		return
 	}
+}
+
+// IterSlice creates a slice from an iter.Iter. If the Iter fulfills Slicer,
+// then the Slice method will be used. If it fulfill Lener, that will be used
+// for buffer allocation.
+func IterSlice[T any](i iter.Iter[T], buf []T) []T {
+	if s, ok := upgrade.To[Slicer[T]](i); ok {
+		return s.Slice(buf)
+	}
+
+	agg := Buffer[T](buf).Lener(i)
+	return iter.Appender[T]().Iter(agg, i)
 }
