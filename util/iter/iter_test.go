@@ -134,3 +134,15 @@ func TestFactoryDo(t *testing.T) {
 	assert.Len(t, s, idx)
 	assert.Nil(t, it)
 }
+
+func TestFactoryFor(t *testing.T) {
+	s := []int{3, 1, 4, 1, 5, 9}
+	var sf iter.Factory[int] = sliceFactory(s)
+	c := 0
+	fn := func(i, idx int) {
+		assert.Equal(t, s[idx], i)
+		c++
+	}
+	sf.For(fn)
+	assert.Len(t, s, c)
+}
