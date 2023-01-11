@@ -1,7 +1,10 @@
 package list
 
 import (
+	"reflect"
+
 	"github.com/adamcolton/luce/util/iter"
+	"github.com/adamcolton/luce/util/upgrade"
 )
 
 // Iter fulfills iter.Iter by iterating over the list.
@@ -56,6 +59,12 @@ func (i *Iter[T]) Next() (t T, done bool) {
 func (i *Iter[T]) Start() (t T, done bool) {
 	i.I = -1
 	return i.Next()
+}
+
+// Upgrade fulfills upgrade.Upgrader allowing the underlying List to be
+// upgraded.
+func (i *Iter[T]) Upgrade(t reflect.Type) interface{} {
+	return upgrade.Wrapped(i.List, t)
 }
 
 // IterFactory creates an iter.Factory that generates a *list.Iter backed by

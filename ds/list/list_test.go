@@ -4,15 +4,21 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/ds/list"
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/iter"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLists(t *testing.T) {
+	pi := []int{3, 1, 4, 1, 5}
 	tt := map[string]struct {
 		expected []int
 		list.List[int]
 	}{
+		"SliceList": {
+			expected: pi,
+			List:     list.SliceList[int](pi),
+		},
 		"Generator": {
 			expected: []int{0, 1, 4, 9, 16},
 			List: list.Generator[int]{
@@ -44,7 +50,17 @@ func TestLists(t *testing.T) {
 			it.Start()
 			assert.Equal(t, 0, it.Idx())
 
-			it.I = it.Len()
+			got := slice.IterSlice[int](it, nil)
+			assert.Equal(t, tc.expected, got)
+
+			it.Start()
+			assert.Equal(t, 0, it.Idx())
+			got = got[:0]
+			iter.For[int](it, func(t int, idx int) {
+				got = append(got, t)
+			})
+			assert.Equal(t, tc.expected, got)
+
 			_, done := it.Next()
 			assert.True(t, done)
 		})
