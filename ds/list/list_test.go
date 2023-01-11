@@ -33,3 +33,30 @@ func TestUpgrade(t *testing.T) {
 	assert.True(t, upgrade.Upgrade(w, &s))
 	assert.Equal(t, "0...9", s.String())
 }
+
+func TestLists(t *testing.T) {
+	tt := map[string]struct {
+		expected []int
+		list.Wrapper[int]
+	}{
+		"Generator": {
+			expected: []int{0, 1, 4, 9, 16},
+			Wrapper: list.Generator[int]{
+				Fn: func(i int) int {
+					return i * i
+				},
+				Length: 5,
+			}.Wrap(),
+		},
+	}
+
+	for n, tc := range tt {
+		t.Run(n, func(t *testing.T) {
+			w := tc.Wrapper
+			assert.Equal(t, len(tc.expected), w.Len())
+			for i, e := range tc.expected {
+				assert.Equal(t, e, tc.List.AtIdx(i))
+			}
+		})
+	}
+}
