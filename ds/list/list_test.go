@@ -28,6 +28,10 @@ func TestLists(t *testing.T) {
 				Length: 5,
 			},
 		},
+		"Reverse": {
+			expected: []int{5, 1, 4, 1, 3},
+			List:     list.Reverse[int]{list.SliceList[int]([]int{3, 1, 4, 1, 5})},
+		},
 	}
 
 	for n, tc := range tt {
