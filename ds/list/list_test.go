@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/ds/list"
+	"github.com/adamcolton/luce/util/iter"
 	"github.com/adamcolton/luce/util/upgrade"
 	"github.com/stretchr/testify/assert"
 )
@@ -32,6 +33,11 @@ func TestUpgrade(t *testing.T) {
 	var s fmt.Stringer
 	assert.True(t, upgrade.Upgrade(w, &s))
 	assert.Equal(t, "0...9", s.String())
+
+	s = nil
+	i := w.Iter()
+	assert.True(t, upgrade.Upgrade(i, &s))
+	assert.Equal(t, "0...9", s.String())
 }
 
 func TestLists(t *testing.T) {
@@ -54,9 +60,26 @@ func TestLists(t *testing.T) {
 		t.Run(n, func(t *testing.T) {
 			w := tc.Wrapper
 			assert.Equal(t, len(tc.expected), w.Len())
-			for i, e := range tc.expected {
-				assert.Equal(t, e, tc.List.AtIdx(i))
+
+			fn := func(i, idx int) {
+				assert.Equal(t, tc.expected[idx], i)
 			}
+
+			c := w.IterFactory().ForIdx(fn)
+			assert.Len(t, tc.expected, c)
+
+			it := w.Iter()
+			var s iter.Starter[int]
+			assert.True(t, upgrade.Upgrade(it, &s))
+
+			c = it.ForIdx(fn)
+			assert.Len(t, tc.expected, c)
+
+			_, done := it.Next()
+			assert.True(t, done)
+
+			s.Start()
+			assert.Equal(t, 0, it.Idx())
 		})
 	}
 }
