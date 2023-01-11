@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/adamcolton/luce/util/iter"
+	"github.com/adamcolton/luce/util/liter"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,12 +42,12 @@ func TestIterSeek(t *testing.T) {
 		idx++
 		return false
 	}
-	it := iter.Seek[int](s, fn)
+	it := liter.Seek[int](s, fn)
 	assert.Len(t, s.Slice, idx)
 	assert.Nil(t, it)
 
 	s.idx = 0
-	it = iter.Seek[int](s, func(i int) bool {
+	it = liter.Seek[int](s, func(i int) bool {
 		return i == 4
 	})
 	i, done := it.Cur()
@@ -55,7 +55,7 @@ func TestIterSeek(t *testing.T) {
 	assert.False(t, done)
 	idx = s.idx
 
-	it = iter.Seek[int](s, fn)
+	it = liter.Seek[int](s, fn)
 	assert.Len(t, s.Slice, idx)
 	assert.Nil(t, it)
 }
@@ -67,11 +67,41 @@ func ExampleSeek() {
 	fn := func(i int) bool {
 		return i == 4
 	}
-	it := iter.Seek[int](s, fn)
+	it := liter.Seek[int](s, fn)
 
 	v, _ := it.Cur()
 	fmt.Println("Value:", v, "Idx:", it.Idx())
 
 	// Output:
 	// Value: 4 Idx: 2
+}
+
+func TestIterFor(t *testing.T) {
+	expected := "hello"
+	si := &sliceIter[byte]{
+		Slice: []byte(expected),
+	}
+	out := ""
+	fn := func(b byte) {
+		out += string(b)
+	}
+	liter.For[byte](si, fn)
+	assert.Equal(t, expected, out)
+}
+
+func ExampleFor() {
+	si := &sliceIter[int]{
+		Slice: []int{3, 1, 4, 1, 5, 9},
+	}
+	fn := func(i int) {
+		fmt.Println(i)
+	}
+	liter.For[int](si, fn)
+	// Output:
+	// 3
+	// 1
+	// 4
+	// 1
+	// 5
+	// 9
 }
