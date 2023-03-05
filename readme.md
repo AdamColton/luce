@@ -13,9 +13,18 @@ which has involved significantly re-writing history. As of late 2024, I've got
 most of the history in a decent state. Most of the code has good test coverage
 and about 75% has documentation.
 
+I'm continuing to add coverage and documentation but I expect it will take
+a while longer to get fully caught up.
+
 ### Buffers
 
 In most functions that would need to allocate memory a buffer argument is
 supplied. It is always safe to use nil for a buffer. This pattern can avoid
 generating garbage often enough that it is useful and (by simply supplying nil)
 it is easy to ignore.
+
+### Wrapers
+
+Several packages provide wrappers around builtin data structures or useful
+interfaces. The package util/upgrade provides a standard way to access the
+wrapped interface.
