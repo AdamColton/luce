@@ -304,3 +304,36 @@ func TestCompactSub(t *testing.T) {
 		assert.Equal(t, c[i], sub.CompactUint64())
 	}
 }
+
+func TestDeserializerSub(t *testing.T) {
+	d := NewDeserializer([]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
+	s := d.Sub(5)
+	assert.Equal(t, byte(6), d.Byte())
+	assert.Equal(t, byte(1), s.Byte())
+	assert.Equal(t, byte(2), s.Byte())
+	assert.Equal(t, byte(7), d.Byte())
+}
+
+func TestSerializerSub(t *testing.T) {
+	s := (&Serializer{Size: 10}).Make()
+	sub := s.Sub(5)
+	for i := byte(0); i < 5; i++ {
+		s.Byte(i + 6)
+		sub.Byte(i + 1)
+	}
+	assert.Equal(t, []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, s.Data)
+}
+
+func TestDeserializerString(t *testing.T) {
+	d := NewDeserializer([]byte("Hello, World"))
+	assert.Equal(t, "Hello", d.String(5))
+	assert.Equal(t, byte(','), d.Byte())
+}
+
+func TestSerializerString(t *testing.T) {
+	str := "Hello, World"
+	s := (&Serializer{Size: len(str)}).Make()
+	s.String(str)
+	assert.Equal(t, len(str), s.Idx)
+	assert.Equal(t, str, string(s.Data))
+}
