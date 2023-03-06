@@ -1,10 +1,10 @@
 package list_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/adamcolton/luce/ds/list"
-	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/iter"
 	"github.com/stretchr/testify/assert"
 )
@@ -37,6 +37,10 @@ func TestLists(t *testing.T) {
 	for n, tc := range tt {
 		t.Run(n, func(t *testing.T) {
 			assert.Equal(t, len(tc.expected), tc.List.Len())
+
+			got := list.ToSlice(tc.List, nil)
+			assert.Equal(t, tc.expected, got)
+
 			f := list.IterFactory(tc.List)
 			var last int
 			fn := func(i, idx int) {
@@ -53,12 +57,6 @@ func TestLists(t *testing.T) {
 
 			it.Start()
 			assert.Equal(t, 0, it.Idx())
-
-			got := slice.IterSlice[int](it, nil)
-			assert.Equal(t, tc.expected, got)
-
-			it.Start()
-			assert.Equal(t, 0, it.Idx())
 			got = got[:0]
 			iter.For[int](it, func(t int, idx int) {
 				got = append(got, t)
@@ -69,4 +67,20 @@ func TestLists(t *testing.T) {
 			assert.True(t, done)
 		})
 	}
+}
+
+func ExampleList_toSlice() {
+	l := list.Generator[int]{
+		Fn: func(i int) int {
+			return i * i
+		},
+		Length: 5,
+	}
+	// To convert a List to a slice, create an Iter and use slice.IterSlice
+	// If the underlying List fulfills Slicer, that will be invoked.
+	// Otherwise, IterSlice will iterate over the list to create a slice.
+	s := list.ToSlice[int](l, nil)
+	fmt.Println(s)
+	// Output:
+	// [0 1 4 9 16]
 }
