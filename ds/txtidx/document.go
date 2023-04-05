@@ -3,6 +3,7 @@ package txtidx
 import (
 	"github.com/adamcolton/luce/ds/huffman"
 	"github.com/adamcolton/luce/serial/rye"
+	"github.com/adamcolton/luce/util/lstr"
 )
 
 type Document interface {
@@ -84,7 +85,7 @@ func (hdu *docUnit[T]) encode() (huffman.Tree[T], *rye.Bits, []byte) {
 }
 
 func newDoc(str string, c *Corpus) *document {
-	start, words := newScanner(str).parse(str)
+	start, words := parse(lstr.NewScanner(str))
 
 	wUnit := newHuffDocUnit[wordIDX](len(words))
 	vUnit := newHuffDocUnit[varIDX](len(words))
@@ -177,7 +178,7 @@ func (hd *document) update(c *Corpus, str string) {
 	for _, wIdx := range wIdxs {
 		wordsBefore[wIdx] = sig{}
 	}
-	start, words := newScanner(str).parse(str)
+	start, words := parse(lstr.NewScanner(str))
 	hd.start = start
 
 	wUnit := newHuffDocUnit[wordIDX](len(words))

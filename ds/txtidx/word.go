@@ -2,6 +2,8 @@ package txtidx
 
 import (
 	"strings"
+
+	"github.com/adamcolton/luce/util/lstr"
 )
 
 type word struct {
@@ -14,9 +16,9 @@ type wordIDX uint32
 
 // str must start with letterNumber but can have trailing non-letter number
 func root(str string) string {
-	s := newScanner(str)
-	s.matchLetterNumber(false)
-	return strings.ToLower(s.str(0, s.idx))
+	s := lstr.NewScanner(str)
+	s.Many(mIsLetterNumber)
+	return strings.ToLower(string(s.Str[0:s.I]))
 }
 
 type words []*word

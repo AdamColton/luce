@@ -2,6 +2,8 @@ package txtidx
 
 import (
 	"strings"
+
+	"github.com/adamcolton/luce/util/lstr"
 )
 
 const MaxUint32 uint32 = ^uint32(0)
@@ -127,7 +129,8 @@ func (c *Corpus) Update(id DocIDer, txt string) {
 }
 
 func (c *Corpus) Search(search string) (DocSet, []string) {
-	s := newScanner(search).buildSearch()
+
+	s := buildSearch(lstr.NewScanner(search))
 	ds := c.find(s.words...).copy()
 	var strs []string
 	if len(s.exact) > 0 {
