@@ -45,10 +45,15 @@ func iSq(i int) int {
 }
 
 func TestLists(t *testing.T) {
+	pi := []int{3, 1, 4, 1, 5}
 	tt := map[string]struct {
 		expected []int
 		list.Wrapper[int]
 	}{
+		"SliceList": {
+			expected: pi,
+			Wrapper:  list.Slice(pi),
+		},
 		"Generator": {
 			expected: []int{0, 1, 4, 9, 16},
 			Wrapper:  list.GeneratorFactory(iSq)(5).Wrap(),
@@ -77,11 +82,19 @@ func TestLists(t *testing.T) {
 			it.Each(fn)
 			assert.Len(t, tc.expected, c)
 
-			_, done := it.Next()
-			assert.True(t, done)
-
 			s.Start()
 			assert.Equal(t, 0, it.Idx())
+
+			if ls, ok := upgrade.To[list.Slicer[int]](w); ok {
+				assert.Equal(t, tc.expected, ls.Slice(nil))
+			}
+
+			got := liter.Appender[int]().
+				Iter(nil, it)
+			assert.Equal(t, tc.expected, got)
+
+			_, done := it.Next()
+			assert.True(t, done)
 		})
 	}
 }
