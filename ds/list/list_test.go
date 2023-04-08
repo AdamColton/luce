@@ -58,6 +58,10 @@ func TestLists(t *testing.T) {
 			expected: []int{0, 1, 4, 9, 16},
 			Wrapper:  list.GeneratorFactory(iSq)(5).Wrap(),
 		},
+		"Reverse": {
+			expected: []int{5, 1, 4, 1, 3},
+			Wrapper:  list.Slice(pi).Reverse(),
+		},
 	}
 
 	for n, tc := range tt {
