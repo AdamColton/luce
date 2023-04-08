@@ -70,6 +70,9 @@ func TestLists(t *testing.T) {
 			w := tc.Wrapper
 			assert.Equal(t, len(tc.expected), w.Len())
 
+			got := w.ToSlice(nil)
+			assert.Equal(t, tc.expected, got)
+
 			fn := func(i, idx int) {
 				assert.Equal(t, tc.expected[idx], i)
 			}
@@ -87,13 +90,8 @@ func TestLists(t *testing.T) {
 			s.Start()
 			assert.Equal(t, 0, it.Idx())
 
-			var ls list.Slicer[int]
-			if upgrade.Upgrade(w, &ls) {
-				assert.Equal(t, tc.expected, ls.Slice(nil))
-			}
-
-			got := iter.Appender[int]().
-				Iter(nil, it)
+			got = iter.Appender[int]().
+				Iter(got[:0], it)
 			assert.Equal(t, tc.expected, got)
 
 			_, done := it.Next()
