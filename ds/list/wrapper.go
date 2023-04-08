@@ -45,3 +45,8 @@ func (w Wrapper[T]) IterFactory() liter.Factory[T] {
 func Slice[T any](s []T) Wrapper[T] {
 	return Wrap(slice.New(s))
 }
+
+// Reverse the list.
+func (w Wrapper[T]) Reverse() Wrapper[T] {
+	return Reverse[T](w).Wrap()
+}
