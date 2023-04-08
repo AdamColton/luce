@@ -43,3 +43,8 @@ func (w Wrapper[T]) IterFactory() iter.Factory[T] {
 		return
 	}
 }
+
+// Reverse the list.
+func (w Wrapper[T]) Reverse() Wrapper[T] {
+	return Reverse[T](w).Wrap()
+}
