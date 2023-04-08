@@ -31,3 +31,15 @@ func (m Multi[T]) Contains(t T) bool {
 	}
 	return false
 }
+
+// AllContain returns true if every Set in Multi contains t. The slice is
+// checked in order under the assumption that the slice is sorted from smallest
+// to largest.
+func (m Multi[T]) AllContain(t T) bool {
+	for _, s := range m {
+		if !s.Contains(t) {
+			return false
+		}
+	}
+	return true
+}
