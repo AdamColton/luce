@@ -1,6 +1,7 @@
 package list
 
 import (
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/liter"
 )
 
@@ -43,4 +44,10 @@ func (w Wrapper[T]) IterFactory() liter.Factory[T] {
 // Reverse the list.
 func (w Wrapper[T]) Reverse() Wrapper[T] {
 	return Reverse[T](w).Wrap()
+}
+
+// ToSlice converts a List to slice. If the underlying List implements Slicer,
+// that will be invoked.
+func (w Wrapper[T]) ToSlice(buf []T) []T {
+	return slice.IterSlice[T](w.Iter(), buf)
 }
