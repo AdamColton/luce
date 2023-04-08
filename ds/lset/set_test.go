@@ -45,4 +45,7 @@ func TestMulti(t *testing.T) {
 
 	m.Sort()
 	assert.Equal(t, lset.Multi[int]{s2, s3, s1}, m)
+
+	assert.True(t, m.Contains(3))
+	assert.False(t, m.Contains(10))
 }
