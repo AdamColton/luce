@@ -1,6 +1,7 @@
 package list
 
 import (
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/liter"
 )
 
@@ -38,4 +39,9 @@ func (w Wrapper[T]) IterFactory() liter.Factory[T] {
 		t, done = it.Next()
 		return
 	}
+}
+
+// Slice wraps a slice.Slice.
+func Slice[T any](s []T) Wrapper[T] {
+	return Wrap(slice.New(s))
 }
