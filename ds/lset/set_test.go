@@ -33,3 +33,13 @@ func TestSet(t *testing.T) {
 	s2 = s.Copy()
 	assert.Equal(t, s, s2)
 }
+
+func TestMulti(t *testing.T) {
+	s1 := lset.New(1, 2, 3, 4)
+	s2 := lset.New(4, 5)
+	s3 := lset.New(5, 6, 7)
+	m := lset.NewMulti(s1, s2, s3)
+
+	m.Sort()
+	assert.Equal(t, lset.Multi[int]{s2, s3, s1}, m)
+}
