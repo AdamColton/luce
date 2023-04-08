@@ -3,6 +3,7 @@ package list
 import (
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/liter"
+	"github.com/adamcolton/luce/util/upgrade"
 )
 
 // Wrapper provides a number of useful methods that can be applied to any List.
@@ -50,4 +51,14 @@ func Slice[T any](s []T) Wrapper[T] {
 // is not changed.
 func (w Wrapper[T]) Reverse() Wrapper[T] {
 	return Reverse[T](w).Wrap()
+}
+
+// Slice converts a List to a slice. If the underlying List (possibly through a
+// Wrapper) fulfills slice.Slicer, that will be invoked. Otherwise the values are
+// copied into buf if it has enough capacity, or a new slice if not.
+func (w Wrapper[T]) Slice(buf []T) []T {
+	if s, ok := upgrade.To[slice.Slicer[T]](w.List); ok {
+		return s.Slice(buf)
+	}
+	return slice.FromIter(w.Iter(), buf)
 }
