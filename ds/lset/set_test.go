@@ -35,9 +35,9 @@ func TestSet(t *testing.T) {
 }
 
 func TestMulti(t *testing.T) {
-	s1 := lset.New(1, 2, 3, 4)
-	s2 := lset.New(4, 5)
-	s3 := lset.New(5, 6, 7)
+	s1 := lset.New(1, 2, 3, 4, 8)
+	s2 := lset.New(1, 4, 5)
+	s3 := lset.New(1, 5, 6, 7)
 	m := lset.NewMulti(s1, s2, s3)
 
 	m.Sort()
@@ -45,4 +45,7 @@ func TestMulti(t *testing.T) {
 
 	assert.True(t, m.Contains(3))
 	assert.False(t, m.Contains(10))
+
+	assert.True(t, m.AllContain(1))
+	assert.False(t, m.AllContain(5))
 }
