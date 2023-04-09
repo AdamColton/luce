@@ -25,3 +25,13 @@ func TestScanner(t *testing.T) {
 	assert.Equal(t, 4, s.I)
 	assert.True(t, s.Done())
 }
+
+func TestFactory(t *testing.T) {
+	i := lstr.
+		ScannerFactory("thisisatest").
+		Seek(lstr.Rune('a').Matches)
+
+	s := i.(*lstr.Scanner)
+	assert.Equal(t, 'a', s.Rune)
+	assert.Equal(t, "thisis", string(s.Str[:s.I]))
+}
