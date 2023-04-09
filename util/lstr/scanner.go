@@ -21,6 +21,16 @@ type Scanner struct {
 	Size int
 }
 
+// ScannerFactory creates a function to fulfill liter.Factory[rune] that is
+// backed by a Scanner.
+func ScannerFactory(str string) liter.Factory[rune] {
+	return func() (i liter.Iter[rune], r rune, done bool) {
+		i = NewScanner(str)
+		r, done = i.Cur()
+		return
+	}
+}
+
 // NewScanner creates a Scanner for the string.
 func NewScanner(str string) *Scanner {
 	s := &Scanner{
