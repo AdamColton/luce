@@ -63,6 +63,15 @@ func TestLists(t *testing.T) {
 			expected: []int{5, 1, 4, 1, 3},
 			Wrapper:  list.Slice(pi).Reverse(),
 		},
+		"Transformer": {
+			expected: []int{20, 5, 19, 20, 9, 14, 7},
+			Wrapper: list.Transformer[rune, int]{
+				List: list.Slice([]rune("testing")),
+				Fn: func(r rune) int {
+					return int(r) - int('a') + 1
+				},
+			}.Wrap(),
+		},
 	}
 
 	for n, tc := range tt {
