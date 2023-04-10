@@ -2,9 +2,11 @@ package list_test
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/adamcolton/luce/ds/list"
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/liter"
 	"github.com/adamcolton/luce/util/upgrade"
 	"github.com/stretchr/testify/assert"
@@ -62,6 +64,15 @@ func TestLists(t *testing.T) {
 			expected: []int{5, 1, 4, 1, 3},
 			Wrapper:  list.Slice(pi).Reverse(),
 		},
+		"Transformer": {
+			expected: []int{20, 5, 19, 20, 9, 14, 7},
+			Wrapper: list.Transformer[rune, int]{
+				List: list.Slice([]rune("testing")),
+				Fn: func(r rune) int {
+					return int(r) - int('a') + 1
+				},
+			}.Wrap(),
+		},
 	}
 
 	for n, tc := range tt {
@@ -97,4 +108,11 @@ func TestLists(t *testing.T) {
 			assert.True(t, done)
 		})
 	}
+}
+
+func TestTransformSlice(t *testing.T) {
+	l := slice.New([]int{1, 2, 3, 4, 5})
+	got := list.TransformSlice(l, strconv.Itoa).ToSlice(nil)
+	expected := []string{"1", "2", "3", "4", "5"}
+	assert.Equal(t, expected, got)
 }
