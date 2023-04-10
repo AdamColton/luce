@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/ds/list"
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/liter"
 	"github.com/adamcolton/luce/util/upgrade"
 	"github.com/stretchr/testify/assert"
@@ -61,6 +62,15 @@ func TestLists(t *testing.T) {
 		"Reverse": {
 			expected: []int{5, 1, 4, 1, 3},
 			Wrapper:  list.Slice(pi).Reverse(),
+		},
+		"Transformer": {
+			expected: []int{20, 5, 19, 20, 9, 14, 7},
+			Wrapper: list.NewTransformer(
+				slice.New([]rune("testing")),
+				list.TransformAny(func(r rune) int {
+					return int(r) - int('a') + 1
+				}),
+			),
 		},
 	}
 
