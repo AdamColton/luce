@@ -60,6 +60,18 @@ func TestIterSeek(t *testing.T) {
 }
 
 func TestIterFor(t *testing.T) {
+	si := &sliceIter[byte]{
+		Slice: []byte("hello"),
+	}
+	out := ""
+	fn := func(b byte) {
+		out += string(b)
+	}
+	iter.For[byte](si, fn)
+	assert.Equal(t, "hello", out)
+}
+
+func TestIterForIdx(t *testing.T) {
 	s := []int{3, 1, 4, 1, 5, 9}
 	si := &sliceIter[int]{
 		Slice: s,
@@ -67,6 +79,6 @@ func TestIterFor(t *testing.T) {
 	fn := func(i, idx int) {
 		assert.Equal(t, s[idx], i)
 	}
-	c := iter.For[int](si, fn)
+	c := iter.ForIdx[int](si, fn)
 	assert.Len(t, s, c)
 }
