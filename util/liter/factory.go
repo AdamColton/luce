@@ -11,3 +11,10 @@ func (f Factory[T]) Seek(fn func(t T) bool) Iter[T] {
 	i, t, done := f()
 	return seek(i, t, done, fn)
 }
+
+// For creates a new Iter from the factory and calls fn sequentially for each
+// value Iter.
+func (f Factory[T]) For(fn func(t T)) {
+	i, t, done := f()
+	fr(i, t, done, fn)
+}
