@@ -195,3 +195,13 @@ func TestFactorySeek(t *testing.T) {
 	assert.Len(t, s, idx)
 	assert.Nil(t, it)
 }
+
+func TestFactoryFor(t *testing.T) {
+	var sf liter.Factory[byte] = sliceFactory([]byte("hello"))
+	out := ""
+	fn := func(b byte) {
+		out += string(b)
+	}
+	sf.For(fn)
+	assert.Equal(t, "hello", out)
+}
