@@ -14,3 +14,11 @@ func fr[T any](i Iter[T], t T, done bool, fn func(t T)) {
 		fn(t)
 	}
 }
+
+func frIdx[T any](i Iter[T], t T, done bool, fn func(t T, idx int)) int {
+	start := i.Idx()
+	for ; !done; t, done = i.Next() {
+		fn(t, i.Idx())
+	}
+	return i.Idx() - start
+}
