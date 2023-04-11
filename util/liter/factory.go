@@ -16,3 +16,9 @@ func (f Factory[T]) For(fn func(t T)) {
 	i, t, done := f()
 	fr(i, t, done, fn)
 }
+
+// Each calls fn sequentially for each value Iter.
+func (f Factory[T]) Each(fn EachFn[T]) {
+	i, t, done := f()
+	each(i, t, done, fn)
+}
