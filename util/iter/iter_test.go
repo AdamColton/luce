@@ -205,3 +205,14 @@ func TestFactoryFor(t *testing.T) {
 	sf.For(fn)
 	assert.Equal(t, "hello", out)
 }
+
+func TestFactoryForIdx(t *testing.T) {
+	s := []int{3, 1, 4, 1, 5, 9}
+	var sf iter.Factory[int] = sliceFactory(s)
+
+	fn := func(i, idx int) {
+		assert.Equal(t, s[idx], i)
+	}
+	c := sf.ForIdx(fn)
+	assert.Len(t, s, c)
+}
