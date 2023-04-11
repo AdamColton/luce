@@ -14,3 +14,12 @@ func fr[T any](i Iter[T], t T, done bool, fn func(t T)) {
 		fn(t)
 	}
 }
+
+func each[T any](i Iter[T], t T, iterDone bool, fn EachFn[T]) int {
+	start := i.Idx()
+
+	for fnDone := false; !iterDone && !fnDone; t, iterDone = i.Next() {
+		fn(i.Idx(), t, &fnDone)
+	}
+	return i.Idx() - start
+}
