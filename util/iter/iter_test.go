@@ -105,3 +105,15 @@ func ExampleFor() {
 	// 5
 	// 9
 }
+
+func TestIterForIdx(t *testing.T) {
+	s := []int{3, 1, 4, 1, 5, 9}
+	si := &sliceIter[int]{
+		Slice: s,
+	}
+	fn := func(i, idx int) {
+		assert.Equal(t, s[idx], i)
+	}
+	c := iter.ForIdx[int](si, fn)
+	assert.Len(t, s, c)
+}
