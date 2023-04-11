@@ -39,3 +39,14 @@ func For[T any](i Iter[T], fn func(t T)) {
 	t, done := i.Cur()
 	fr(i, t, done, fn)
 }
+
+// EachFn is called by Each for each value. idx is the index of the value, and
+// setting done to true stops the iteration after this call.
+type EachFn[T any] = func(idx int, t T, done *bool)
+
+// Each calls fn sequentially for each value Iter, and returns how far the index
+// moved. This does not reset the iterator.
+func Each[T any](i Iter[T], fn EachFn[T]) int {
+	t, done := i.Cur()
+	return each(i, t, done, fn)
+}
