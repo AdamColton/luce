@@ -16,3 +16,10 @@ func (f Factory[T]) For(fn func(t T)) {
 	i, t, done := f()
 	fr(i, t, done, fn)
 }
+
+// ForIdx calls fn sequentially for each value Iter. This does not reset the
+// iterator.
+func (f Factory[T]) ForIdx(fn func(t T, idx int)) int {
+	i, t, done := f()
+	return frIdx(i, t, done, fn)
+}
