@@ -33,3 +33,12 @@ func For[T any](i Iter[T], fn func(t T)) {
 	t, done := i.Cur()
 	fr(i, t, done, fn)
 }
+
+type EachFn[T any] = func(idx int, t T, done *bool)
+
+// For calls fn sequentially for each value Iter. This does not reset the
+// iterator.
+func Each[T any](i Iter[T], fn EachFn[T]) int {
+	t, done := i.Cur()
+	return each(i, t, done, fn)
+}
