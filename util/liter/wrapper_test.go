@@ -67,3 +67,16 @@ func TestWrapperSeek(t *testing.T) {
 	assert.Len(t, si.Slice, idx)
 	assert.Nil(t, it)
 }
+
+func TestWrapperFor(t *testing.T) {
+	si := &sliceIter[byte]{
+		Slice: []byte("hello"),
+	}
+	w := si.Wrap()
+	out := ""
+	fn := func(b byte) {
+		out += string(b)
+	}
+	w.For(fn)
+	assert.Equal(t, "hello", out)
+}
