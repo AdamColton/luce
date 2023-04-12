@@ -80,3 +80,21 @@ func TestWrapperFor(t *testing.T) {
 	w.For(fn)
 	assert.Equal(t, "hello", out)
 }
+
+func TestWrapperForIdx(t *testing.T) {
+	si := &sliceIter[int]{
+		Slice: []int{3, 1, 4, 1, 5, 9},
+	}
+	w := si.Wrap()
+
+	c := 0
+	si.idx = 0
+	each := func(idx, i int, done *bool) {
+		c++
+		*done = i == 5
+		assert.Equal(t, si.Slice[idx], i)
+		assert.NotEqual(t, 6, i)
+	}
+	w.Each(each)
+	assert.Equal(t, 5, c)
+}
