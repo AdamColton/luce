@@ -12,3 +12,8 @@ func Wrap[T any](i Iter[T]) Wrapper[T] {
 	}
 	return Wrapper[T]{i}
 }
+
+// Wrapped fulfills upgrade.Wrapper.
+func (w Wrapper[T]) Wrapped() any {
+	return w.Iter
+}
