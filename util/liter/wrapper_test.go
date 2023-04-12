@@ -2,6 +2,7 @@ package liter_test
 
 import (
 	"fmt"
+	"sync/atomic"
 	"testing"
 
 	"github.com/adamcolton/luce/util/liter"
@@ -91,4 +92,18 @@ func TestWrapperForIdx(t *testing.T) {
 	}
 	c := w.ForIdx(fn)
 	assert.Len(t, si.Slice, c)
+}
+
+func TestWrapperConcurrent(t *testing.T) {
+	si := &sliceIter[int]{
+		Slice: []int{3, 1, 4, 1, 5, 9},
+	}
+	w := si.Wrap()
+	var c int32
+	wg := w.Concurrent(func(i, idx int) {
+		assert.Equal(t, si.Slice[idx], i)
+		atomic.AddInt32(&c, 1)
+	})
+	wg.Wait()
+	assert.Len(t, si.Slice, int(c))
 }
