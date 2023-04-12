@@ -50,3 +50,10 @@ func (w Wrapper[T]) Concurrent(fn func(t T, idx int)) *sync.WaitGroup {
 	t, done := w.Cur()
 	return concurrent(w.Iter, t, done, fn)
 }
+
+// Channel creates a chan with size buf and places each value from Iter on the
+// channel until Done is true. This does not reset the iterator.
+func (w Wrapper[T]) Channel(buf int) <-chan T {
+	t, done := w.Cur()
+	return channel(w.Iter, t, done, buf)
+}
