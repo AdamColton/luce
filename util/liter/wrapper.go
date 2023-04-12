@@ -24,3 +24,10 @@ func (w Wrapper[T]) Seek(fn func(t T) bool) Iter[T] {
 	t, done := w.Cur()
 	return seek(w.Iter, t, done, fn)
 }
+
+// For calls fn sequentially for each value Iter. This does not reset the
+// iterator.
+func (w Wrapper[T]) For(fn func(t T)) {
+	t, done := w.Cur()
+	fr(w.Iter, t, done, fn)
+}
