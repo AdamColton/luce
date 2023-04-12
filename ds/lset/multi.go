@@ -1,6 +1,7 @@
 package lset
 
 import (
+	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/ds/slice"
 )
 
@@ -42,4 +43,25 @@ func (m Multi[T]) AllContain(t T) bool {
 		}
 	}
 	return true
+}
+
+// Intersection returns a set containing any value present in all sets.
+func (m Multi[T]) Intersection() *Set[T] {
+	if len(m) == 0 {
+		return nil
+	}
+	if len(m) == 1 {
+		return m[0].Copy()
+	}
+	out := &Set[T]{
+		m: lmap.Empty[T, flag](m[0].Len()),
+	}
+	m1 := m[1:]
+	m[0].m.Each(func(key T, val flag) (done bool) {
+		if m1.AllContain(key) {
+			out.m.Set(key, flag{})
+		}
+		return false
+	})
+	return out
 }
