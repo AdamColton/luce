@@ -23,3 +23,10 @@ func (r Reducer[A, T]) Factory(aggregate A, f Factory[T]) A {
 	i, t, done := f()
 	return r.reduce(t, done, i.Idx(), aggregate, i)
 }
+
+// Appender creates a reducer that appends to a slice.
+func Appender[T any]() Reducer[[]T, T] {
+	return func(aggregate []T, element T, idx int) []T {
+		return append(aggregate, element)
+	}
+}
