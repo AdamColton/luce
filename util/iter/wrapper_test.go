@@ -107,3 +107,17 @@ func TestWrapperConcurrent(t *testing.T) {
 	wg.Wait()
 	assert.Len(t, si.Slice, int(c))
 }
+
+func TestWrapperChannel(t *testing.T) {
+	si := &sliceIter[int]{
+		Slice: []int{3, 1, 4, 1, 5, 9},
+	}
+	w := si.Wrap()
+
+	idx := 0
+	for i := range w.Channel(0) {
+		assert.Equal(t, si.Slice[idx], i)
+		idx++
+	}
+	assert.Len(t, si.Slice, idx)
+}
