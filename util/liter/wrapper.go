@@ -31,3 +31,10 @@ func (w Wrapper[T]) For(fn func(t T)) {
 	t, done := w.Cur()
 	fr(w.Iter, t, done, fn)
 }
+
+// Each calls fn sequentially for each value Iter. This does not reset the
+// iterator.
+func (w Wrapper[T]) Each(fn EachFn[T]) {
+	t, done := w.Cur()
+	each(w.Iter, t, done, fn)
+}
