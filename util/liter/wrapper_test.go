@@ -2,6 +2,7 @@ package liter_test
 
 import (
 	"fmt"
+	"sync/atomic"
 	"testing"
 
 	"github.com/adamcolton/luce/util/liter"
@@ -97,4 +98,32 @@ func TestWrapperForIdx(t *testing.T) {
 	}
 	w.Each(each)
 	assert.Equal(t, 5, c)
+}
+
+func TestWrapperConcurrent(t *testing.T) {
+	si := &sliceIter[int]{
+		Slice: make([]int, 1000),
+	}
+	for i := range si.Slice {
+		si.Slice[i] = i + 100 // just to make sure they're not equal and can't be flipped
+	}
+	w := si.Wrap()
+	var c int32
+	wg := w.Concurrent(func(idx, i int, done *bool) {
+		assert.Equal(t, si.Slice[idx], i)
+		atomic.AddInt32(&c, 1)
+	})
+	wg.Wait()
+	assert.Len(t, si.Slice, int(c))
+
+	c = 0
+	si.idx = 0
+	stop := len(si.Slice) / 2
+	wg = w.Concurrent(func(idx, i int, done *bool) {
+		*done = idx > stop
+		assert.Equal(t, si.Slice[idx], i)
+		atomic.AddInt32(&c, 1)
+	})
+	wg.Wait()
+	assert.InDelta(t, stop, c, 50)
 }

@@ -245,7 +245,9 @@ func TestFactoryConcurrent(t *testing.T) {
 		Slice: make([]int, 1000),
 	}
 	for i := range s.Slice {
-		s.Slice[i] = i + 100 // just to make sure they're not equal and can't be flipped
+		// Just to make sure they're not equal which would risk false positives
+		// when comparing the values.
+		s.Slice[i] = i + 100
 	}
 	var sf liter.Factory[int] = sliceFactory(s.Slice)
 	var c int32

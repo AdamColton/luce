@@ -1,5 +1,9 @@
 package liter
 
+import (
+	"sync"
+)
+
 // Wrapper provides useful methods that can be applied to any Iter.
 type Wrapper[T any] struct {
 	Iter[T]
@@ -38,4 +42,12 @@ func (w Wrapper[T]) For(fn func(t T)) {
 func (w Wrapper[T]) Each(fn EachFn[T]) {
 	t, done := w.Cur()
 	each(w.Iter, t, done, fn)
+}
+
+// Concurrent calls fn in a Go routine for each value Iter returns until Done is
+// true. The returned WaitGroup will reach zero when all Go routines return.
+// This does not reset the iterator.
+func (w Wrapper[T]) Concurrent(fn EachFn[T]) *sync.WaitGroup {
+	t, done := w.Cur()
+	return concurrent(w.Iter, t, done, fn)
 }
