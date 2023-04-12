@@ -23,5 +23,12 @@ func TestReduce(t *testing.T) {
 
 	var sf iter.Factory[int] = sliceFactory(s)
 	assert.Equal(t, 9, max.Factory(100, sf))
+}
 
+func TestAppend(t *testing.T) {
+	s := &sliceIter[int]{
+		Slice: []int{3, 1, 4, 1, 5, 9},
+	}
+	got := iter.Appender[int]().Iter(nil, s)
+	assert.Equal(t, s.Slice, got)
 }
