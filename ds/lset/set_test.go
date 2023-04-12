@@ -49,3 +49,21 @@ func TestMulti(t *testing.T) {
 	assert.True(t, m.AllContain(1))
 	assert.False(t, m.AllContain(5))
 }
+
+func TestMultiIntersection(t *testing.T) {
+	s1 := lset.New(1, 2, 3, 4, 5)
+	s2 := lset.New(1, 2, 6, 7)
+	s3 := lset.New(1, 2, 8, 9)
+	m := lset.Multi[int]{s1, s2, s3}
+
+	m.Sort()
+	i := m.Intersection()
+	got := slice.LT[int]().Sort(i.Slice(nil))
+	assert.Equal(t, []int{1, 2}, got)
+
+	m = lset.Multi[int]{}
+	assert.Nil(t, m.Intersection())
+
+	m = lset.Multi[int]{s1}
+	assert.Equal(t, s1, m.Intersection())
+}
