@@ -17,3 +17,10 @@ func Wrap[T any](i Iter[T]) Wrapper[T] {
 func (w Wrapper[T]) Wrapped() any {
 	return w.Iter
 }
+
+// Seek calls fn sequentially for each value Iter returns until Done is true.
+// This does not reset the iterator.
+func (w Wrapper[T]) Seek(fn func(t T) bool) Iter[T] {
+	t, done := w.Cur()
+	return seek(w.Iter, t, done, fn)
+}
