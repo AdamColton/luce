@@ -85,7 +85,7 @@ func (c *Corpus) find(terms ...string) *docSet {
 
 func (c *Corpus) findSingle(word string) *docSet {
 	var ws words
-	for _, n := range c.roots.Contains(root(word)) {
+	for _, n := range c.roots.Containing(root(word)) {
 		for _, w := range n.AllWords() {
 			g := w.Gram()
 			w := c.wordsByStr[g]

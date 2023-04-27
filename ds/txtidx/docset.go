@@ -52,7 +52,7 @@ func (ds *docSet) Intersect(with DocSet) DocSet {
 
 func (ds *docSet) intersect(with *docSet) *docSet {
 	return &docSet{
-		t: lset.And(ds.t, with.t),
+		t: lset.Multi[DocID]{ds.t, with.t}.Intersection(),
 	}
 }
 
@@ -61,7 +61,7 @@ func (ds *docSet) IntersectMerge(with DocSet) {
 }
 
 func (ds *docSet) intersectMerge(with *docSet) {
-	ds.t = lset.And(ds.t, with.t)
+	ds.t = lset.Multi[DocID]{ds.t, with.t}.Intersection()
 }
 
 func (ds *docSet) Union(with DocSet) DocSet {
@@ -69,9 +69,11 @@ func (ds *docSet) Union(with DocSet) DocSet {
 }
 
 func (ds *docSet) union(with *docSet) *docSet {
-	return &docSet{
-		t: lset.Or(ds.t, with.t),
+	out := &docSet{
+		t: ds.t.Copy(),
 	}
+	out.t.AddAll(with.t)
+	return out
 }
 
 func (ds *docSet) Merge(with DocSet) {
