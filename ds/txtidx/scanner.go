@@ -19,7 +19,7 @@ func buildSearch(s *lstr.Scanner) search {
 	out := search{}
 	exactStart := -1
 	start := -1
-	for ; !s.Done(); s.Next() {
+	for done := false; !done; _, done = s.Next() {
 		if s.Rune == '"' {
 			if exactStart == -1 {
 				exactStart = s.I + 1

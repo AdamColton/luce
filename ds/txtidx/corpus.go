@@ -73,7 +73,6 @@ func (c *Corpus) find(terms ...string) *docSet {
 	}
 
 	out := c.findSingle(terms[0])
-
 	for _, w := range terms[1:] {
 		if out == nil {
 			break
