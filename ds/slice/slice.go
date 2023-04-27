@@ -81,3 +81,9 @@ func (s Slice[T]) Remove(idxs ...int) Slice[T] {
 	}
 	return s[:ln]
 }
+
+// Buffer is syntactic sugar to convert a Slice to a Buffer providing a set
+// of methods useful for buffering operations.
+func (s Slice[T]) Buffer() Buffer[T] {
+	return Buffer[T](s)
+}
