@@ -115,3 +115,7 @@ func (s Slice[T]) Remove(idxs ...int) Slice[T] {
 	}
 	return s[:ln]
 }
+
+func (s Slice[T]) Buffer() Buffer[T] {
+	return Buffer[T](s)
+}
