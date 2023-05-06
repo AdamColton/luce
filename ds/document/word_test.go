@@ -20,3 +20,18 @@ func TestRoot(t *testing.T) {
 		})
 	}
 }
+
+func TestVariant(t *testing.T) {
+	tt := []string{
+		"Test",
+		"TEST",
+		"tesTIng. ",
+	}
+
+	for _, word := range tt {
+		t.Run(word, func(t *testing.T) {
+			rt, v := document.RootVariant(word)
+			assert.Equal(t, word, v.Apply(rt, nil))
+		})
+	}
+}
