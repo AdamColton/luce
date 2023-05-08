@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	mIsLetterNumber = lstr.Or{lstr.IsLetter, lstr.IsNumber}
+	mIsLetterNumber    = lstr.Or{lstr.IsLetter, lstr.IsNumber}
+	mNotIsLetterNumber = lstr.Not{mIsLetterNumber}
 )
 
 // Root find the prefix of the string containing letters and numbers.
@@ -55,7 +56,7 @@ func findVariant(root, str string) Variant {
 // Apply a variant to a word. It is expected that the root is all lower case.
 // The casing will be changed according the variant and non-alphanumeric
 // runes will be appended.
-func (v Variant) Apply(root string, buf []byte) string {
+func (v Variant) Apply(root string, buf []byte) []byte {
 	b := &rye.Bits{
 		Data: []byte(v),
 	}
@@ -72,7 +73,7 @@ func (v Variant) Apply(root string, buf []byte) string {
 	}
 
 	buf = append(buf, v[divUp(b.Idx, 8):]...)
-	return string(buf)
+	return buf
 }
 
 // divUp division round up
@@ -82,4 +83,19 @@ func divUp(a, b int) int {
 		out++
 	}
 	return out
+}
+
+func Parse(str string) (string, []string) {
+	s := lstr.NewScanner(str)
+	s.Many(mNotIsLetterNumber)
+	start := string(s.Str[:s.I])
+
+	var words []string
+	for !s.Done() {
+		start := s.I
+		s.Many(mIsLetterNumber)
+		s.Many(mNotIsLetterNumber)
+		words = append(words, string(s.Str[start:s.I]))
+	}
+	return start, words
 }
