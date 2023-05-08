@@ -31,7 +31,7 @@ func TestVariant(t *testing.T) {
 	for _, word := range tt {
 		t.Run(word, func(t *testing.T) {
 			rt, v := document.RootVariant(word)
-			assert.Equal(t, word, v.Apply(rt, nil))
+			assert.Equal(t, word, string(v.Apply(rt, nil)))
 		})
 	}
 }
