@@ -32,6 +32,31 @@ func TestSet(t *testing.T) {
 
 	s2 = s.Copy()
 	assert.Equal(t, s, s2)
+
+	got := make([]int, 0, s.Len())
+	s.Each(func(i int, done *bool) {
+		got = append(got, i)
+	})
+	assert.Equal(t, []int{3, 4, 5, 6, 7, 9}, slice.LT[int]().Sort(got))
+
+	got = got[:0]
+	s.Each(func(i int, done *bool) {
+		got = append(got, i)
+		*done = len(got) >= 3
+	})
+	assert.Len(t, got, 3)
+}
+
+func TestEachNoNilPanic(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Error(r)
+		}
+	}()
+	var s *lset.Set[string]
+	s.Each(func(str string, done *bool) {
+		t.Error("this should not be reached")
+	})
 }
 
 func TestMulti(t *testing.T) {
