@@ -79,3 +79,41 @@ func (s *Set[T]) AddAll(set *Set[T]) {
 		s.m.Set(key, flag{})
 	})
 }
+
+// IterFunc is the func type for Each. Setting done to true stops the iteration.
+type IterFunc[T any] func(t T, done *bool)
+
+// Each calls fn for each element in the set, in no particular order. This avoids
+// the allocation of creating a slice when iterating over the values. If the Set
+// is nil, fn is not called.
+func (s *Set[T]) Each(fn IterFunc[T]) {
+	if s == nil {
+		return
+	}
+	s.m.Each(func(key T, val flag, done *bool) {
+		fn(key, done)
+	})
+}
+
+// All calls the function for every element in the set, in no particular order.
+// If the Set is nil, fn is not called.
+func (s *Set[T]) All(fn func(t T)) {
+	if s == nil {
+		return
+	}
+	s.m.Each(func(key T, val flag, done *bool) {
+		fn(key)
+	})
+}
+
+// SortedEach first sorts the values with less, using buf if it has sufficient
+// capacity, and calls fn with the values in that order. Setting done stops the
+// iteration. If the Set is nil, fn is not called.
+func (s *Set[T]) SortedEach(less slice.Less[T], buf []T, fn IterFunc[T]) {
+	if s == nil {
+		return
+	}
+	s.m.SortedEachKey(less, buf, func(key T, val flag, done *bool) {
+		fn(key, done)
+	})
+}
