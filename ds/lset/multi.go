@@ -57,11 +57,10 @@ func (m Multi[T]) Intersection() *Set[T] {
 		m: lmap.Empty[T, flag](m[0].Len()),
 	}
 	m1 := m[1:]
-	m[0].m.Each(func(key T, val flag) (done bool) {
+	m[0].m.Each(func(key T, val flag, done *bool) {
 		if m1.AllContain(key) {
 			out.m.Set(key, flag{})
 		}
-		return false
 	})
 	return out
 }
