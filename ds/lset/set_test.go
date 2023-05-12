@@ -33,8 +33,47 @@ func TestSet(t *testing.T) {
 	s2 = s.Copy()
 	assert.Equal(t, s, s2)
 
+	got := slice.Make[int](0, s.Len())
+	s.Each(func(i int, done *bool) {
+		got = append(got, i)
+	})
+	got.Sort(lt)
+	expected := slice.New([]int{3, 4, 5, 6, 7, 9})
+	assert.Equal(t, expected, got)
+
+	got = got[:0]
+	s.All(func(i int) {
+		got = append(got, i)
+	})
+	got.Sort(lt)
+	assert.Equal(t, expected, got)
+
+	got = got[:0]
+	s.Each(func(i int, done *bool) {
+		got = append(got, i)
+		*done = len(got) >= 3
+	})
+	assert.Len(t, got, 3)
+
+	// calling All on a nil set should not panic
+	(*lset.Set[int])(nil).All(func(i int) {
+		t.Error("should not invoke any values on nil set")
+	})
+
 	s = nil
 	assert.Nil(t, s.Slice(nil))
+}
+
+func TestEachNoNilPanic(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Error(r)
+		}
+	}()
+	var s *lset.Set[string]
+	s.Each(func(str string, done *bool) {
+		t.Error("this should not be reached")
+	})
 }
 
 func TestMulti(t *testing.T) {
