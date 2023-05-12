@@ -52,3 +52,9 @@ func (s *Set[T]) AddAll(set *Set[T]) {
 		s.m[k] = flag{}
 	}
 }
+
+func (s *Set[T]) Each(fn func(T)) {
+	for t := range s.m {
+		fn(t)
+	}
+}
