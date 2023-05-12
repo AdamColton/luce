@@ -65,3 +65,16 @@ func (s *Set[T]) AddAll(set *Set[T]) {
 		s.m[k] = flag{}
 	}
 }
+
+// Each calls fn for each element in the set. This avoids the allocation of
+// creating a slice when iterating over the values.
+func (s *Set[T]) Each(fn func(T) (done bool)) {
+	if s == nil {
+		return
+	}
+	for t := range s.m {
+		if done := fn(t); done {
+			break
+		}
+	}
+}
