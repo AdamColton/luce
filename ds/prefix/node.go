@@ -33,6 +33,16 @@ func (ns Nodes) Strings() list.Wrapper[string] {
 	}.Wrap()
 }
 
+func (ns Nodes) AllWords() Nodes {
+	m := make(map[*node]Node)
+	for _, n := range ns {
+		for _, wn := range n.AllWords() {
+			m[wn.(*node)] = wn
+		}
+	}
+	return Nodes(slice.Vals(m))
+}
+
 type node struct {
 	isWord        bool
 	r             rune
