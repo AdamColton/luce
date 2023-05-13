@@ -50,3 +50,12 @@ func (n *huffNode[T]) ReadAll(b *rye.Bits) []T {
 	}
 	return out
 }
+
+func (n *huffNode[T]) All(fn func(T)) {
+	if n.branch[0] == nil {
+		fn(n.v)
+	} else {
+		n.branch[0].All(fn)
+		n.branch[1].All(fn)
+	}
+}
