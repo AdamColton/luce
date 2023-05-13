@@ -39,6 +39,18 @@ func (ns Nodes) Strings() list.Wrapper[string] {
 	return gramTransform.List(slice.New(ns))
 }
 
+// AllWords returns the words among the nodes and among all of their
+// descendants, each once.
+func (ns Nodes) AllWords() Nodes {
+	m := lmap.New[*node, Node](nil)
+	for _, n := range ns {
+		for _, wn := range n.AllWords() {
+			m.Set(wn.(*node), wn)
+		}
+	}
+	return Nodes(m.Vals(nil))
+}
+
 type node struct {
 	isWord        bool
 	r             rune
