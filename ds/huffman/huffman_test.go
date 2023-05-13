@@ -43,6 +43,17 @@ func TestFromMap(t *testing.T) {
 	ht := MapNew(data)
 	assert.NotNil(t, ht)
 
+	{
+		lt := slice.LT[rune]()
+		expected := lt.Sort(slice.Keys(letters))
+		got := make([]rune, 0, len(expected))
+		ht.All(func(r rune) {
+			got = append(got, r)
+		})
+		lt.Sort(got)
+		assert.Equal(t, expected, got)
+	}
+
 	l := NewLookup(ht)
 	expectedBits := &rye.Bits{
 		Ln:   4,
