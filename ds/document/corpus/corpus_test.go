@@ -46,4 +46,7 @@ func TestCorpus(t *testing.T) {
 	c := corpus.New()
 	d := c.AddDoc(str)
 	assert.Equal(t, str, d.String())
+
+	ids := c.Find("gimble")
+	assert.Equal(t, []corpus.DocID{d.DocID}, ids)
 }
