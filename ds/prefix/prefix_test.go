@@ -40,13 +40,17 @@ func TestBasic(t *testing.T) {
 }
 
 func TestAllWords(t *testing.T) {
-	words := []string{"abcd", "abce", "abcf", "bbcd"}
+	words := []string{"abcdc", "abce", "abcf", "bbcd"}
 	p := prefix.New()
 	for _, w := range words {
 		p.Upsert(w)
 	}
 
 	got := p.Find("").AllWords().Strings().ToSlice(nil)
+	lt.Sort(got)
+	assert.Equal(t, words, got)
+
+	got = p.Containing("c").AllWords().Strings().ToSlice(nil)
 	lt.Sort(got)
 	assert.Equal(t, words, got)
 }
