@@ -11,6 +11,8 @@ import (
 type Tree[T any] interface {
 	Read(b *rye.Bits) T
 	ReadAll(b *rye.Bits) []T
+	// All visits every value in the Tree can calls the given func on each value
+	All(func(T))
 }
 
 // Frequency is used for constructing a Huffman Coding.
