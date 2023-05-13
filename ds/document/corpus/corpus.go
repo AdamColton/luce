@@ -1,6 +1,9 @@
 package corpus
 
-import "github.com/adamcolton/luce/ds/document"
+import (
+	"github.com/adamcolton/luce/ds/document"
+	"github.com/adamcolton/luce/ds/lset"
+)
 
 const (
 	MaxUint32    = ^uint32(0)
@@ -13,6 +16,7 @@ const (
 type Corpus struct {
 	Splitter    func(string) (string, []string)
 	RootVariant func(str string) (string, document.Variant)
+	Root        func(str string) string
 
 	cur struct {
 		RootID
@@ -31,11 +35,13 @@ func New() *Corpus {
 	return &Corpus{
 		Splitter:    document.Parse,
 		RootVariant: document.RootVariant,
-		id2root:     make(map[RootID]*root),
-		rootByStr:   make(map[string]*root),
-		variant2id:  make(map[string]VariantID),
-		id2variant:  make(map[VariantID]document.Variant),
-		docs:        make(map[DocID]*Document),
+		Root:        document.Root,
+
+		id2root:    make(map[RootID]*root),
+		rootByStr:  make(map[string]*root),
+		variant2id: make(map[string]VariantID),
+		id2variant: make(map[VariantID]document.Variant),
+		docs:       make(map[DocID]*Document),
 	}
 }
 
@@ -46,6 +52,7 @@ func (c *Corpus) WordToID(rStr string) RootID {
 		r = &root{
 			RootID: c.cur.RootID,
 			str:    rStr,
+			docs:   lset.New[DocID](),
 		}
 		c.rootByStr[rStr] = r
 		c.id2root[c.cur.RootID] = r
@@ -97,5 +104,18 @@ func (c *Corpus) AddDoc(str string) *Document {
 	}
 	c.cur.DocID++
 	c.docs[d.DocID] = d
+
+	for _, rID := range d.WordIDs() {
+		c.id2root[rID].docs.Add(d.DocID)
+	}
 	return d
+}
+
+// Find all documents containing a word
+func (c *Corpus) Find(word string) *lset.Set[DocID] {
+	r := c.rootByStr[c.Root(word)]
+	if r == nil {
+		return nil
+	}
+	return r.docs
 }
