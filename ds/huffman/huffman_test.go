@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/adamcolton/luce/ds/list"
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/serial/rye"
 	"github.com/stretchr/testify/assert"
@@ -68,7 +69,8 @@ func TestFromMap(t *testing.T) {
 
 	// round trip
 	expected := []rune("THISISATEST")
-	enc := Encode(expected, l)
+
+	enc := Encode[rune](list.Slice(expected), l)
 	got := ht.ReadAll(enc)
 	assert.Equal(t, expected, got)
 	assert.True(t, enc.Ln < len(expected)*8)
@@ -116,7 +118,7 @@ func TestTranslate(t *testing.T) {
 		[]byte("S"),
 		[]byte("T"),
 	}
-	enc := Encode(expected, l)
+	enc := Encode[[]byte](list.Slice(expected), l)
 	got := ht.ReadAll(enc)
 	assert.Equal(t, expected, got)
 	assert.True(t, enc.Ln < len(expected)*8)
@@ -140,7 +142,7 @@ func ExampleEncode_roundTrip() {
 	tree := MapNew(letterFrequencyMap)
 	l := NewLookup(tree)
 
-	bits := Encode([]rune("THISISATEST"), l)
+	bits := Encode[rune](list.Slice([]rune("THISISATEST")), l)
 	// Encoded length is 5, much less than the 11 characters
 	fmt.Println("Length:", len(bits.Data))
 
