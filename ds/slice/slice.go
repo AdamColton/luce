@@ -147,3 +147,14 @@ func (s Slice[T]) Shift() (T, Slice[T]) {
 	}
 	return s[0], s[1:ln]
 }
+
+// CheckCapacity ensures that Slice s has capacity c. If not, a new slice is
+// created with capacity c and the slice is copied.
+func (s Slice[T]) CheckCapacity(c int) Slice[T] {
+	if cap(s) >= c {
+		return s
+	}
+	out := make(Slice[T], len(s), c)
+	copy(out, s)
+	return out
+}
