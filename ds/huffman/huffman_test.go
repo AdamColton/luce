@@ -55,6 +55,8 @@ func TestFromMap(t *testing.T) {
 		assert.Equal(t, expected, got)
 	}
 
+	assert.Equal(t, len(data), ht.Len())
+
 	l := NewLookup(ht)
 	expectedBits := &rye.Bits{
 		Ln:   4,
