@@ -19,8 +19,10 @@ type Lookup[T any] interface {
 	All() []T
 }
 
-// Encode data to bits using the lookup. Calling Tree.ReadAll on these bits will
-// recover the original data. It panics if a value is not in the lookup.
+// Encode data to bits using the lookup. Calling Tree.Iter on these bits will
+// recover the original data. It panics if a value is not in the lookup. A Tree
+// with a single value gives that value zero bits, so the data cannot be
+// recovered from a Tree like that.
 func Encode[T any](data list.List[T], l Lookup[T]) *rye.Bits {
 	b := &rye.Bits{}
 	list.Wrap(data).Iter().For(func(t T) {
