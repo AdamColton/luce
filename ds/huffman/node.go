@@ -42,15 +42,6 @@ func (n *huffNode[T]) Read(b *rye.Bits) T {
 	return n.branch[b.Read()].Read(b)
 }
 
-// ReadAll bits, traversing the Huffman tree.
-func (n *huffNode[T]) ReadAll(b *rye.Bits) []T {
-	var out []T
-	for b.Idx < b.Ln {
-		out = append(out, n.Read(b))
-	}
-	return out
-}
-
 func (n *huffNode[T]) All(fn func(T)) {
 	if n.branch[0] == nil {
 		fn(n.v)
