@@ -112,3 +112,19 @@ func (s Slice[T]) Shift() (T, Slice[T]) {
 	}
 	return s[0], s[1:ln]
 }
+
+// CheckCapacity ensures that Slice s has capacity check. If not, a new slice is
+// created with capacity request and the slice is copied.
+//
+// If request is 0 (or any value less than check) then check is used. Request
+// can be used to avoid additional allocations. For instance, doubling the
+// capacity if there is insufficient space (as the underlying slice does in Go).
+func (s Slice[T]) CheckCapacity(check, request int) Slice[T] {
+	if cap(s) >= check {
+		return s
+	}
+	request = cmpr.Max(check, request)
+	out := make(Slice[T], len(s), request)
+	copy(out, s)
+	return out
+}
