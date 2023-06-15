@@ -71,10 +71,12 @@ func TestFromMap(t *testing.T) {
 	assert.Equal(t, expectedBits, l.Get('Z'))
 
 	// round trip
-	expected := []rune("THISISATEST")
+	expected := slice.Slice[rune]("THISISATEST")
 
 	enc := Encode[rune](list.Slice(expected), l)
-	got := ht.ReadAll(enc)
+
+	it, _, _ := ht.Iter(enc).Factory()
+	got := slice.FromIter(it, nil)
 	assert.Equal(t, expected, got)
 	assert.True(t, enc.Ln < len(expected)*8)
 
@@ -108,7 +110,7 @@ func TestTranslate(t *testing.T) {
 	assert.Equal(t, expectedBits, l.Get([]byte("Z")))
 
 	// round trip
-	expected := [][]byte{
+	expected := slice.Slice[[]byte]{
 		[]byte("T"),
 		[]byte("H"),
 		[]byte("I"),
@@ -121,8 +123,9 @@ func TestTranslate(t *testing.T) {
 		[]byte("S"),
 		[]byte("T"),
 	}
-	enc := Encode[[]byte](list.Slice(expected), l)
-	got := ht.ReadAll(enc)
+	enc := Encode(list.Slice(expected), l)
+
+	got := slice.FromIter(ht.Iter(enc), nil)
 	assert.Equal(t, expected, got)
 	assert.True(t, enc.Ln < len(expected)*8)
 
@@ -149,7 +152,7 @@ func ExampleEncode_roundTrip() {
 	// Encoded length is 5, much less than the 11 characters
 	fmt.Println("Length:", len(bits.Data))
 
-	str := string(tree.ReadAll(bits))
+	str := string(slice.FromIter(tree.Iter(bits), nil))
 	fmt.Println(str)
 
 	// Output:
