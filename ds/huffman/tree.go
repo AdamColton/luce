@@ -13,7 +13,20 @@ type Tree[T any] interface {
 	ReadAll(b *rye.Bits) []T
 	// All visits every value in the Tree can calls the given func on each value
 	All(func(T))
+	Len() int
+	private()
 }
+
+type tree[T any] struct {
+	ln int
+	*huffNode[T]
+}
+
+func (t tree[T]) Len() int {
+	return t.ln
+}
+
+func (t tree[T]) private() {}
 
 // Frequency is used for constructing a Huffman Coding.
 type Frequency[T any] struct {
@@ -29,7 +42,10 @@ func New[T any](data []Frequency[T]) Tree[T] {
 	}
 	sort.Slice(h.Data, h.Less)
 
-	return makeHeapTree(h)
+	return tree[T]{
+		huffNode: makeHeapTree(h),
+		ln:       len(data),
+	}
 }
 
 // New Huffman Coding Tree contructed from a frequency map.
@@ -40,7 +56,10 @@ func MapNew[T comparable](data map[T]int) Tree[T] {
 	}
 	sort.Slice(h.Data, h.Less)
 
-	return makeHeapTree(h)
+	return tree[T]{
+		huffNode: makeHeapTree(h),
+		ln:       len(data),
+	}
 }
 
 func newHeap[T any](ln int) *heap.Heap[*root[T]] {
@@ -53,7 +72,7 @@ func newHeap[T any](ln int) *heap.Heap[*root[T]] {
 	return h
 }
 
-func makeHeapTree[T any](data *heap.Heap[*root[T]]) Tree[T] {
+func makeHeapTree[T any](data *heap.Heap[*root[T]]) *huffNode[T] {
 	for ln := len(data.Data); ln > 1; ln-- {
 		a, b := data.Pop(), data.Pop()
 		data.Push(newBranch(a.node, b.node, a.sum+b.sum))
