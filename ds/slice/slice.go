@@ -14,6 +14,15 @@ func New[T any](s []T) Slice[T] {
 	return s
 }
 
+// Make a slice with the specified length and capacity. If capacity is set to
+// 0, then ln will be used for capacity as well.
+func Make[T any](ln, cp int) Slice[T] {
+	if cp == 0 {
+		cp = ln
+	}
+	return make(Slice[T], ln, cp)
+}
+
 // Clone a slice.
 func (s Slice[T]) Clone() Slice[T] {
 	out := make([]T, len(s))
