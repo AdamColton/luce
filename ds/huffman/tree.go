@@ -7,12 +7,18 @@ import (
 	"github.com/adamcolton/luce/serial/rye"
 )
 
-// Tree represents a Huffman Coding.
+// Tree represents a Huffman Coding. Create one with New or MapNew. It has an
+// unexported method, so it can only be fulfilled in this package.
 type Tree[T any] interface {
+	// Read decodes one value from b, moving b.Idx past its bits.
 	Read(b *rye.Bits) T
-	ReadAll(b *rye.Bits) []T
-	// All visits every value in the Tree can calls the given func on each value
-	All(func(T))
+	// Iter returns an iterator that decodes all of the bits in b, from the
+	// beginning of b. The iterator shares b, so it moves b.Idx.
+	Iter(b *rye.Bits) HuffIter[T]
+	// All visits every value in the Tree can calls the given func on each value,
+	// from the leftmost branch (the 0 bit) to the rightmost.
+	All(fn func(T))
+	// Len returns the number of values in the Tree.
 	Len() int
 	private()
 }
@@ -22,11 +28,21 @@ type tree[T any] struct {
 	*huffNode[T]
 }
 
-func (t tree[T]) Len() int {
-	return t.ln
+func (tr tree[T]) Len() int {
+	return tr.ln
 }
 
-func (t tree[T]) private() {}
+func (tr tree[T]) Iter(b *rye.Bits) HuffIter[T] {
+	i := &huffiter[T]{
+		node: tr.huffNode,
+		b:    b,
+	}
+	i.Start()
+
+	return i
+}
+
+func (tr tree[T]) private() {}
 
 // Frequency is used for constructing a Huffman Coding.
 type Frequency[T any] struct {
