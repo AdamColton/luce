@@ -10,9 +10,9 @@ import (
 // Tree represents a Huffman Coding.
 type Tree[T any] interface {
 	Read(b *rye.Bits) T
-	ReadAll(b *rye.Bits) []T
+	Iter(b *rye.Bits) HuffIter[T]
 	// All visits every value in the Tree can calls the given func on each value
-	All(func(T))
+	All(fn func(T))
 	Len() int
 	private()
 }
@@ -22,11 +22,21 @@ type tree[T any] struct {
 	*huffNode[T]
 }
 
-func (t tree[T]) Len() int {
-	return t.ln
+func (tr tree[T]) Len() int {
+	return tr.ln
 }
 
-func (t tree[T]) private() {}
+func (tr tree[T]) Iter(b *rye.Bits) HuffIter[T] {
+	i := &huffiter[T]{
+		node: tr.huffNode,
+		b:    b,
+	}
+	i.Start()
+
+	return i
+}
+
+func (tr tree[T]) private() {}
 
 // Frequency is used for constructing a Huffman Coding.
 type Frequency[T any] struct {

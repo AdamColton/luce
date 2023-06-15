@@ -74,7 +74,9 @@ func TestFromMap(t *testing.T) {
 	expected := []rune("THISISATEST")
 
 	enc := Encode[rune](list.Slice(expected), l)
-	got := ht.ReadAll(enc)
+
+	it, _, _ := ht.Iter(enc).Factory()
+	got := slice.IterSlice[rune](it, nil)
 	assert.Equal(t, expected, got)
 	assert.True(t, enc.Ln < len(expected)*8)
 
@@ -122,7 +124,8 @@ func TestTranslate(t *testing.T) {
 		[]byte("T"),
 	}
 	enc := Encode[[]byte](list.Slice(expected), l)
-	got := ht.ReadAll(enc)
+
+	got := slice.IterSlice[[]byte](ht.Iter(enc), nil)
 	assert.Equal(t, expected, got)
 	assert.True(t, enc.Ln < len(expected)*8)
 
@@ -149,7 +152,7 @@ func ExampleEncode_roundTrip() {
 	// Encoded length is 5, much less than the 11 characters
 	fmt.Println("Length:", len(bits.Data))
 
-	str := string(tree.ReadAll(bits))
+	str := string(slice.IterSlice[rune](tree.Iter(bits), nil))
 	fmt.Println(str)
 
 	// Output:
