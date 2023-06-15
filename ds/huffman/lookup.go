@@ -1,6 +1,7 @@
 package huffman
 
 import (
+	"github.com/adamcolton/luce/ds/list"
 	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/serial/rye"
 )
@@ -16,11 +17,12 @@ type Lookup[T any] interface {
 
 // Encode data to bits using the lookup. Calling Tree.ReadAll on these bits will
 // recover the original data.
-func Encode[T any](data []T, l Lookup[T]) *rye.Bits {
+func Encode[T any](data list.List[T], l Lookup[T]) *rye.Bits {
 	b := &rye.Bits{}
-	for _, d := range data {
-		b.WriteBits(l.Get(d))
-	}
+	list.Wrap(data).Iter().For(func(t T) {
+		b.WriteBits(l.Get(t))
+	})
+
 	return b.Reset()
 }
 
