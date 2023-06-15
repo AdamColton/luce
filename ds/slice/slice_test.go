@@ -197,3 +197,17 @@ func TestIterSlice(t *testing.T) {
 	got = slice.IterSlice[int](&genIterLen{&genIter{}}, nil)
 	assert.Equal(t, expected, got)
 }
+
+func TestCheckCapacity(t *testing.T) {
+	expected := slice.Slice[int]{3, 1, 4, 1, 5}
+	data := slice.Slice[int](make([]int, 0, 10))
+	data = append(data, expected...)
+
+	data = data.CheckCapacity(7)
+	assert.Equal(t, expected, data)
+	assert.True(t, cap(data) >= 7)
+
+	data = data.CheckCapacity(15)
+	assert.Equal(t, expected, data)
+	assert.True(t, cap(data) >= 15)
+}
