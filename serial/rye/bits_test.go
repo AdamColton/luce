@@ -52,3 +52,20 @@ func TestBitsCopy(t *testing.T) {
 	assert.Equal(t, []byte{1, 3}, bs.Data)
 	assert.Equal(t, []byte{2, 3}, cp.Data)
 }
+
+func TestShallowCopy(t *testing.T) {
+	b := &Bits{
+		Data: []byte{3, 1},
+		Ln:   12,
+		Idx:  2,
+	}
+	cp := b.ShallowCopy()
+	assert.Equal(t, b, cp)
+
+	b.Data[0] = 10
+	assert.Equal(t, b, cp)
+
+	b.Idx = 5
+	b.Ln = 15
+	assert.NotEqual(t, b, cp)
+}
