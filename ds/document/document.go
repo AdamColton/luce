@@ -52,6 +52,17 @@ type Locations[T comparable] struct {
 	Idxs []uint32
 }
 
+// WordIDs returns a slice with all the WordIDs in the document.
+func (doc *Document[WordID, VariantID]) WordIDs() []WordID {
+	ln := len(doc.Words)
+
+	out := make([]WordID, 0, ln)
+	for _, w := range doc.Words {
+		out = append(out, w.ID)
+	}
+	return out
+}
+
 // Build takes a stirng and encodes it to a Document.
 func (enc DocumentEncoder[WordID, VariantID]) Build(str string) *Document[WordID, VariantID] {
 	doc := &Document[WordID, VariantID]{}
