@@ -1,6 +1,7 @@
 package huffman
 
 import (
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/serial/rye"
 	"github.com/adamcolton/luce/util/liter"
 )
@@ -11,6 +12,7 @@ type HuffIter[T any] interface {
 	liter.Iter[T]
 	liter.Starter[T]
 	Factory() (copy liter.Iter[T], t T, done bool)
+	slice.Slicer[T]
 }
 
 type huffiter[T any] struct {
@@ -55,9 +57,18 @@ func (i *huffiter[T]) Start() (t T, done bool) {
 func (i *huffiter[T]) Factory() (copy liter.Iter[T], t T, done bool) {
 	copy = &huffiter[T]{
 		node: i.node,
-		b:    i.b.Copy().Reset(),
+		b:    i.b.ShallowCopy().Reset(),
 		idx:  -1,
 	}
 	t, done = copy.Next()
 	return
+}
+
+func (i *huffiter[T]) Slice(buf []T) []T {
+	cp := i.b.ShallowCopy().Reset()
+	out := buf
+	for cp.Idx < cp.Ln {
+		out = append(out, i.node.Read(cp))
+	}
+	return out
 }
