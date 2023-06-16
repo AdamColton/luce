@@ -3,6 +3,7 @@ package document
 import (
 	"testing"
 
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -104,5 +105,16 @@ And the mome raths outgrabe.`
 	got := dec.Decode(doc)
 
 	assert.Equal(t, str, got)
+	lt := slice.LT[wordID]()
 
+	{
+		// words should return one instance of every index value because this is
+		// not a shared corpus.
+		expected := make([]wordID, len(med.word2id))
+		for i := range expected {
+			expected[i] = wordID(i)
+		}
+		words := lt.Sort(doc.WordIDs())
+		assert.Equal(t, expected, words)
+	}
 }
