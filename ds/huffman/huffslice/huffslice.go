@@ -6,6 +6,7 @@ import (
 	"github.com/adamcolton/luce/ds/list"
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/serial/rye"
+	"github.com/adamcolton/luce/util/iter"
 )
 
 // Slice encoded using Huffman compression
@@ -72,18 +73,50 @@ func (e *Encoder[T]) Encode() *Slice[T] {
 	return out
 }
 
-// Decode from a huffslice.Slice.
-func (s *Slice[T]) Decode() slice.Slice[T] {
-	sIdx := 0
-	out := slice.New(s.Tree.Iter(s.Encoded).Slice(nil))
-	if len(out) == 0 {
-		return s.Singles
+// Iter creates an iterator for decoding the Slice.
+func (s *Slice[T]) Iter() iter.Iter[T] {
+	if s.Encoded.Ln == 0 {
+		return slice.NewIter(s.Singles)
 	}
-	out.Iter().ForIdx(func(t T, idx int) {
-		if t == s.SingleToken {
-			out[idx] = s.Singles[sIdx]
-			sIdx++
-		}
-	})
-	return out
+	i := &sliceiter[T]{
+		Iter:        s.Tree.Iter(s.Encoded),
+		singleToken: s.SingleToken,
+		singles:     s.Singles,
+	}
+	i.Start()
+	return i
+}
+
+type sliceiter[T comparable] struct {
+	iter.Iter[T]
+	sIdx        int
+	singleToken T
+	singles     slice.Slice[T]
+}
+
+func (si *sliceiter[T]) Start() (t T, done bool) {
+	si.sIdx = -1
+	t, done = si.Iter.(iter.Starter[T]).Start()
+	if !done && t == si.singleToken {
+		si.sIdx++
+		t = si.singles[si.sIdx]
+	}
+	return
+}
+
+func (si *sliceiter[T]) Next() (t T, done bool) {
+	t, done = si.Iter.Next()
+	if !done && t == si.singleToken {
+		si.sIdx++
+		t = si.singles[si.sIdx]
+	}
+	return
+}
+
+func (si *sliceiter[T]) Cur() (t T, done bool) {
+	t, done = si.Iter.Cur()
+	if !done && t == si.singleToken {
+		t = si.singles[si.sIdx]
+	}
+	return
 }
