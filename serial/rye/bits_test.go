@@ -69,3 +69,20 @@ func TestSubBitsRoundTrip(t *testing.T) {
 		assert.Equal(t, expected.Data, sub.Data)
 	}
 }
+
+func TestShallowCopy(t *testing.T) {
+	b := &rye.Bits{
+		Data: []byte{3, 1},
+		Ln:   12,
+		Idx:  2,
+	}
+	cp := b.ShallowCopy()
+	assert.Equal(t, b, cp)
+
+	b.Data[0] = 10
+	assert.Equal(t, b, cp)
+
+	b.Idx = 5
+	b.Ln = 15
+	assert.NotEqual(t, b, cp)
+}
