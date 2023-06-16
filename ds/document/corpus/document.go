@@ -26,3 +26,15 @@ func (d *Document) String() string {
 	}
 	return dec.Decode(d.Document)
 }
+
+type Documents []*Document
+
+func (ds Documents) Strings() []string {
+	out := make([]string, len(ds))
+	for i, d := range ds {
+		if d != nil {
+			out[i] = d.String()
+		}
+	}
+	return out
+}

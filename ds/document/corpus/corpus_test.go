@@ -1,9 +1,13 @@
 package corpus_test
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/adamcolton/luce/ds/document/corpus"
+	"github.com/adamcolton/luce/ds/lset"
+	"github.com/adamcolton/luce/ds/prefix"
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,5 +52,60 @@ func TestCorpus(t *testing.T) {
 	assert.Equal(t, str, d.String())
 
 	ids := c.Find("gimble")
-	assert.Equal(t, []corpus.DocID{d.DocID}, ids)
+	assert.True(t, ids.Contains(d.DocID))
+
+	lt := slice.LT[string]()
+	bis := c.Prefix("bi").AllWords().Strings().ToSlice(nil)
+	assert.Equal(t, []string{"bird", "bite"}, lt.Sort(bis))
+
+	ffs := c.Containing("ff").AllWords().Strings().ToSlice(nil)
+	assert.Equal(t, []string{"uffish", "whiffling"}, lt.Sort(ffs))
+
+	expected := []prefix.Suggestion{
+		{Word: "te", Terminals: []int{1}},
+		{Word: "rd", Terminals: []int{1}},
+	}
+	assert.Equal(t, expected, c.Prefix("bi").Suggest(10))
+}
+
+func TestCorpusSearch(t *testing.T) {
+	c := corpus.New()
+	c.AddDoc("The sun was shining on the sea")
+	c.AddDoc("Shining with all it's might")
+	c.AddDoc("And it did the very best it could")
+	c.AddDoc("To make the billows smooth and bright")
+	c.AddDoc("And this was very odd because")
+	c.AddDoc("It was the middle of the night")
+	c.AddDoc("The moon was shining skulkily")
+	c.AddDoc("Because she thought the sun")
+
+	the := c.Find("the")
+	assert.Equal(t, 6, the.Len())
+
+	shining := c.Find("shining")
+	assert.Equal(t, 3, shining.Len())
+
+	foo := lset.Multi[corpus.DocID]{the, shining}.Intersection()
+	both := c.GetDocs(foo.Slice()).Strings()
+	sort.Strings(both)
+	expected := []string{
+		"The moon was shining skulkily",
+		"The sun was shining on the sea",
+	}
+	assert.Equal(t, expected, both)
+
+	{
+		s := c.Prefix("sh").Suggest(10)
+		expected := []prefix.Suggestion{
+			{
+				Word:      "ining",
+				Terminals: []int{4},
+			},
+			{
+				Word:      "e",
+				Terminals: []int{0},
+			},
+		}
+		assert.Equal(t, expected, s)
+	}
 }
