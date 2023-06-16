@@ -76,6 +76,15 @@ func TestFromMap(t *testing.T) {
 	enc := Encode[rune](list.Slice(expected), l)
 
 	it, _, _ := ht.Iter(enc).Factory()
+	r, done := it.Cur()
+	assert.Equal(t, r, 'T')
+	assert.Equal(t, 0, it.Idx())
+	assert.False(t, done)
+	r, done = it.Next()
+	assert.Equal(t, r, 'H')
+	assert.Equal(t, 1, it.Idx())
+	assert.False(t, done)
+
 	got := slice.FromIter(it, nil)
 	assert.Equal(t, expected, got)
 	assert.True(t, enc.Ln < len(expected)*8)
