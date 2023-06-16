@@ -2,6 +2,7 @@ package document
 
 import (
 	"github.com/adamcolton/luce/ds/huffman/huffslice"
+	"github.com/adamcolton/luce/ds/lset"
 	"github.com/adamcolton/luce/ds/slice"
 )
 
@@ -119,4 +120,25 @@ func (dec DocumentDecoder[WordID, VariantID]) Decode(doc *Document[WordID, Varia
 		out = dec.IDToVariant(vID).Apply(words[vi.Idx()], out)
 	}
 	return string(out)
+}
+
+// ChangeSet shows the IDs that were added and removed from a Document.
+type ChangeSet[T any] struct {
+	Added, Removed slice.Slice[T]
+}
+
+// Update a document updates the encoding and returns a ChangeSet.
+func (enc DocumentEncoder[WordID, VariantID]) Update(doc *Document[WordID, VariantID], str string) *ChangeSet[WordID] {
+	wordsBefore := lset.New(doc.WordIDs()...)
+	enc.build(doc, str)
+	cs := &ChangeSet[WordID]{}
+	for _, wID := range doc.WordIDs() {
+		if wordsBefore.Contains(wID) {
+			wordsBefore.Remove(wID)
+		} else {
+			cs.Added = append(cs.Added, wID)
+		}
+	}
+	cs.Removed = wordsBefore.Slice(nil)
+	return cs
 }
