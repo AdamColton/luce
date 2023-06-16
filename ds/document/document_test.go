@@ -1,6 +1,7 @@
 package document
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/adamcolton/luce/ds/slice"
@@ -116,5 +117,17 @@ And the mome raths outgrabe.`
 		}
 		words := lt.Sort(doc.WordIDs())
 		assert.Equal(t, expected, words)
+	}
+
+	{
+		str = strings.NewReplacer("brillig", "gloorp", "borogoves", "klatuu").Replace(str)
+		cs := enc.Update(doc, str)
+		lt.Sort(cs.Added)
+		lt.Sort(cs.Removed)
+		expected := &ChangeSet[wordID]{
+			Removed: []wordID{med.WordToID("brillig"), med.WordToID("borogoves")},
+			Added:   []wordID{med.WordToID("gloorp"), med.WordToID("klatuu")},
+		}
+		assert.Equal(t, expected, cs)
 	}
 }
