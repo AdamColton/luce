@@ -23,9 +23,9 @@ func TestHuffSlice(t *testing.T) {
 			ue.Slice = append(ue.Slice, tc...)
 
 			u := ue.Encode()
-			got := u.Decode()
+			got := slice.IterSlice(u.Iter(), nil)
 
-			assert.Equal(t, slice.New(tc), got)
+			assert.Equal(t, tc, got)
 		})
 	}
 }
