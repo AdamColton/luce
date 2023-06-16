@@ -36,6 +36,16 @@ func (b *Bits) Copy() *Bits {
 	return out
 }
 
+// ShallowCopy shares the underlying Data. The Idx and Ln values are copied, so
+// changing them on one does not change the other.
+func (b *Bits) ShallowCopy() *Bits {
+	return &Bits{
+		Data: b.Data,
+		Idx:  b.Idx,
+		Ln:   b.Ln,
+	}
+}
+
 // Reset the Idx to 0. Syntactic sugar.
 func (b *Bits) Reset() *Bits {
 	b.Idx = 0
