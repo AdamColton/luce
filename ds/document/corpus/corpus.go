@@ -3,6 +3,7 @@ package corpus
 import (
 	"github.com/adamcolton/luce/ds/document"
 	"github.com/adamcolton/luce/ds/lset"
+	"github.com/adamcolton/luce/ds/prefix"
 )
 
 // The largest IDs are reserved: they are the single tokens the Document encoding
@@ -20,7 +21,8 @@ type Corpus struct {
 	RootVariant func(str string) (string, document.Variant)
 	Root        func(str string) string
 
-	cur struct {
+	prefix *prefix.Prefix
+	cur    struct {
 		RootID
 		VariantID
 		DocID
@@ -39,6 +41,7 @@ func New() *Corpus {
 		RootVariant: document.RootVariant,
 		Root:        document.Root,
 
+		prefix:     prefix.New(),
 		id2root:    make(map[RootID]*root),
 		rootByStr:  make(map[string]*root),
 		variant2id: make(map[string]VariantID),
@@ -59,6 +62,7 @@ func (c *Corpus) WordToID(rStr string) RootID {
 		c.rootByStr[rStr] = r
 		c.id2root[c.cur.RootID] = r
 		c.cur.RootID++
+		c.prefix.Upsert(rStr)
 	}
 	return r.RootID
 }
@@ -122,4 +126,10 @@ func (c *Corpus) Find(word string) *lset.Set[DocID] {
 		return nil
 	}
 	return r.docs
+}
+
+// Prefix returns the prefix.Node for the gram, in the tree of all words in the
+// corpus, or nil if no word starts with it.
+func (c *Corpus) Prefix(gram string) prefix.Node {
+	return c.prefix.Find(gram)
 }
