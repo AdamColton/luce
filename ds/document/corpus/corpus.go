@@ -138,3 +138,12 @@ func (c *Corpus) Containing(gram string) prefix.Nodes {
 func (c *Corpus) GetDoc(id DocID) *Document {
 	return c.docs[id]
 }
+
+// GetDocs returns a set of documents by DocID
+func (c *Corpus) GetDocs(ids []DocID) Documents {
+	out := make(Documents, len(ids))
+	for i, id := range ids {
+		out[i] = c.docs[id]
+	}
+	return out
+}
