@@ -5,6 +5,7 @@ import (
 
 	"github.com/adamcolton/luce/ds/document"
 	"github.com/adamcolton/luce/ds/document/corpus"
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -90,6 +91,7 @@ func TestCorpus(t *testing.T) {
 
 func TestCorpusSearch(t *testing.T) {
 	c := corpus.New()
+	lt := slice.LT[string]()
 	docs := []*corpus.Document{
 		c.AddDoc("The sun was shining on the sea"),
 		c.AddDoc("Shining with all it's might"),
@@ -116,4 +118,7 @@ func TestCorpusSearch(t *testing.T) {
 			assert.True(t, shining.Contains(docs[idx].ID()))
 		}
 	}
+
+	sh := c.Prefix("sh").AllWords().Strings().ToSlice(nil)
+	assert.Equal(t, []string{"she", "shining"}, lt.Sort(sh))
 }
