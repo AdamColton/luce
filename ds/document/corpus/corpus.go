@@ -143,3 +143,12 @@ func (c *Corpus) Containing(gram string) prefix.Nodes {
 func (c *Corpus) GetDoc(id DocID) *Document {
 	return c.docs[id]
 }
+
+// GetDocs returns the documents for the ids. The entry for an unknown id is nil.
+func (c *Corpus) GetDocs(ids []DocID) Documents {
+	out := make(Documents, len(ids))
+	for i, id := range ids {
+		out[i] = c.docs[id]
+	}
+	return out
+}
