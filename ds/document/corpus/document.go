@@ -32,3 +32,18 @@ func (d *Document) String() string {
 	}
 	return dec.Decode(d.Document)
 }
+
+// Documents is a collection of documents
+type Documents []*Document
+
+// Strings converts all the documents in the collection to strings. A nil
+// Document gives an empty string.
+func (ds Documents) Strings() []string {
+	out := make([]string, len(ds))
+	for i, d := range ds {
+		if d != nil {
+			out[i] = d.String()
+		}
+	}
+	return out
+}
