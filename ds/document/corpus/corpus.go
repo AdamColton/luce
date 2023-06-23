@@ -128,3 +128,8 @@ func (c *Corpus) Find(word string) *lset.Set[DocID] {
 func (c *Corpus) Prefix(gram string) prefix.Node {
 	return c.prefix.Find(gram)
 }
+
+// Containing returns a prefix.Nodes for all nodes containing the given gram.
+func (c *Corpus) Containing(gram string) prefix.Nodes {
+	return c.prefix.Containing(gram)
+}
