@@ -5,6 +5,7 @@ import (
 
 	"github.com/adamcolton/luce/ds/document"
 	"github.com/adamcolton/luce/ds/document/corpus"
+	"github.com/adamcolton/luce/ds/lset"
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/stretchr/testify/assert"
 )
@@ -120,9 +121,19 @@ func TestCorpusSearch(t *testing.T) {
 		}
 	}
 
+	foo := lset.NewMulti(the, shining).Intersection()
+	both := c.GetDocs(foo.Slice(nil)).Strings()
+	lt.Sort(both)
+	expected := []string{
+		"The moon was shining skulkily",
+		"The sun was shining on the sea",
+	}
+	assert.Equal(t, expected, both)
+
 	sh := c.Prefix("sh").AllWords().Strings().ToSlice(nil)
 	assert.Equal(t, []string{"she", "shining"}, lt.Sort(sh))
 
 	ffs := c.Containing("ll").AllWords().Strings().ToSlice(nil)
 	assert.Equal(t, []string{"all", "billows"}, lt.Sort(ffs))
+
 }
