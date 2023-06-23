@@ -121,4 +121,7 @@ func TestCorpusSearch(t *testing.T) {
 
 	sh := c.Prefix("sh").AllWords().Strings().Slice(nil)
 	assert.Equal(t, []string{"she", "shining"}, lt.Sort(sh))
+
+	ffs := c.Containing("ll").AllWords().Strings().Slice(nil)
+	assert.Equal(t, []string{"all", "billows"}, lt.Sort(ffs))
 }
