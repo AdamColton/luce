@@ -32,3 +32,17 @@ func (d *Document) String() string {
 	}
 	return dec.Decode(d.Document)
 }
+
+// Documents is a collection of documents
+type Documents []*Document
+
+// Strings converts all the documents in the collection to stirngs.
+func (ds Documents) Strings() []string {
+	out := make([]string, len(ds))
+	for i, d := range ds {
+		if d != nil {
+			out[i] = d.String()
+		}
+	}
+	return out
+}
