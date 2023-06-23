@@ -133,3 +133,8 @@ func (c *Corpus) Prefix(gram string) prefix.Node {
 func (c *Corpus) Containing(gram string) prefix.Nodes {
 	return c.prefix.Containing(gram)
 }
+
+// GetDoc returns a Document by DocID.
+func (c *Corpus) GetDoc(id DocID) *Document {
+	return c.docs[id]
+}
