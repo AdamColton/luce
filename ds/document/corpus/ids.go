@@ -7,3 +7,6 @@ type root struct {
 	RootID
 	str string
 }
+
+// VariantID represents a Variant by ID.
+type VariantID uint32
