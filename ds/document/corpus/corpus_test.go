@@ -85,6 +85,7 @@ func TestCorpus(t *testing.T) {
 	c := corpus.New()
 	d := c.AddDoc(str)
 	assert.Equal(t, str, d.String())
+	assert.Equal(t, d, c.GetDoc(d.DocID))
 
 	assert.Equal(t, d.DocID, corpus.DocIDer(d).ID())
 }
