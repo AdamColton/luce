@@ -83,19 +83,22 @@ func (r *RouteConfig) Validate() error {
 		r.Method = "GET"
 	}
 	if r.ID == "" {
-		if r.Method != "" {
-			r.ID = fmt.Sprintf("(%s) %s", r.Method, r.Path)
-		} else {
-			r.ID = r.Path
-		}
-		if r.PathPrefix {
-			r.ID += "..."
-		}
+		r.ID = r.String()
 	}
 	if strings.Contains(r.Path, "{") {
 		r.PathVars = true
 	}
 	return nil
+}
+
+// String fulfills Stringer. Returns the RouteConfig as "(Method)path...", where
+// the ellipse will only be present if the path is a prefix.
+func (r RouteConfig) String() string {
+	prefxStr := ""
+	if r.PathPrefix {
+		prefxStr = "..."
+	}
+	return fmt.Sprintf("(%s) %s%s", r.Method, r.Path, prefxStr)
 }
 
 func (r RouteConfig) Methods() []string {
