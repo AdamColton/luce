@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/util/lstr"
 )
 
 // Routes holds a collection of RouteConfigs.
@@ -26,40 +27,35 @@ func NewRouteConfigGen(basePath string) *RouteConfigGen {
 	}
 }
 
+var slash = lstr.Seperator("/")
+
+// Path creates a RouteConfig appending path to the Base.
+func (g *RouteConfigGen) Path(path string) *RouteConfig {
+	return NewRoute(slash.Join(g.Base, path))
+}
+
 // Get creates a RouteConfig with a Path of Base+path at
 func (g *RouteConfigGen) Get(path string) *RouteConfig {
-	r := &RouteConfig{
-		Path:   g.Base + path,
-		Method: "GET",
-	}
-	return r
+	return g.Path(path).Get()
 }
 
-// GetQuery
+// GetQuery creates a clone of the RouteConfigGen appending path to the Base and
+// setting the method to Get.
 func (g *RouteConfigGen) GetQuery(path string) *RouteConfig {
-	r := &RouteConfig{
-		Path:   g.Base + path,
-		Method: "GET",
-		Query:  true,
-	}
-	return r
+	return g.Path(path).Get().WithQuery()
 }
 
+// GetQuery creates a clone of the RouteConfigGen appending path to the Base and
+// setting the method to Post.
 func (g *RouteConfigGen) Post(path string) *RouteConfig {
-	r := &RouteConfig{
-		Path:   g.Base + path,
-		Method: "POST",
-	}
-	return r
+	return g.Path(path).Post()
 }
 
+// GetQuery creates a clone of the RouteConfigGen appending path to the Base and
+// setting the method to Post and enabling form data to be included in the
+// requets.
 func (g *RouteConfigGen) PostForm(path string) *RouteConfig {
-	r := &RouteConfig{
-		Path:   g.Base + path,
-		Method: "POST",
-		Form:   true,
-	}
-	return r
+	return g.Path(path).Post().WithForm()
 }
 
 type RouteConfig struct {
