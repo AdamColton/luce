@@ -54,9 +54,9 @@ func (c *Client) Run() {
 
 // Add a Route, RequestResponder is the handler and RouteConfig describes the
 // route.
-func (c *Client) Add(h RequestResponder, r RouteConfig) {
+func (c *Client) Add(h RequestResponder, r *RouteConfig) {
 	lerr.Panic(r.Validate())
-	fn := func(r Request) {
+	fn := func(r *Request) {
 		c.Sender.Send(h(r))
 	}
 	c.Mux.Add(fn, r)

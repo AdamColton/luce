@@ -44,20 +44,20 @@ type Request struct {
 }
 
 // TypeID32 fulfill TypeIDer32. The ID was choosen at random.
-func (Request) TypeID32() uint32 {
+func (*Request) TypeID32() uint32 {
 	return 161709784
 }
 
 // Response to the Request.
-func (r Request) Response(body []byte) Response {
-	return Response{
+func (r *Request) Response(body []byte) *Response {
+	return &Response{
 		ID:   r.ID,
 		Body: body,
 	}
 }
 
 // ResponseString to the Request.
-func (r Request) ResponseString(body string) Response {
+func (r *Request) ResponseString(body string) *Response {
 	return r.Response([]byte(body))
 }
 
@@ -69,7 +69,7 @@ type Response struct {
 }
 
 // TypeID32 fulfill TypeIDer32. The ID was choosen at random.
-func (Response) TypeID32() uint32 {
+func (*Response) TypeID32() uint32 {
 	return 370114636
 }
 
