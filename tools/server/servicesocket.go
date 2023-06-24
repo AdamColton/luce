@@ -46,14 +46,14 @@ func (s *Server) handleServiceSocket(netConn net.Conn) {
 	conn.Listener.Run()
 }
 
-func (sc *serviceConn) HandleResponse(resp service.Response) {
+func (sc *serviceConn) HandleResponse(resp *service.Response) {
 	sc.mapLock.Lock()
 	ch := sc.respMap[resp.ID]
 	sc.mapLock.Unlock()
 	if ch == nil {
 		return
 	}
-	ch <- &resp
+	ch <- resp
 }
 
 func (sc *serviceConn) HandleRoutes(routes service.Routes) {
@@ -71,7 +71,7 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 		sc.respMap[req.ID] = ch
 		sc.mapLock.Unlock()
 
-		err := sc.Sender.Send(*req)
+		err := sc.Sender.Send(req)
 		lerr.Panic(err)
 		select {
 		case resp := <-ch:
