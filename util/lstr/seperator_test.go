@@ -3,6 +3,7 @@ package lstr_test
 import (
 	"testing"
 
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/lstr"
 	"github.com/stretchr/testify/assert"
 )
@@ -45,4 +46,24 @@ func TestSeperatorIndex(t *testing.T) {
 			assert.Equal(t, tc, s.Index(n))
 		})
 	}
+}
+
+func TestSeperatorSplit(t *testing.T) {
+	tt := map[string]slice.Slice[string]{
+		"":       {""},
+		"/":      {"", ""},
+		"a":      {"a"},
+		"b/c":    {"b", "c"},
+		"/d/e":   {"", "d", "e"},
+		"fg/h/i": {"fg", "h", "i"},
+	}
+
+	s := lstr.Seperator("/")
+	for n, tc := range tt {
+		t.Run("_"+n, func(t *testing.T) {
+			assert.Equal(t, tc, s.Split(n))
+		})
+	}
+
+	assert.Equal(t, 0, s.JoinLen(nil))
 }

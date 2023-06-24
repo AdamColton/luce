@@ -81,3 +81,8 @@ func (s Seperator) Join(elems ...string) string {
 func (s Seperator) Index(str string) int {
 	return strings.Index(str, string(s))
 }
+
+// Split is a wrapper around strings.Split, splitting str at every Seperator.
+func (s Seperator) Split(str string) slice.Slice[string] {
+	return strings.Split(str, string(s))
+}
