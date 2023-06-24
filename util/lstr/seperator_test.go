@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSeperatorJoinLen(t *testing.T) {
+func TestSeperatorJoin(t *testing.T) {
 	tt := map[string][]string{
 		"":        {},
 		"a":       {"a"},
@@ -23,7 +23,9 @@ func TestSeperatorJoinLen(t *testing.T) {
 	s := lstr.Seperator("/")
 	for n, tc := range tt {
 		t.Run("_"+n, func(t *testing.T) {
-			assert.Equal(t, len(n), s.JoinLen(tc))
+			assert.Equal(t, n, s.BufJoin(tc, nil))
 		})
 	}
+
+	assert.Equal(t, 0, s.JoinLen(nil))
 }
