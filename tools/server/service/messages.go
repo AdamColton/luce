@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/gob"
+	"net/http"
 	"net/url"
 
 	"github.com/adamcolton/luce/serial/type32"
@@ -51,8 +52,9 @@ func (*Request) TypeID32() uint32 {
 // Response to the Request.
 func (r *Request) Response(body []byte) *Response {
 	return &Response{
-		ID:   r.ID,
-		Body: body,
+		ID:     r.ID,
+		Body:   body,
+		Status: http.StatusOK,
 	}
 }
 
@@ -64,13 +66,20 @@ func (r *Request) ResponseString(body string) *Response {
 // Response to a request. The ID is the same as the ID is taken from the
 // request.
 type Response struct {
-	ID   uint32
-	Body []byte
+	ID     uint32
+	Body   []byte
+	Status int
 }
 
 // TypeID32 fulfill TypeIDer32. The ID was choosen at random.
 func (*Response) TypeID32() uint32 {
 	return 370114636
+}
+
+// Set Response HTTP Status Code
+func (r *Response) SetStatus(status int) *Response {
+	r.Status = status
+	return r
 }
 
 type SocketOpened struct {
