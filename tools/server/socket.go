@@ -57,7 +57,18 @@ func (s *Server) RunSocket() {
 				Name:  "users",
 				Usage: "list users",
 				Action: func(ctx *unixsocket.Context) {
-					ctx.Printf("  %s", strings.Join(s.Users.List(), "\n  "))
+					us := s.Users.List()
+					for _, name := range us {
+						u, err := s.Users.GetByName(name)
+						if err != nil {
+							ctx.Printf("  Error: %s", err.Error())
+						}
+						ctx.Printf("  %s", name)
+						if len(u.Groups) > 0 {
+							ctx.Printf(" (%s)", strings.Join(u.Groups, ", "))
+						}
+						ctx.Printf("\n")
+					}
 				},
 			}, {
 				Name:  "group",
@@ -103,6 +114,39 @@ func (s *Server) RunSocket() {
 					}
 
 					err = g.AddUser(u)
+					if ctx.Error(err) {
+						return
+					}
+
+					err = s.Users.Update(u)
+					ctx.Error(err)
+				},
+			}, {
+				Name:  "rm-user-group",
+				Usage: "remove user from group",
+				Action: func(ctx *unixsocket.Context) {
+					var user, group string
+					ok := ctx.Input("(group) ", &group)
+					if !ok {
+						ctx.WriteString("  Operation Cancelled")
+						return
+					}
+					g := s.Users.HasGroup(group)
+					if g == nil {
+						ctx.WriteString("  Group not found")
+					}
+
+					ok = ctx.Input("(user) ", &user)
+					if !ok {
+						ctx.WriteString("  Operation Cancelled")
+						return
+					}
+					u, err := s.Users.GetByName(user)
+					if ctx.Error(err) {
+						return
+					}
+
+					err = g.RemoveUser(u)
 					if ctx.Error(err) {
 						return
 					}
