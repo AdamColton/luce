@@ -47,4 +47,6 @@ func TestInGroup(t *testing.T) {
 	assert.True(t, u.In("bar"))
 	assert.True(t, u.In("glorp"))
 	assert.False(t, u.In("baz"))
+	assert.False(t, u.In("aaa"))
+	assert.False(t, u.In("zzz"))
 }

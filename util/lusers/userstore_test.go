@@ -15,9 +15,19 @@ func TestUserStore(t *testing.T) {
 
 	names := []string{"user1", "user2", "user3", "user4"}
 	for _, n := range names {
-		_, err := us.Create(n, n+"-password")
+		pwd := n + "-password"
+		uc, err := us.Create(n, pwd)
 		assert.NoError(t, err)
+		ul, err := us.Login(n, pwd)
+		assert.NoError(t, err)
+		assert.Equal(t, uc, ul)
+		ul, err = us.Login(n, "bad-password")
+		assert.Error(t, err)
+		assert.Nil(t, ul)
 	}
+	ul, err := us.Login("bad-user", "bad-password")
+	assert.Error(t, err)
+	assert.Nil(t, ul)
 
 	found := make(map[string]bool)
 	for _, name := range us.List() {
@@ -29,7 +39,8 @@ func TestUserStore(t *testing.T) {
 		assert.True(t, found[n])
 	}
 
-	_, err := us.Create("user1", "user1-password")
+	_, err = us.Create("user1", "user1-password")
 	assert.Equal(t, ErrUserAlreadyExists("user1"), err)
 	assert.Equal(t, "User user1 already exists", err.Error())
+
 }
