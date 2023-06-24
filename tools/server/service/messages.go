@@ -82,6 +82,16 @@ func (r *Response) SetStatus(status int) *Response {
 	return r
 }
 
+// Write p to the body. Fulfills io.Writer.
+func (r *Response) Write(p []byte) (n int, err error) {
+	if r.Body == nil {
+		r.Body = p
+	} else {
+		r.Body = append(r.Body, p...)
+	}
+	return len(p), nil
+}
+
 type SocketOpened struct {
 	ID uint32
 }
