@@ -47,9 +47,7 @@ func (u *User) gidx(group string) int {
 }
 
 func (u *User) sortGroups() {
-	sort.Slice(u.Groups, func(i, j int) bool {
-		return u.Groups[i] < u.Groups[j]
-	})
+	sort.Strings(u.Groups)
 }
 
 // OneRequired requires that a user be in one of the listed groups. If no groups

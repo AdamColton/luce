@@ -3,6 +3,7 @@ package lusers
 import (
 	"bytes"
 
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/store"
 )
 
@@ -33,4 +34,20 @@ func (g *Group) AddUser(u *User) error {
 // HasUser checks if the user is in the Group
 func (g *Group) HasUser(u *User) bool {
 	return bytes.Equal(g.Store.Get(u.ID).Value, hasUser)
+}
+
+// RemoveUser from group. Updates both the Group and the User.
+func (g *Group) RemoveUser(u *User) error {
+	if g.HasUser(u) {
+		err := g.Store.Delete(u.ID)
+		if err != nil {
+			return err
+		}
+	}
+	idx := u.gidx(g.Name)
+	if u.Groups.IdxCheck(idx) && u.Groups[idx] == g.Name {
+		u.Groups = slice.New(u.Groups).RemoveOrdered(idx)
+	}
+
+	return nil
 }
