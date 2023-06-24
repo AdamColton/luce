@@ -34,6 +34,7 @@ func (Routes) TypeID32() uint32 {
 // RouteConfigGen is used to create RouteConfigs from a Base path.
 type RouteConfigGen struct {
 	Base string
+	Host string
 	Require
 }
 
@@ -52,11 +53,18 @@ func (r *RouteConfigGen) RequireGroup(group string) *RouteConfigGen {
 	return r
 }
 
+// SetHost is a chainable helper. It sets the Host field.
+func (r *RouteConfigGen) SetHost(host string) *RouteConfigGen {
+	r.Host = host
+	return r
+}
+
 // Path creates a RouteConfig appending path to the Base and copying the Require
 // object.
 func (g *RouteConfigGen) Path(path string) *RouteConfig {
 	r := NewRoute(slash.Join(g.Base, path))
 	r.Require = g.Require
+	r.Host = g.Host
 	return r
 }
 
@@ -87,6 +95,7 @@ func (g *RouteConfigGen) PostForm(path string) *RouteConfig {
 type RouteConfig struct {
 	ID   string
 	Path string
+	Host string
 	// Method is comma delimited methods that are accepted
 	Method     string
 	PathPrefix bool
@@ -105,6 +114,12 @@ func NewRoute(path string) *RouteConfig {
 	return &RouteConfig{
 		Path: path,
 	}
+}
+
+// SetHost is a chainable helper. It sets the Host field.
+func (r *RouteConfig) SetHost(host string) *RouteConfig {
+	r.Host = host
+	return r
 }
 
 // AddMethod is a chainable helper. It sets the Method field. If the Method
@@ -179,7 +194,7 @@ func (r *RouteConfig) Validate() error {
 	if r.ID == "" {
 		r.ID = r.String()
 	}
-	if strings.Contains(r.Path, "{") {
+	if strings.Contains(r.Path, "{") || strings.Contains(r.Host, "{") {
 		r.PathVars = true
 	}
 	return nil
@@ -192,7 +207,11 @@ func (r *RouteConfig) String() string {
 	if r.PathPrefix {
 		prefxStr = "..."
 	}
-	return fmt.Sprintf("(%s) %s%s", r.Method, r.Path, prefxStr)
+	host := ""
+	if r.Host != "" {
+		host = fmt.Sprintf("(HOST:%s)", r.Host)
+	}
+	return fmt.Sprintf("(%s) %s%s%s", r.Method, host, r.Path, prefxStr)
 }
 
 func (r *RouteConfig) Methods() []string {
