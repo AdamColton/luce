@@ -64,3 +64,8 @@ func (s Seperator) BufJoin(elems []string, buf []byte) string {
 	}
 	return string(out)
 }
+
+// Join elems making sure there is a single Seperator between each elem.
+func (s Seperator) Join(elems ...string) string {
+	return s.BufJoin(elems, nil)
+}
