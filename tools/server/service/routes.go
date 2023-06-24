@@ -8,6 +8,21 @@ import (
 	"github.com/adamcolton/luce/util/lstr"
 )
 
+// Require breaks out the possible route requirements so the logic can be shared
+// between RouteConfigGen and RouteConfig.
+type Require struct {
+	Group string
+}
+
+// RequireGroup sets or appends the group to the Group field.
+func (r *Require) RequireGroup(group string) {
+	if r.Group == "" {
+		r.Group = group
+	} else {
+		r.Group += "," + group
+	}
+}
+
 // Routes holds a collection of RouteConfigs.
 type Routes []RouteConfig
 
@@ -19,6 +34,7 @@ func (Routes) TypeID32() uint32 {
 // RouteConfigGen is used to create RouteConfigs from a Base path.
 type RouteConfigGen struct {
 	Base string
+	Require
 }
 
 func NewRouteConfigGen(basePath string) *RouteConfigGen {
@@ -29,9 +45,19 @@ func NewRouteConfigGen(basePath string) *RouteConfigGen {
 
 var slash = lstr.Seperator("/")
 
-// Path creates a RouteConfig appending path to the Base.
+// RequireGroup is a chainable helper. It calls RequireGroup on the embedded
+// Require.
+func (r *RouteConfigGen) RequireGroup(group string) *RouteConfigGen {
+	r.Require.RequireGroup(group)
+	return r
+}
+
+// Path creates a RouteConfig appending path to the Base and copying the Require
+// object.
 func (g *RouteConfigGen) Path(path string) *RouteConfig {
-	return NewRoute(slash.Join(g.Base, path))
+	r := NewRoute(slash.Join(g.Base, path))
+	r.Require = g.Require
+	return r
 }
 
 // Get creates a RouteConfig with a Path of Base+path at
@@ -69,6 +95,7 @@ type RouteConfig struct {
 	Body       bool
 	User       bool
 	Query      bool
+	Require
 }
 
 const ErrPathRequired = lerr.Str("RouteConfig: Path is required")
@@ -130,6 +157,13 @@ func (r *RouteConfig) WithBody() *RouteConfig {
 // WithPrefix is a chainable helper. It sets the PathPrefix field to true.
 func (r *RouteConfig) WithPrefix() *RouteConfig {
 	r.PathPrefix = true
+	return r
+}
+
+// RequireGroup is a chainable helper. It calls RequireGroup on the embedded
+// Require.
+func (r *RouteConfig) RequireGroup(group string) *RouteConfig {
+	r.Require.RequireGroup(group)
 	return r
 }
 
