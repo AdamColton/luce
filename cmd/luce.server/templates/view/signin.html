@@ -1,0 +1,14 @@
+{{template "layout/header.html" "Sign In"}}
+<div>{{.Message}}</div>
+<form method="POST" action="/user/signin">
+    <div>
+        Username <input type="text" name="Username" autofocus />
+    </div>
+    <div>
+        Password <input type="password" name="Password" />
+    </div>
+    <div>
+        <button>Sign In</button>
+    </div>
+</form>
+{{template "layout/footer.html"}}
