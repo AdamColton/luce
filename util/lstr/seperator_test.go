@@ -29,3 +29,20 @@ func TestSeperatorJoin(t *testing.T) {
 
 	assert.Equal(t, 0, s.JoinLen(nil))
 }
+
+func TestSeperatorIndex(t *testing.T) {
+	tt := map[string]int{
+		"":       -1,
+		"*":      0,
+		"a*b":    1,
+		"a*b*":   1,
+		"abcd*e": 4,
+	}
+
+	s := lstr.Seperator("*")
+	for n, tc := range tt {
+		t.Run("_"+n, func(t *testing.T) {
+			assert.Equal(t, tc, s.Index(n))
+		})
+	}
+}
