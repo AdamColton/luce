@@ -8,10 +8,10 @@ import (
 
 // RunSocket for the admin interface. This is not invoked by ListenAndServe
 // and needs to be run seperately.
-func (s *Server) RunSocket(addr string) {
+func (s *Server) RunSocket() {
 	sck := &unixsocket.Commands{
 		Name: "luce-server",
-		Addr: addr,
+		Addr: s.Socket,
 		Commands: []unixsocket.Command{
 			{
 				Name:  "help",
