@@ -1,5 +1,7 @@
 package lstr
 
+import "github.com/adamcolton/luce/ds/slice"
+
 // Seperator is used for string operations with a separator.
 type Seperator string
 
@@ -29,4 +31,38 @@ func (s Seperator) JoinLen(elems []string) int {
 		}
 	}
 	return ln
+}
+
+// BufJoin joins elems making sure there is a single Seperator between each elem
+// and will use buf if it has adequate capacity. If an elem ends with the
+// Seperator and the next starts with it, only one is kept and if neither has it,
+// one is added. Empty elems are skipped.
+func (s Seperator) BufJoin(elems []string, buf []byte) string {
+	if len(elems) == 0 {
+		return ""
+	}
+
+	sep := string(s)
+	sln := len(s)
+	ln := s.JoinLen(elems)
+	out := slice.NewBuffer(buf).Empty(ln)
+
+	out = append(out, elems[0]...)
+	for _, e := range elems[1:] {
+		if e == "" {
+			continue
+		}
+		oln := len(out)
+		ps := oln >= sln && string(out[oln-sln:]) == sep
+		es := len(e) >= sln && e[:sln] == sep
+		if ps && es {
+			out = append(out, e[sln:]...)
+		} else {
+			if !ps && !es {
+				out = append(out, sep...)
+			}
+			out = append(out, e...)
+		}
+	}
+	return string(out)
 }
