@@ -9,6 +9,11 @@ import (
 // capacity, otherwise a new slice is allocated and the Buffer is left alone.
 type Buffer[T any] []T
 
+// NewBuffer converts buf to a Buffer, inferring the type.
+func NewBuffer[T any](buf []T) Buffer[T] {
+	return buf
+}
+
 // Empty returns a zero length Slice with at least capacity c. If the buffer
 // has capacity c, it will be used otherwise a new one is created.
 func (buf Buffer[T]) Empty(c int) Slice[T] {
