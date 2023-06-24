@@ -103,6 +103,9 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 		if route.Method != "" {
 			r = r.Methods(route.Methods()...)
 		}
+		if route.Host != "" {
+			r = r.Host(route.Host)
+		}
 		sc.s.serviceRoutes[route.ID] = r
 	}
 	r.HandlerFunc(h)
