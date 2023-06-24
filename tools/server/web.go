@@ -19,6 +19,7 @@ func (s *Server) setRoutes() {
 	m := midware.New(
 		s.Users,
 		midware.NewDecoder(formdecoder.New(), "Form"),
+		midware.NewRedirect("Redirect"),
 	)
 	r := s.Router
 
