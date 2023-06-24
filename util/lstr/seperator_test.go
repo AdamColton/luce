@@ -23,7 +23,7 @@ func TestSeperatorJoin(t *testing.T) {
 	s := lstr.Seperator("/")
 	for n, tc := range tt {
 		t.Run("_"+n, func(t *testing.T) {
-			assert.Equal(t, n, s.BufJoin(tc, nil))
+			assert.Equal(t, n, s.Join(tc...))
 		})
 	}
 
