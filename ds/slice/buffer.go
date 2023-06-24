@@ -7,6 +7,11 @@ import (
 // Buffer is used to provide a slice for re-use avoiding excessive allocation.
 type Buffer[T any] []T
 
+// NewBuffer provides syntactic sugar by inferring the type.
+func NewBuffer[T any](buf []T) Buffer[T] {
+	return buf
+}
+
 // BufferEmpty returns a zero length buffer with at least capacity c. If the
 // provided buffer has capacity, it will be used otherwise a new one is created.
 func (buf Buffer[T]) Empty(c int) Slice[T] {
