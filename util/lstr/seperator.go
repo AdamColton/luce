@@ -1,6 +1,9 @@
 package lstr
 
-import "github.com/adamcolton/luce/ds/slice"
+import (
+	"github.com/adamcolton/luce/ds/slice"
+	"strings"
+)
 
 // Seperator is used for string operations with a seperator
 type Seperator string
@@ -68,4 +71,9 @@ func (s Seperator) BufJoin(elems []string, buf []byte) string {
 // Join elems making sure there is a single Seperator between each elem.
 func (s Seperator) Join(elems ...string) string {
 	return s.BufJoin(elems, nil)
+}
+
+// Index is a wrapper around strings.Index
+func (s Seperator) Index(str string) int {
+	return strings.Index(str, string(s))
 }
