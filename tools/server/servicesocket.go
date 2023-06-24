@@ -75,6 +75,9 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 		lerr.Panic(err)
 		select {
 		case resp := <-ch:
+			if resp.Status > 0 {
+				w.WriteHeader(resp.Status)
+			}
 			w.Write(resp.Body)
 		case <-time.After(time.Second * 5):
 			w.WriteHeader(http.StatusRequestTimeout)
