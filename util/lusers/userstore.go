@@ -55,7 +55,7 @@ func (us *UserStore) GetByName(name string) (*User, error) {
 }
 
 func (us *UserStore) Login(name, password string) (*User, error) {
-	u, err := us.GetByID(us.byName.Get([]byte(name)).Value)
+	u, err := us.GetByName(name)
 	if err != nil {
 		return nil, err
 	}
