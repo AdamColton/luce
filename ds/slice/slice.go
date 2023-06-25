@@ -98,6 +98,43 @@ func (s Slice[T]) Remove(idxs ...int) Slice[T] {
 	return s[:ln]
 }
 
+// RemoveOrdered preserves the order of the slice while removing the values at
+// the given indexes. Negative and duplicate indexes are ignored, as are indexes
+// past the end of the slice, unless the smallest non-negative index is out of
+// range, in which case it panics. Note that idxs is sorted in place, so if that
+// is a slice passed in and the order is important, pass in a copy.
+func (s Slice[T]) RemoveOrdered(idxs ...int) Slice[T] {
+	sort.Ints(idxs)
+	ln := len(idxs)
+	start := 0
+	var pIdx int
+	for {
+		if start >= ln {
+			return s
+		}
+		pIdx = idxs[start]
+		start++
+		if pIdx >= 0 {
+			break
+		}
+	}
+	ln = len(s)
+	d := 0
+	for _, idx := range idxs[start:] {
+		if idx >= ln {
+			break
+		}
+		if idx < 0 || idx == pIdx {
+			continue
+		}
+		copy(s[pIdx-d:], s[pIdx+1:idx])
+		d++
+		pIdx = idx
+	}
+	copy(s[pIdx-d:], s[pIdx+1:ln])
+	return s[:ln-d-1]
+}
+
 // Buffer is syntactic sugar to convert a Slice to a Buffer providing a set of
 // methods useful for buffering operations.
 func (s Slice[T]) Buffer() Buffer[T] {
