@@ -95,6 +95,81 @@ func TestRemove(t *testing.T) {
 	assert.Equal(t, expected, data)
 }
 
+func TestRemoveOrdered(t *testing.T) {
+	tt := map[string]struct {
+		start    slice.Slice[int]
+		remove   []int
+		expected slice.Slice[int]
+	}{
+		"basic": {
+			start:    slice.Slice[int]{3, 1, 4, 1, 5, 9},
+			remove:   []int{1},
+			expected: slice.Slice[int]{3, 4, 1, 5, 9},
+		},
+		"first": {
+			start:    slice.Slice[int]{3, 1, 4, 1, 5, 9},
+			remove:   []int{0},
+			expected: slice.Slice[int]{1, 4, 1, 5, 9},
+		},
+		"last": {
+			start:    slice.Slice[int]{3, 1, 4, 1, 5, 9},
+			remove:   []int{5},
+			expected: slice.Slice[int]{3, 1, 4, 1, 5},
+		},
+		"two": {
+			start:    slice.Slice[int]{3, 1, 4, 1, 5, 9},
+			remove:   []int{3, 1},
+			expected: slice.Slice[int]{3, 4, 5, 9},
+		},
+		"two-first": {
+			start:    slice.Slice[int]{3, 1, 4, 1, 5, 9},
+			remove:   []int{3, 0},
+			expected: slice.Slice[int]{1, 4, 5, 9},
+		},
+		"two-last": {
+			start:    slice.Slice[int]{3, 1, 4, 1, 5, 9},
+			remove:   []int{5, 3},
+			expected: slice.Slice[int]{3, 1, 4, 5},
+		},
+		"first-last": {
+			start:    slice.Slice[int]{3, 1, 4, 1, 5, 9},
+			remove:   []int{5, 0},
+			expected: slice.Slice[int]{1, 4, 1, 5},
+		},
+		"repeat": {
+			start:    slice.Slice[int]{3, 1, 4, 1, 5, 9},
+			remove:   []int{3, 3},
+			expected: slice.Slice[int]{3, 1, 4, 5, 9},
+		},
+		"repeat-first": {
+			start:    slice.Slice[int]{3, 1, 4, 1, 5, 9},
+			remove:   []int{0, 0},
+			expected: slice.Slice[int]{1, 4, 1, 5, 9},
+		},
+		"repeat-last": {
+			start:    slice.Slice[int]{3, 1, 4, 1, 5, 9},
+			remove:   []int{5, 5},
+			expected: slice.Slice[int]{3, 1, 4, 1, 5},
+		},
+		"none": {
+			start:    slice.Slice[int]{3, 1, 4, 1, 5, 9},
+			remove:   []int{},
+			expected: slice.Slice[int]{3, 1, 4, 1, 5, 9},
+		},
+		"out-of-range": {
+			start:    slice.Slice[int]{3, 1, 4, 1, 5, 9},
+			remove:   []int{-1, 6, 3, -3},
+			expected: slice.Slice[int]{3, 1, 4, 5, 9},
+		},
+	}
+
+	for n, tc := range tt {
+		t.Run(n, func(t *testing.T) {
+			assert.Equal(t, tc.expected, tc.start.RemoveOrdered(tc.remove...))
+		})
+	}
+}
+
 func TestPop(t *testing.T) {
 	data := slice.Slice[int]{3, 1, 4, 1, 5, 9}
 	i, got := data.Pop()
