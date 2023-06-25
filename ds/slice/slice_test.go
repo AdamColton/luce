@@ -270,3 +270,22 @@ func TestMake(t *testing.T) {
 	assert.Equal(t, 15, cap(data))
 	assert.Equal(t, 15, len(data))
 }
+
+func TestSearch(t *testing.T) {
+	data := slice.Slice[int]{2, 3, 5, 7, 11, 13, 17, 19, 23}
+	fn := func(i int) bool { return i >= 5 }
+	idx := data.Search(fn)
+	assert.Equal(t, 5, data[idx])
+
+	fn = func(i int) bool { return i >= 10 }
+	idx = data.Search(fn)
+	assert.Equal(t, 11, data[idx])
+
+	fn = func(i int) bool { return i >= 0 }
+	idx = data.Search(fn)
+	assert.Equal(t, 0, idx)
+
+	fn = func(i int) bool { return i >= 24 }
+	idx = data.Search(fn)
+	assert.Equal(t, len(data), idx)
+}
