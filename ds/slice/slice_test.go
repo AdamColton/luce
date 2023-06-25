@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/util/filter"
 	"github.com/adamcolton/luce/util/iter"
 	"github.com/adamcolton/luce/util/upgrade"
 	"github.com/stretchr/testify/assert"
@@ -295,4 +296,19 @@ func TestMake(t *testing.T) {
 	data = slice.Make[int](15, 0)
 	assert.Equal(t, 15, cap(data))
 	assert.Equal(t, 15, len(data))
+}
+
+func TestSearch(t *testing.T) {
+	data := slice.Slice[int]{2, 3, 5, 7, 11, 13, 17, 19, 23}
+	idx := data.Search(filter.GTE(5))
+	assert.Equal(t, 5, data[idx])
+
+	idx = data.Search(filter.GTE(10))
+	assert.Equal(t, 11, data[idx])
+
+	idx = data.Search(filter.GTE(0))
+	assert.Equal(t, 0, idx)
+
+	idx = data.Search(filter.GTE(24))
+	assert.Equal(t, len(data), idx)
 }
