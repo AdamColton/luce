@@ -201,3 +201,10 @@ func (s Slice[T]) CheckCapacity(c int) Slice[T] {
 	copy(out, s)
 	return out
 }
+
+// Search wraps sort.Search
+func (s Slice[T]) Search(fn func(T) bool) int {
+	return sort.Search(len(s), func(idx int) bool {
+		return fn(s[idx])
+	})
+}
