@@ -289,3 +289,14 @@ func TestSearch(t *testing.T) {
 	idx = data.Search(fn)
 	assert.Equal(t, len(data), idx)
 }
+
+func TestIdxCheck(t *testing.T) {
+	data := slice.Slice[int]{2, 3, 5, 7, 11, 13, 17, 19, 23}
+	assert.False(t, data.IdxCheck(-3))
+	assert.False(t, data.IdxCheck(-1))
+	assert.True(t, data.IdxCheck(0))
+	assert.True(t, data.IdxCheck(5))
+	assert.True(t, data.IdxCheck(len(data)-1))
+	assert.False(t, data.IdxCheck(len(data)))
+	assert.False(t, data.IdxCheck(len(data)+1))
+}
