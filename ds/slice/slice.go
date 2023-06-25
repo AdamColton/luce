@@ -178,3 +178,8 @@ func (s Slice[T]) Search(fn func(T) bool) int {
 		return fn(s[idx])
 	})
 }
+
+// IdxCheck returns false if idx is out of the range of s.
+func (s Slice[T]) IdxCheck(idx int) bool {
+	return idx >= 0 && idx < len(s)
+}
