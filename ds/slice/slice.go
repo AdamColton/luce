@@ -181,3 +181,12 @@ func (s Slice[T]) CheckCapacity(check, request int) Slice[T] {
 	copy(out, s)
 	return out
 }
+
+// Search wraps sort.Search. The slice must be sorted so that fn returns false
+// for a prefix of the slice and true for the rest. Search returns the first idx
+// where fn is true, or len(s) if there is none.
+func (s Slice[T]) Search(fn func(T) bool) int {
+	return sort.Search(len(s), func(idx int) bool {
+		return fn(s[idx])
+	})
+}
