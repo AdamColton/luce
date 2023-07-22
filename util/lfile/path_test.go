@@ -27,6 +27,11 @@ func TestName(t *testing.T) {
 		"/foo/bar/":    {"/foo/", "bar"},
 		"foo.txt":      {"", "foo.txt"},
 		"foo/":         {"", "foo"},
+		"a":            {"", "a"},
+		"/a":           {"/", "a"},
+		"//a/b.txt":    {"//a/", "b.txt"},
+		"/":            {"", "/"},
+		"":             {"", ""},
 	}
 
 	for n, tc := range tt {

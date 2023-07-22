@@ -37,11 +37,15 @@ func (pln PathLength) Trim(filename string) string {
 // is the preceeding portion.
 func Name(path string) (string, string) {
 	end := len(path) - 1
+	if end < 0 {
+		return "", ""
+	}
 	for end > 0 && path[end] == '/' {
 		end--
 	}
 	start := end - 1
 	for ; start >= 0 && path[start] != '/'; start-- {
 	}
-	return path[:start+1], path[start+1 : end+1]
+	start++
+	return path[:start], path[start : end+1]
 }
