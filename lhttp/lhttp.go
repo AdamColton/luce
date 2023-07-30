@@ -33,3 +33,22 @@ type MessageReaderWriter interface {
 	WriteMessage(messageType int, data []byte) error
 	ReadMessage() (int, []byte, error)
 }
+
+// StatusErr provides an optional interface for errors allowing errors to
+// include HTTP status.
+type StatusErr interface {
+	Status() int
+}
+
+// ErrStatus will return 0 if err is nil. If err is not nil and fulfills
+// StatusErr, that Status will be returned, otherwise StatusInternalServerError
+// is returned.
+func ErrStatus(err error) int {
+	if err == nil {
+		return 0
+	}
+	if s, ok := err.(StatusErr); ok {
+		return s.Status()
+	}
+	return http.StatusInternalServerError
+}
