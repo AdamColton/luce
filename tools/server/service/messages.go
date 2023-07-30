@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/adamcolton/luce/lhttp"
 	"github.com/adamcolton/luce/serial"
 	"github.com/adamcolton/luce/serial/type32"
 	"github.com/adamcolton/luce/util/luceio"
@@ -108,6 +109,17 @@ func (r *Request) ResponseErr(err error, status int) *Response {
 	return resp
 }
 
+// ResponseErr sets the response body to the error and sets the status.
+func (r *Request) ErrCheck(err error) *Response {
+	s := lhttp.ErrStatus(err)
+	if s == 0 {
+		return nil
+	}
+	return r.
+		ResponseString(err.Error()).
+		SetStatus(s)
+}
+
 // Response to a request. The ID is the same as the ID is taken from the
 // request.
 type Response struct {
@@ -125,6 +137,22 @@ func (*Response) TypeID32() uint32 {
 func (r *Response) SetStatus(status int) *Response {
 	r.Status = status
 	return r
+}
+
+// ErrCheck will set the response to the error body only if err is not nil. In
+// this case it will check if the error fulfills lhttp.StatusErr and use that
+// for the status, other wise it will set the status to
+// StatusInternalServerError.
+func (r *Response) ErrCheck(err error) (notNil bool) {
+	notNil = err != nil
+	if notNil {
+		r.Body = []byte(err.Error())
+		r.Status = http.StatusInternalServerError
+		if s, ok := err.(lhttp.StatusErr); ok {
+			r.Status = s.Status()
+		}
+	}
+	return
 }
 
 // Write p to the body. Fulfills io.Writer.
