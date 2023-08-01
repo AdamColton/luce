@@ -41,6 +41,26 @@ func (f Filter[T]) Slice(vals []T) slice.Slice[T] {
 	})
 }
 
+// FirstIdx finds the index of the first value that passes the filter
+func (f Filter[T]) FirstIdx(vals ...T) int {
+	for i, val := range vals {
+		if f(val) {
+			return i
+		}
+	}
+	return -1
+}
+
+// First returns the first value that passes the Filter and the index. If none
+// pass, then idx will be -1 and t will be the default value.
+func (f Filter[T]) First(vals ...T) (t T, idx int) {
+	idx = f.FirstIdx(vals...)
+	if idx > -1 {
+		t = vals[idx]
+	}
+	return
+}
+
 // SliceInPlace reorders the slice so all the elements passing the filter are at
 // the start of the slice and all elements failing the filter are at the end.
 // It returns two subslices, the first for passing, the second for failing.
