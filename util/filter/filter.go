@@ -1,6 +1,6 @@
 package filter
 
-// Filter provides tools to filter ints and compose filters
+// Filter provides tools to filter values and compose filters
 type Filter[T any] func(T) bool
 
 // Or builds a new Int that will return true if either underlying
@@ -27,7 +27,7 @@ func (f Filter[T]) Not() Filter[T] {
 	}
 }
 
-// Returns all values that return true when passed to Int.
+// Returns all values that return true when passed to the filter.
 func (f Filter[T]) Slice(vals []T) []T {
 	var out []T
 	for _, val := range vals {
@@ -36,6 +36,26 @@ func (f Filter[T]) Slice(vals []T) []T {
 		}
 	}
 	return out
+}
+
+// FirstIdx finds the index of the first value that passes the filter
+func (f Filter[T]) FirstIdx(vals ...T) int {
+	for i, val := range vals {
+		if f(val) {
+			return i
+		}
+	}
+	return -1
+}
+
+// First returns the first value that passes the filter and the index. If none
+// pass, then idx will be -1 and t will be the default value.
+func (f Filter[T]) First(vals ...T) (t T, idx int) {
+	idx = f.FirstIdx(vals...)
+	if idx > -1 {
+		t = vals[idx]
+	}
+	return
 }
 
 // SliceInPlace reorders the slice so all the elements passing the filter are at
