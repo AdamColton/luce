@@ -3,6 +3,11 @@ package filter
 // Filter provides tools to filter values and compose filters
 type Filter[T any] func(T) bool
 
+// New is syntactic sugar to make filter declarations a bit cleaner.
+func New[T any](fn func(T) bool) Filter[T] {
+	return fn
+}
+
 // Returns all values that return true when passed to the filter.
 func (f Filter[T]) Slice(vals []T) []T {
 	var out []T
