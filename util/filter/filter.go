@@ -47,6 +47,11 @@ func (f Filter[T]) Slice(vals []T) slice.Slice[T] {
 	return slice.TransformSlice(vals, nil, f.SliceTransformFunc())
 }
 
+// New is syntactic sugar to make filter declarations a bit cleaner.
+func New[T any](fn func(T) bool) Filter[T] {
+	return fn
+}
+
 // FirstIdx finds the index of the first value that passes the filter
 func (f Filter[T]) FirstIdx(vals ...T) int {
 	for i, val := range vals {
