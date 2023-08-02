@@ -73,7 +73,9 @@ func TestSliceInPlace(t *testing.T) {
 	type Foo struct {
 		A, B int
 	}
-	f := filter.Filter[Foo](func(foo Foo) bool { return foo.A*foo.B%2 == 0 })
+	f := filter.New(func(foo Foo) bool {
+		return foo.A*foo.B%2 == 0
+	})
 
 	tt := map[string][]Foo{
 		"Simple": {
