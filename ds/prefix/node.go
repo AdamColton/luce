@@ -57,6 +57,20 @@ func newNode() *node {
 	}
 }
 
+func (n *node) Next(r rune, create bool, p *Prefix) (*node, bool) {
+	next, ok := n.children[r]
+	if !ok && create {
+		next = &node{
+			r:        r,
+			parent:   n,
+			children: make(map[rune]*node),
+		}
+		p.starts[r] = append(p.starts[r], next)
+		n.children[r], ok = next, true
+	}
+	return next, ok
+}
+
 func (n *node) IsWord() bool {
 	return n.isWord
 }
