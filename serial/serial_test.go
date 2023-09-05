@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/util/reflector"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -27,8 +28,8 @@ func mockDeserialize(i interface{}, r io.Reader) error {
 type typeMap struct{}
 
 var (
-	personPtrType = reflect.TypeOf((*person)(nil))
-	personType    = reflect.TypeOf(person{})
+	personPtrType = reflector.Type[*person]()
+	personType    = personPtrType.Elem()
 )
 
 func (typeMap) PrefixReflectType(t reflect.Type, b []byte) ([]byte, error) {

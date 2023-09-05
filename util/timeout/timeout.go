@@ -26,11 +26,13 @@ import (
 	"reflect"
 	"sync"
 	"time"
+
+	"github.com/adamcolton/luce/util/reflector"
 )
 
 var (
-	errType = reflect.TypeOf((*error)(nil)).Elem()
-	wgType  = reflect.TypeOf((*sync.WaitGroup)(nil))
+	errType = reflector.Type[error]()
+	wgType  = reflector.Type[*sync.WaitGroup]()
 )
 
 const (
