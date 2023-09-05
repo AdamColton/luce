@@ -33,7 +33,7 @@ func (l *HTMLLoader) Load() (*template.Template, error) {
 
 	var err error
 	i, done := l.Iterator()
-	for ; !done && err == nil; done = i.Next() {
+	for ; !done && err == nil; _, done = i.Next() {
 		tmplname := i.Path()
 		if l.Trimmer != nil {
 			tmplname = l.Trim(tmplname)
