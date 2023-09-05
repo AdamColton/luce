@@ -30,6 +30,16 @@ func TestNewMatch(t *testing.T) {
 
 // TODO:tests where match has nil values
 
+type idxCheck struct {
+	shouldBe int
+	t        *testing.T
+}
+
+func (i *idxCheck) HandleIter(iter Iterator) {
+	assert.Equal(i.t, i.shouldBe, iter.Idx())
+	i.shouldBe++
+}
+
 func TestMRI(t *testing.T) {
 	restore := setupForTestMRI()
 	defer restore()
@@ -76,7 +86,8 @@ func TestMRI(t *testing.T) {
 				Iterator()
 			byType := &GetByTypeHandler{}
 			contents := GetContentsHandler{}
-			err := RunHandler(i, MultiHandler{byType, contents})
+			idxChecker := &idxCheck{t: t}
+			err := RunHandler(i, MultiHandler{byType, contents, idxChecker})
 			assert.NoError(t, err)
 			assert.True(t, i.Done())
 			assert.Equal(t, "", i.Path())
@@ -146,5 +157,6 @@ func TestMRIErr(t *testing.T) {
 		Iterator()
 
 	assert.Equal(t, "test error", i.Err().Error())
-	assert.True(t, i.Next())
+	_, done := i.Next()
+	assert.True(t, done)
 }

@@ -45,7 +45,7 @@ func TestMultiGlobIter(t *testing.T) {
 	defer restore()
 
 	c := 0
-	for i, done := (MultiGlob{"foo*", "*.bar"}).Iterator(); !done; done = i.Next() {
+	for i, done := (MultiGlob{"foo*", "*.bar"}).Iterator(); !done; _, done = i.Next() {
 		c++
 		assert.Equal(t, i.Path(), string(i.Data()))
 	}
