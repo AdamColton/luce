@@ -5,10 +5,18 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/util/reflector"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestType(t *testing.T) {
+
+	var (
+		strType = reflector.Type[string]()
+		intType = reflector.Type[int]()
+		fnType  = reflector.Type[func(a, b, c int)]()
+	)
+
 	tt := map[string]struct {
 		expected bool
 		f        Filter[reflect.Type]
@@ -17,22 +25,22 @@ func TestType(t *testing.T) {
 		"string-true": {
 			expected: true,
 			f:        IsType(""),
-			Type:     reflect.TypeOf("foo"),
+			Type:     strType,
 		},
 		"string-false": {
 			expected: false,
 			f:        IsType(""),
-			Type:     reflect.TypeOf(123),
+			Type:     intType,
 		},
 		"string-type-true": {
 			expected: true,
 			f:        IsType(reflect.TypeOf("")),
-			Type:     reflect.TypeOf("foo"),
+			Type:     strType,
 		},
 		"string-kind-true": {
 			expected: true,
 			f:        IsKind(reflect.String),
-			Type:     reflect.TypeOf("foo"),
+			Type:     strType,
 		},
 		"elem-string-true": {
 			expected: true,
@@ -62,17 +70,17 @@ func TestType(t *testing.T) {
 		"numIn-true": {
 			expected: true,
 			f:        NumIn(EQ(3)),
-			Type:     reflect.TypeOf(func(a, b, c int) {}),
+			Type:     fnType,
 		},
 		"numIn-false": {
 			expected: false,
 			f:        NumIn(EQ(4)),
-			Type:     reflect.TypeOf(func(a, b, c int) {}),
+			Type:     fnType,
 		},
 		"in-true": {
 			expected: true,
 			f:        In(1, IsNilRef((*int)(nil))),
-			Type:     reflect.TypeOf(func(a, b, c int) {}),
+			Type:     fnType,
 		},
 	}
 
