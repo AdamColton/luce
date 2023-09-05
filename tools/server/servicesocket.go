@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net"
@@ -38,7 +37,7 @@ func (s *Server) handleServiceSocket(netConn net.Conn) {
 	defer netConn.Close()
 	conn, err := service.NewConn(netConn)
 	if err != nil {
-		fmt.Println(err)
+		// TODO: add err handler to Server and handle err
 		return
 	}
 	sc := &serviceConn{
@@ -115,7 +114,7 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 				w.WriteHeader(resp.Status)
 			}
 			w.Write(resp.Body)
-		case <-time.After(time.Second * 5):
+		case <-time.After(TimeoutDuration):
 			w.WriteHeader(http.StatusRequestTimeout)
 		}
 
