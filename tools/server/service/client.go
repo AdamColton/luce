@@ -57,7 +57,10 @@ func (c *Client) Run() {
 func (c *Client) Add(h RequestResponder, r *RouteConfig) {
 	lerr.Panic(r.Validate())
 	fn := func(r *Request) {
-		c.Sender.Send(h(r))
+		err := c.Sender.Send(h(r))
+		if err != nil {
+			c.Listener.HandleError(err)
+		}
 	}
 	c.Mux.Add(fn, r)
 }
