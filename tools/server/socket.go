@@ -8,10 +8,10 @@ import (
 
 // RunSocket for the admin interface. This is not invoked by ListenAndServe
 // and needs to be run seperately.
-func (s *Server) RunSocket(addr string) {
+func (s *Server) RunSocket() {
 	sck := &unixsocket.Commands{
 		Name: "luce-server",
-		Addr: addr,
+		Addr: s.Socket,
 		Commands: []unixsocket.Command{
 			{
 				Name:  "help",
@@ -57,7 +57,18 @@ func (s *Server) RunSocket(addr string) {
 				Name:  "users",
 				Usage: "list users",
 				Action: func(ctx *unixsocket.Context) {
-					ctx.Printf("  %s", strings.Join(s.Users.List(), "\n  "))
+					us := s.Users.List()
+					for _, name := range us {
+						u, err := s.Users.GetByName(name)
+						if err != nil {
+							ctx.Printf("  Error: %s", err.Error())
+						}
+						ctx.Printf("  %s", name)
+						if len(u.Groups) > 0 {
+							ctx.Printf(" (%s)", strings.Join(u.Groups, ", "))
+						}
+						ctx.Printf("\n")
+					}
 				},
 			}, {
 				Name:  "group",
@@ -111,6 +122,39 @@ func (s *Server) RunSocket(addr string) {
 					ctx.Error(err)
 				},
 			}, {
+				Name:  "rm-user-group",
+				Usage: "remove user from group",
+				Action: func(ctx *unixsocket.Context) {
+					var user, group string
+					ok := ctx.Input("(group) ", &group)
+					if !ok {
+						ctx.WriteString("  Operation Cancelled")
+						return
+					}
+					g := s.Users.HasGroup(group)
+					if g == nil {
+						ctx.WriteString("  Group not found")
+					}
+
+					ok = ctx.Input("(user) ", &user)
+					if !ok {
+						ctx.WriteString("  Operation Cancelled")
+						return
+					}
+					u, err := s.Users.GetByName(user)
+					if ctx.Error(err) {
+						return
+					}
+
+					err = g.RemoveUser(u)
+					if ctx.Error(err) {
+						return
+					}
+
+					err = s.Users.Update(u)
+					ctx.Error(err)
+				},
+			}, {
 				Name:  "setport",
 				Usage: "change port that server is running on",
 				Action: func(ctx *unixsocket.Context) {
@@ -141,6 +185,17 @@ func (s *Server) RunSocket(addr string) {
 						return
 					}
 					s.Settings.AdminLockUserCreation = lock == "Y" || lock == "y"
+				},
+			}, {
+				Name:  "routes",
+				Usage: "View service routes",
+				Action: func(ctx *unixsocket.Context) {
+					for id, r := range s.serviceRoutes {
+						if r.active {
+							ctx.WriteString(id)
+							ctx.WriteString("\n")
+						}
+					}
 				},
 			},
 		},

@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/util/luceio"
 	"github.com/urfave/cli"
 )
 
@@ -25,7 +28,19 @@ func filevars(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(out, "var %s = `%s`\n\n", varName, string(f))
+		str := string(f)
+		if strings.Contains(str, "`") {
+			buf := bytes.NewBuffer(nil)
+			fmt.Fprintf(buf, "var %s = string([]byte{%d", varName, f[0])
+			for _, b := range f[1:] {
+				fmt.Fprintf(buf, ", %d", b)
+			}
+			fmt.Fprint(buf, "})")
+			luceio.NewLineWrappingWriter(out).Write(buf.Bytes())
+		} else {
+			fmt.Fprintf(out, "var %s = `%s`", varName, str)
+		}
+		fmt.Fprint(out, "\n\n")
 	}
 
 	return nil

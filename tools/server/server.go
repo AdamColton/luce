@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/adamcolton/luce/ds/toq"
+	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/store"
 	"github.com/adamcolton/luce/util/lusers"
 	"github.com/adamcolton/luce/util/lusers/lusess"
@@ -14,25 +14,41 @@ import (
 	"github.com/gorilla/sessions"
 )
 
+// Config is used to create a Server. It holds all the configuration values.
+// This follows the builder pattern instead of using a function that would
+// take many arguments.
+type Config struct {
+	SessionStore sessions.Store
+	Templates    *template.Template
+	UserStore    store.Factory
+	TemplateNames
+	Addr          string
+	Socket        string
+	ServiceSocket string
+	Host          string
+}
+
+// Server runs a webserver.
 type Server struct {
-	Router    *mux.Router
-	Addr      string
-	Users     *lusess.Store
-	Templates *template.Template
-	Settings  struct {
+	Router   *mux.Router
+	Addr     string
+	Users    *lusess.Store
+	Settings struct {
 		AdminLockUserCreation bool
 	}
-	tokens map[string]http.HandlerFunc
-	toq    *toq.TimeoutQueue
+	Templates     *template.Template
+	Socket        string
+	ServiceSocket string
 	TemplateNames
 	server        *http.Server
-	serviceRoutes map[string]*mux.Route
+	serviceRoutes map[string]*serviceRoute
 }
 
 var TimeoutDuration = time.Second * 5
 
-func New(ses sessions.Store, fac store.Factory, t *template.Template, n TemplateNames) (*Server, error) {
-	us, err := lusers.NewUserStore(fac)
+// New Server using the values from the Config.
+func (c *Config) New() (*Server, error) {
+	us, err := lusers.NewUserStore(c.UserStore)
 	if err != nil {
 		return nil, err
 	}
@@ -40,20 +56,21 @@ func New(ses sessions.Store, fac store.Factory, t *template.Template, n Template
 	srv := &Server{
 		Router: mux.NewRouter(),
 		Users: &lusess.Store{
-			Store:     ses,
+			Store:     c.SessionStore,
 			UserStore: us,
 			Decoder:   schema.NewDecoder(),
 			FieldName: "Session",
 		},
-		Templates:     t,
-		tokens:        make(map[string]http.HandlerFunc),
-		toq:           toq.New(TimeoutDuration, 10),
-		TemplateNames: n,
+		Addr:          c.Addr,
+		Templates:     c.Templates,
+		Socket:        c.Socket,
+		ServiceSocket: c.ServiceSocket,
+		TemplateNames: c.TemplateNames,
 		server:        &http.Server{},
-		serviceRoutes: make(map[string]*mux.Route),
+		serviceRoutes: make(map[string]*serviceRoute),
 	}
 
-	srv.setRoutes()
+	srv.setRoutes(c.Host)
 	return srv, nil
 }
 
@@ -65,4 +82,22 @@ func (s *Server) ListenAndServe() error {
 
 func (s *Server) Close() error {
 	return s.server.Close()
+}
+
+// Run the server. If Socket or ServiceSocket is defined, they will be run as
+// well.
+func (s *Server) Run() {
+	if s.Socket != "" {
+		go func() {
+			s.RunSocket()
+		}()
+	}
+
+	if s.ServiceSocket != "" {
+		go func() {
+			s.RunServiceSocket()
+		}()
+	}
+
+	lerr.Panic(s.ListenAndServe(), http.ErrServerClosed)
 }

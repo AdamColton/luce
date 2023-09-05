@@ -34,9 +34,15 @@ func TestCtx(t *testing.T) {
 
 func TestMany(t *testing.T) {
 	var m Many
-	m = m.Add(Str("Error 1"))
+	assert.Nil(t, m.Get())
+
+	err1 := Str("Error 1")
+	m = m.Add(err1)
+	assert.Equal(t, err1, m.Get())
 	m = m.Add(nil)
+	assert.Equal(t, err1, m.Get())
 	m = m.Add(Str("Error 2"))
+	assert.Equal(t, m, m.Get())
 
 	assert.Equal(t, "Error 1\nError 2", m.Error())
 }
