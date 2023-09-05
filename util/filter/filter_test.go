@@ -12,7 +12,9 @@ func TestSliceInPlace(t *testing.T) {
 	type Foo struct {
 		A, B int
 	}
-	f := filter.Filter[Foo](func(foo Foo) bool { return foo.A*foo.B%2 == 0 })
+	f := filter.New(func(foo Foo) bool {
+		return foo.A*foo.B%2 == 0
+	})
 
 	tt := map[string][]Foo{
 		"Simple": {
@@ -125,4 +127,15 @@ func TestMapValueFilter(t *testing.T) {
 
 	f.Purge(m)
 	assert.Equal(t, expected, m)
+}
+
+func TestFirst(t *testing.T) {
+	input := []int{3, 1, 4, 1, 5, 9, 2, 6, 5}
+	got, idx := filter.GT(5).First(input...)
+	assert.Equal(t, 5, idx)
+	assert.Equal(t, 9, got)
+
+	got, idx = filter.GT(9).First(input...)
+	assert.Equal(t, -1, idx)
+	assert.Equal(t, 0, got)
 }
