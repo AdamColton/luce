@@ -61,3 +61,14 @@ func TestLog(t *testing.T) {
 	assert.True(t, lerr.Log(testErr))
 	assert.True(t, called)
 }
+func TestTypeMismatch(t *testing.T) {
+	expected := `Types do not match: expected "string", got "float64"`
+	err := lerr.NewTypeMismatch("test", 1.0)
+	assert.Equal(t, expected, err.Error())
+
+	err = lerr.TypeMismatch("test", 1.0)
+	assert.Equal(t, expected, err.Error())
+
+	err = lerr.NewTypeMismatch("test", "foo")
+	assert.NoError(t, err)
+}
