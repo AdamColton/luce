@@ -89,3 +89,12 @@ func TestLenMismatch(t *testing.T) {
 	assert.Equal(t, max, 5)
 	assert.Equal(t, "Lengths do not match: Expected 5 got 3", err.Error())
 }
+
+func TestNotEqual(t *testing.T) {
+	a, b := 5, 5
+	err := lerr.NewNotEqual(a == b, a, b)
+	assert.NoError(t, err)
+	b = 3
+	err = lerr.NewNotEqual(a == b, a, b)
+	assert.Equal(t, "Expected 5 got 3", err.Error())
+}
