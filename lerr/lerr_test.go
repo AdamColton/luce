@@ -72,3 +72,20 @@ func TestTypeMismatch(t *testing.T) {
 	err = lerr.NewTypeMismatch("test", "foo")
 	assert.NoError(t, err)
 }
+
+func TestLenMismatch(t *testing.T) {
+	min, max, err := lerr.NewLenMismatch(5, 5)
+	assert.Equal(t, min, 5)
+	assert.Equal(t, max, 5)
+	assert.NoError(t, err)
+
+	min, max, err = lerr.NewLenMismatch(3, 5)
+	assert.Equal(t, min, 3)
+	assert.Equal(t, max, 5)
+	assert.Equal(t, "Lengths do not match: Expected 3 got 5", err.Error())
+
+	min, max, err = lerr.NewLenMismatch(5, 3)
+	assert.Equal(t, min, 3)
+	assert.Equal(t, max, 5)
+	assert.Equal(t, "Lengths do not match: Expected 5 got 3", err.Error())
+}
