@@ -1,12 +1,13 @@
-package lerr
+package lerr_test
 
 import (
 	"testing"
 
+	"github.com/adamcolton/luce/lerr"
 	"github.com/stretchr/testify/assert"
 )
 
-const testErr = Str("TestError")
+const testErr = lerr.Str("TestError")
 
 func TestError(t *testing.T) {
 	assert.Error(t, testErr)
@@ -14,35 +15,49 @@ func TestError(t *testing.T) {
 }
 
 func TestPanic(t *testing.T) {
-	Panic(nil)
+	lerr.Panic(nil)
+
+	lerr.Panic(testErr, testErr)
 
 	defer func() {
 		assert.Equal(t, recover(), testErr)
 	}()
 
-	Panic(testErr)
+	lerr.Panic(testErr)
 }
 
 func TestCtx(t *testing.T) {
-	ctx := Wrap(nil, "No Error")
+	ctx := lerr.Wrap(nil, "No Error")
 	assert.NoError(t, ctx)
 
-	ctx = Wrap(testErr, "Should Err %d time", 1)
+	ctx = lerr.Wrap(testErr, "Should Err %d time", 1)
 	assert.Error(t, ctx)
 	assert.Equal(t, "Should Err 1 time: TestError", ctx.Error())
 }
 
 func TestMany(t *testing.T) {
-	var m Many
+	var m lerr.Many
 	assert.Nil(t, m.Get())
 
-	err1 := Str("Error 1")
+	err1 := lerr.Str("Error 1")
 	m = m.Add(err1)
 	assert.Equal(t, err1, m.Get())
 	m = m.Add(nil)
 	assert.Equal(t, err1, m.Get())
-	m = m.Add(Str("Error 2"))
+	m = m.Add(lerr.Str("Error 2"))
 	assert.Equal(t, m, m.Get())
 
 	assert.Equal(t, "Error 1\nError 2", m.Error())
+}
+
+func TestLog(t *testing.T) {
+	assert.False(t, lerr.Log(testErr, testErr))
+	called := false
+	lerr.LogTo = func(err error) {
+		assert.Equal(t, testErr, testErr)
+		called = true
+	}
+
+	assert.True(t, lerr.Log(testErr))
+	assert.True(t, called)
 }
