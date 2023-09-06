@@ -16,7 +16,7 @@ const (
 )
 
 // EQ returns a filter that will check if a given value is equal to 'a'.
-func EQ[T Comparable](a T) Filter[T] {
+func EQ[T comparable](a T) Filter[T] {
 	return func(b T) bool { return a == b }
 }
 
@@ -26,7 +26,7 @@ func GT[T Comparable](a T) Filter[T] {
 }
 
 // NEQ returns a filter that will check if a given value is not equal to 'a'.
-func NEQ[T Comparable](a T) Filter[T] {
+func NEQ[T comparable](a T) Filter[T] {
 	return func(b T) bool { return a != b }
 }
 
