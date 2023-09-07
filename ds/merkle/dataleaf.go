@@ -17,7 +17,6 @@ func newDataLeaf(data []byte, idx uint32, h hash.Hash) *dataLeaf {
 	rye.Serialize.Uint32(buf, idx)
 	h.Write(buf)
 	h.Write(data)
-
 	return &dataLeaf{
 		data:   data,
 		digest: h.Sum(nil),
