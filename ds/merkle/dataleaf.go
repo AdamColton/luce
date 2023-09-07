@@ -11,8 +11,8 @@ type dataLeaf struct {
 
 func newDataLeaf(data []byte, idx uint32, h hash.Hash) *dataLeaf {
 	h.Reset()
-	h.Write(data)
 	h.Write(uint32ToSlice(idx))
+	h.Write(data)
 	return &dataLeaf{
 		data:   data,
 		digest: h.Sum(nil),
@@ -26,4 +26,8 @@ func (dl *dataLeaf) Digest() []byte {
 
 func (dl *dataLeaf) Data() []byte {
 	return dl.data
+}
+
+func (dl *dataLeaf) Leaves() int {
+	return 1
 }

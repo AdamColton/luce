@@ -1,6 +1,9 @@
 package merkle
 
-import "hash"
+import (
+	"hash"
+	"math/bits"
+)
 
 type builder struct {
 	maxLeafSize int
@@ -25,6 +28,7 @@ func (b builder) Build(data []byte) Tree {
 		h: b.h(),
 	}
 	t.node, t.leaves = makeTree(0, b.maxLeafSize, data, t.h)
+	t.depth = uint32(bits.Len(uint(t.leaves)))
 	return t
 }
 
@@ -42,6 +46,6 @@ func makeTree(idx uint32, maxLeafSize int, data []byte, h hash.Hash) (node, uint
 	}
 	n.children[0], idx = makeTree(idx, maxLeafSize, data[:split], h)
 	n.children[1], idx = makeTree(idx, maxLeafSize, data[split:], h)
-	n.setDigest(h)
+	n.update(h)
 	return n, idx
 }

@@ -11,9 +11,10 @@ type node interface {
 	Digest() []byte
 	// Data returns the entire data of the tree
 	Data() []byte
+	Leaves() int
 }
 
 type Tree interface {
 	node
-	Leaves() int
+	Leaf(int) *Leaf
 }
