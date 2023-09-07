@@ -16,4 +16,5 @@ type node interface {
 
 type Tree interface {
 	node
+	Leaf(int) *Leaf
 }
