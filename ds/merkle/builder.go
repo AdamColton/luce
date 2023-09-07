@@ -3,6 +3,8 @@ package merkle
 import (
 	"hash"
 
+	"math/bits"
+
 	"github.com/adamcolton/luce/math/ints"
 )
 
@@ -29,6 +31,7 @@ func (b builder) Build(data []byte) Tree {
 		h: b.h(),
 	}
 	t.node, t.leaves = makeTree(0, b.maxLeafSize, data, t.h)
+	t.depth = uint32(bits.Len(uint(t.leaves)))
 	return t
 }
 
