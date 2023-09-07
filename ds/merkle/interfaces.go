@@ -18,4 +18,7 @@ type node interface {
 // io.Seeker over that data.
 type Tree interface {
 	node
+	// Leaf returns the Leaf at idx, with the rows that validate it, or nil if idx is
+	// out of range.
+	Leaf(int) *Leaf
 }

@@ -11,7 +11,7 @@ import (
 
 func TestLeaf(t *testing.T) {
 	var maxLeafSize uint32 = 200
-	var ln uint32 = 5010
+	var ln uint32 = 5000
 	data := make([]byte, ln)
 	rand.Read(data)
 
@@ -21,9 +21,19 @@ func TestLeaf(t *testing.T) {
 	m = b.Build(data)
 	assert.Equal(t, data, m.Data())
 
-	expected := ln / maxLeafSize
-	if ln%maxLeafSize != 0 {
-		expected++
+	start := 0
+	h := sha256.New()
+	buf := make([]byte, 32)
+	leaves := m.Leaves()
+	for i := 0; i < leaves; i++ {
+		l := m.Leaf(i)
+		d := l.Data
+		end := start + len(d)
+		assert.Equal(t, i, int(l.Index))
+		assert.Equal(t, data[start:end], d)
+		assert.Equal(t, m.Digest(), l.Digest(h, buf))
+		start = end
 	}
-	assert.Equal(t, int(expected), m.Leaves())
+	assert.Nil(t, m.Leaf(leaves))
+
 }
