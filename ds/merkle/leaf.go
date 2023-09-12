@@ -11,6 +11,13 @@ type ValidatorRow struct {
 	IsFirst       bool
 }
 
+func (vr ValidatorRow) idx() int {
+	if vr.IsFirst {
+		return 0
+	}
+	return 1
+}
+
 // Leaf represents a Data Leaf in a Merkle Tree and contains the rows necessary
 // to validate that the leaf belongs to the Tree. Leaves can be used by an
 // Assembler to assemble a tree.
@@ -41,4 +48,24 @@ func (l *Leaf) Digest(h hash.Hash, buf []byte) []byte {
 		dig = h.Sum(dig[:0])
 	}
 	return dig
+}
+
+func (l *Leaf) populate(rowIdx int, n node) node {
+	if rowIdx == len(l.Rows) {
+		if n == nil {
+			n = newDataLeaf(l.Data, l.Index)
+		}
+		return n
+	}
+	r := l.Rows[rowIdx]
+	var b *branch
+	if nb, ok := n.(*branch); ok {
+		b = nb
+	} else {
+		b = &branch{}
+	}
+
+	cIdx := r.idx()
+	b.children[cIdx] = l.populate(rowIdx+1, b.children[cIdx])
+	return b
 }

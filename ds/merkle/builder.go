@@ -2,7 +2,6 @@ package merkle
 
 import (
 	"hash"
-	"math/bits"
 )
 
 type builder struct {
@@ -27,15 +26,15 @@ func (b builder) Build(data []byte) Tree {
 	t := &tree{
 		h: b.h(),
 	}
-	t.node, t.leaves = makeTree(0, b.maxLeafSize, data, t.h)
-	t.depth = uint32(bits.Len(uint(t.leaves)))
+	t.node, _ = makeTree(0, b.maxLeafSize, data)
+	t.update(t.h)
 	return t
 }
 
-func makeTree(idx uint32, maxLeafSize int, data []byte, h hash.Hash) (node, uint32) {
+func makeTree(idx uint32, maxLeafSize int, data []byte) (node, uint32) {
 	ln := len(data)
 	if ln <= maxLeafSize {
-		return newDataLeaf(data, idx, h), idx + 1
+		return newDataLeaf(data, idx), idx + 1
 	}
 
 	leaves := divUp(ln, maxLeafSize)
@@ -44,8 +43,8 @@ func makeTree(idx uint32, maxLeafSize int, data []byte, h hash.Hash) (node, uint
 	n := &branch{
 		data: data,
 	}
-	n.children[0], idx = makeTree(idx, maxLeafSize, data[:split], h)
-	n.children[1], idx = makeTree(idx, maxLeafSize, data[split:], h)
-	n.update(h)
+	n.children[0], idx = makeTree(idx, maxLeafSize, data[:split])
+	n.children[1], idx = makeTree(idx, maxLeafSize, data[split:])
+
 	return n, idx
 }
