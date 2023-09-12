@@ -16,18 +16,21 @@ func TestDataLeaf(t *testing.T) {
 
 	n := NewBuilder(maxLeafSize, sha256.New).Build(data).(*tree).node
 	idx := 0
-	var fn func(node)
-	fn = func(n node) {
+	var fn func(node) int
+	fn = func(n node) int {
 		if dl, ok := n.(*dataLeaf); ok {
 			dld := dl.Data()
 			ln := len(dld)
 			assert.Equal(t, data[idx:idx+ln], dld)
 			idx += ln
-			return
+			assert.Equal(t, ln, dl.Len())
+			return ln
 		}
 		b := n.(*branch)
-		fn(b.children[0])
-		fn(b.children[1])
+		ln := fn(b.children[0])
+		ln += fn(b.children[1])
+		assert.Equal(t, ln, b.Len())
+		return ln
 	}
 	fn(n)
 	assert.Equal(t, int(ln), idx)
