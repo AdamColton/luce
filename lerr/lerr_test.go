@@ -186,3 +186,14 @@ func TestManyFirst(t *testing.T) {
 	err = lerr.NewMany(nil, nil, nil).First()
 	assert.NoError(t, err)
 }
+
+func TestBadWhence(t *testing.T) {
+	err := lerr.Whence(0)
+	assert.NoError(t, err)
+
+	err = lerr.Whence(-1)
+	assert.Error(t, err)
+
+	err = lerr.Whence(3)
+	assert.Equal(t, "lerr: Seek whence value should be io.SeekStart (0), io.SeekCurrent (1) or io.SeekEnd (2), got:3", err.Error())
+}
