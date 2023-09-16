@@ -31,4 +31,8 @@ type Tree interface {
 	// Description returns what an Assembler needs to validate the Leaves of this
 	// tree: its digest and the number of leaves.
 	Description() Description
+	// Read fulfills io.Reader
+	Read(p []byte) (n int, err error)
+	// Seek fulfills io.Seeker
+	Seek(offset int64, whence int) (int64, error)
 }
