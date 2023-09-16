@@ -25,4 +25,8 @@ type Tree interface {
 	node
 	Leaf(int) *Leaf
 	Description() Description
+	// Read fulfills io.Reader
+	Read(p []byte) (n int, err error)
+	// Seek fulfills io.Seeker
+	Seek(offset int64, whence int) (int64, error)
 }
