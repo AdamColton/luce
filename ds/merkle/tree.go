@@ -2,13 +2,17 @@ package merkle
 
 import (
 	"hash"
+	"io"
 	"math/bits"
+
+	"github.com/adamcolton/luce/lerr"
 )
 
 type tree struct {
 	node
 	h     hash.Hash
 	depth uint32
+	pos   int64
 }
 
 func (t *tree) updateTree(h hash.Hash, stitchData bool) {
@@ -18,6 +22,37 @@ func (t *tree) updateTree(h hash.Hash, stitchData bool) {
 	if stitchData {
 		t.stitchData(make([]byte, ln))
 	}
+}
+
+func (t *tree) Read(p []byte) (n int, err error) {
+	if t.pos >= int64(t.Len()) {
+		return 0, io.EOF
+	}
+	n = copy(p, t.Data()[t.pos:])
+	t.pos += int64(n)
+	return
+}
+
+func (t *tree) Seek(offset int64, whence int) (int64, error) {
+	switch whence {
+	case io.SeekStart:
+		t.pos = offset
+	case io.SeekEnd:
+		t.pos = int64(t.Len()) + offset
+	case io.SeekCurrent:
+		t.pos += offset
+	default:
+		return -1, lerr.ErrBadWhence(whence)
+	}
+
+	l64 := int64(t.Len())
+	if t.pos < 0 {
+		t.pos = 0
+	} else if t.pos > l64 {
+		t.pos = l64
+	}
+
+	return t.pos, nil
 }
 
 func (t *tree) Description() Description {
