@@ -1,6 +1,7 @@
 package lerr_test
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"testing"
@@ -153,4 +154,24 @@ func TestHandlerFunc(t *testing.T) {
 	assert.Nil(t, got)
 	assert.Nil(t, err)
 	got.Handle(testErr) // Make sure this doesn't panic
+}
+
+func TestLog(t *testing.T) {
+	restore := lerr.LogTo
+	defer func() {
+		lerr.LogTo = restore
+	}()
+
+	buf := bytes.NewBuffer(nil)
+	lerr.LogTo = func(err error) {
+		if err != nil {
+			buf.WriteString(err.Error())
+		}
+	}
+
+	te := lerr.Str("test error")
+	assert.True(t, lerr.Log(te))
+	assert.Equal(t, te.Error(), buf.String())
+
+	assert.False(t, lerr.Log(te, te))
 }
