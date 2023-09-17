@@ -12,6 +12,22 @@ func Panic(err error, except ...error) bool {
 	return false
 }
 
+// LogTo can be set to handle errors when Log is called.
+var LogTo func(err error)
+
+// Log returns true if err is not nil, even if err is in the exception list. Log
+// will pass the err to LogTo if it is not nil and not in the exception list.
+func Log(err error, except ...error) bool {
+	if Except(err, except...) {
+		return false
+	}
+	isErr := err != nil
+	if isErr && LogTo != nil {
+		LogTo(err)
+	}
+	return isErr
+}
+
 // Except returns true if err is equal to one of the exceptions.
 func Except(err error, except ...error) bool {
 	for _, ex := range except {
