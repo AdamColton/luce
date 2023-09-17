@@ -25,7 +25,8 @@ type Server struct {
 	tokens map[string]http.HandlerFunc
 	toq    *toq.TimeoutQueue
 	TemplateNames
-	server *http.Server
+	server        *http.Server
+	serviceRoutes map[string]*mux.Route
 }
 
 var TimeoutDuration = time.Second * 5
@@ -49,6 +50,7 @@ func New(ses sessions.Store, fac store.Factory, t *template.Template, n Template
 		toq:           toq.New(TimeoutDuration, 10),
 		TemplateNames: n,
 		server:        &http.Server{},
+		serviceRoutes: make(map[string]*mux.Route),
 	}
 
 	srv.setRoutes()
