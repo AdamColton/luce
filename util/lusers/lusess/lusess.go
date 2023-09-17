@@ -53,6 +53,21 @@ func (s *Store) Session(w http.ResponseWriter, r *http.Request) (*Session, error
 	}, nil
 }
 
+func (s *Store) User(r *http.Request) (*lusers.User, error) {
+	sess, err := s.Get(r, StoreName)
+	if err != nil {
+		return nil, err
+	}
+
+	i := sess.Values[ValueName]
+	if i == nil {
+		return nil, nil
+	}
+	u, _ := i.(*lusers.User)
+	return u, nil
+
+}
+
 type HandlerFunc func(http.ResponseWriter, *http.Request, *Session)
 
 func (s *Store) HandlerFunc(fn HandlerFunc) http.HandlerFunc {

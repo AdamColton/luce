@@ -1,6 +1,7 @@
 package lusess
 
 import (
+	"fmt"
 	"net/http"
 	"reflect"
 
@@ -33,6 +34,9 @@ func (mi midwareInserter) Inject(w http.ResponseWriter, r *http.Request, dst ref
 	}
 	dst.Elem().FieldByIndex(mi.idx).Set(reflect.ValueOf(s))
 	return func(rets []reflect.Value) {
-		s.Save()
+		err := s.Save()
+		if err != nil {
+			fmt.Println(err)
+		}
 	}, nil
 }
