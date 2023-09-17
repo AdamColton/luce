@@ -6,11 +6,12 @@ import (
 	"github.com/adamcolton/luce/util/unixsocket"
 )
 
+// RunSocket for the admin interface. This is not invoked by ListenAndServe
+// and needs to be run seperately.
 func (s *Server) RunSocket(addr string) {
-	sck := &unixsocket.Socket{
-		Name:         "demo-server",
-		Addr:         addr,
-		StartMessage: "Welcome to the demo server\nenter 'help' for more\n",
+	sck := &unixsocket.Commands{
+		Name: "luce-server",
+		Addr: addr,
 		Commands: []unixsocket.Command{
 			{
 				Name:  "help",
