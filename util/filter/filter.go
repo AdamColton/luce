@@ -26,3 +26,17 @@ func (f Filter[T]) Not() Filter[T] {
 		return !f(val)
 	}
 }
+
+// SliceTransformFunc creates a slice.TransformFunc that uses the filter for
+// the bool return argument.
+// func (f Filter[T]) SliceTransformFunc() slice.TransformFunc[T, T] {
+// 	return func(t T, idx int) (T, bool) {
+// 		return t, f(t)
+// 	}
+// }
+
+// Slice creates a new slice holding all values that return true when passed to
+// Filter.
+// func (f Filter[T]) Slice(vals []T) slice.Slice[T] {
+// 	return slice.TransformSlice(vals, nil, f.SliceTransformFunc())
+// }
