@@ -3,6 +3,7 @@ package filter_test
 import (
 	"testing"
 
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/filter"
 	"github.com/stretchr/testify/assert"
 )
@@ -24,4 +25,20 @@ func TestFilterOps(t *testing.T) {
 	assert.True(t, lte4OrGte8(3))
 	assert.False(t, lte4OrGte8(5))
 	assert.True(t, lte4OrGte8(10))
+}
+
+func TestSlice(t *testing.T) {
+	gt4 := filter.Filter[int](func(i int) bool {
+		return i > 4
+	})
+	s := []int{3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5}
+	got := gt4.Slice(s)
+	expected := slice.Slice[int]{5, 9, 6, 5, 5}
+	assert.Equal(t, expected, got)
+
+	gt10 := filter.Filter[int](func(i int) bool {
+		return i > 10
+	})
+	got = gt10.Slice(s)
+	assert.Nil(t, got)
 }
