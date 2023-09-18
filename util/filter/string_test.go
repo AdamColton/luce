@@ -38,3 +38,21 @@ func TestSuffix(t *testing.T) {
 		})
 	}
 }
+
+func TestContains(t *testing.T) {
+	tt := map[string]bool{
+		"test":     true,
+		"testing":  true,
+		"atesting": true,
+		"atsting":  false,
+		"atest":    true,
+		"abc":      false,
+	}
+
+	c := filter.Contains("test")
+	for n, tc := range tt {
+		t.Run(n, func(t *testing.T) {
+			assert.Equal(t, tc, c(n))
+		})
+	}
+}
