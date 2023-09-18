@@ -1,5 +1,7 @@
 package filter
 
+import "github.com/adamcolton/luce/ds/slice"
+
 // Filter represents boolean logic on a Type.
 type Filter[T any] func(T) bool
 
@@ -25,4 +27,18 @@ func (f Filter[T]) Not() Filter[T] {
 	return func(val T) bool {
 		return !f(val)
 	}
+}
+
+// SliceTransformFunc creates a slice.TransformFunc that uses the filter for
+// the bool return argument.
+func (f Filter[T]) SliceTransformFunc() slice.TransformFunc[T, T] {
+	return func(t T, idx int) (T, bool) {
+		return t, f(t)
+	}
+}
+
+// Slice creates a new slice holding all values that return true when passed to
+// Filter.
+func (f Filter[T]) Slice(vals []T) slice.Slice[T] {
+	return slice.TransformSlice(vals, nil, f.SliceTransformFunc())
 }
