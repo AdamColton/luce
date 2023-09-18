@@ -1,5 +1,9 @@
 package filter
 
+import (
+	"github.com/adamcolton/luce/ds/channel"
+)
+
 // Filter is a func that tests a value of type T. Filters can be combined with
 // And, Or and Not and used to select values from slices, channels and
 // iterators.
@@ -42,3 +46,21 @@ func (f Filter[T]) Not() Filter[T] {
 // func (f Filter[T]) Slice(vals []T) slice.Slice[T] {
 // 	return slice.TransformSlice(vals, nil, f.SliceTransformFunc())
 // }
+
+// Chan runs a go routine that reads from pipe.Rcv and sends every value that
+// passes the Filter to pipe.Snd, and closes pipe.Snd when pipe.Rcv is closed. If
+// either channel in pipe is nil it is created (see channel.NewPipe) and the
+// other end of it is in the returned Pipe.
+func (f Filter[T]) Chan(pipe channel.Pipe[T]) channel.Pipe[T] {
+	var out channel.Pipe[T]
+	pipe, out.Snd, out.Rcv = channel.NewPipe(pipe.Rcv, pipe.Snd)
+	go func() {
+		for in := range pipe.Rcv {
+			if f(in) {
+				pipe.Snd <- in
+			}
+		}
+		close(pipe.Snd)
+	}()
+	return out
+}
