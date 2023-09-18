@@ -5,6 +5,7 @@ import (
 
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/filter"
+	"github.com/adamcolton/luce/util/timeout"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,4 +42,28 @@ func TestSlice(t *testing.T) {
 	})
 	got = gt10.Slice(s)
 	assert.Nil(t, got)
+}
+
+func TestChan(t *testing.T) {
+	gt4 := filter.Filter[int](func(i int) bool {
+		return i > 4
+	})
+	ch := make(chan int)
+	go func() {
+		for _, i := range []int{3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5} {
+			ch <- i
+		}
+		close(ch)
+	}()
+
+	to := timeout.After(5, func() {
+		expected := []int{5, 9, 6, 5, 5}
+		get := gt4.Chan(ch, 0)
+		idx := 0
+		for got := range get {
+			assert.Equal(t, expected[idx], got)
+			idx++
+		}
+	})
+	assert.NoError(t, to)
 }
