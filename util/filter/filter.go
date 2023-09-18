@@ -1,6 +1,9 @@
 package filter
 
-import "github.com/adamcolton/luce/ds/slice"
+import (
+	"github.com/adamcolton/luce/ds/channel"
+	"github.com/adamcolton/luce/ds/slice"
+)
 
 // Filter represents boolean logic on a Type.
 type Filter[T any] func(T) bool
@@ -41,4 +44,20 @@ func (f Filter[T]) SliceTransformFunc() slice.TransformFunc[T, T] {
 // Filter.
 func (f Filter[T]) Slice(vals []T) slice.Slice[T] {
 	return slice.TransformSlice(vals, nil, f.SliceTransformFunc())
+}
+
+// Chan runs a go routine listening on ch and any int that passes the Int is
+// passed to the channel that is returned.
+func (f Filter[T]) Chan(pipe channel.Pipe[T]) channel.Pipe[T] {
+	var out channel.Pipe[T]
+	pipe, out.Snd, out.Rcv = channel.NewPipe(pipe.Rcv, pipe.Snd)
+	go func() {
+		for in := range pipe.Rcv {
+			if f(in) {
+				pipe.Snd <- in
+			}
+		}
+		close(pipe.Snd)
+	}()
+	return out
 }

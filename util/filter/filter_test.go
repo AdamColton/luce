@@ -3,8 +3,10 @@ package filter_test
 import (
 	"testing"
 
+	"github.com/adamcolton/luce/ds/channel"
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/filter"
+	"github.com/adamcolton/luce/util/timeout"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,4 +43,28 @@ func TestSlice(t *testing.T) {
 	})
 	got = gt10.Slice(s)
 	assert.Nil(t, got)
+}
+
+func TestChan(t *testing.T) {
+	gt4 := filter.Filter[int](func(i int) bool {
+		return i > 4
+	})
+	s := []int{3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5}
+	snd := channel.Slice(s, nil)
+	// since the channel is populated, close can be called immediatly and it will
+	// close when data is drained.
+	close(snd)
+	p, _, rcv := channel.NewPipe(snd, nil)
+
+	expected := []int{5, 9, 6, 5, 5}
+	idx := 0
+	to := timeout.After(5, func() {
+		gt4.Chan(p)
+		for got := range rcv {
+			assert.Equal(t, expected[idx], got)
+			idx++
+		}
+	})
+	assert.Equal(t, len(expected), idx)
+	assert.NoError(t, to)
 }
