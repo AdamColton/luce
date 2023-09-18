@@ -25,3 +25,13 @@ func TestFilterOps(t *testing.T) {
 	assert.False(t, lte4OrGte8(5))
 	assert.True(t, lte4OrGte8(10))
 }
+
+func TestSlice(t *testing.T) {
+	gt4 := filter.Filter[int](func(i int) bool {
+		return i > 4
+	})
+	s := []int{3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5}
+	got := gt4.Slice(s)
+	expected := []int{5, 9, 6, 5, 5}
+	assert.Equal(t, expected, got)
+}
