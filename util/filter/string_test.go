@@ -22,3 +22,19 @@ func TestPrefix(t *testing.T) {
 		})
 	}
 }
+
+func TestSuffix(t *testing.T) {
+	tt := map[string]bool{
+		"test":    true,
+		"testing": false,
+		"atest":   true,
+		"abc":     false,
+	}
+
+	s := filter.Suffix("test")
+	for n, tc := range tt {
+		t.Run(n, func(t *testing.T) {
+			assert.Equal(t, tc, s(n))
+		})
+	}
+}
