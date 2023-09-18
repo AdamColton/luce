@@ -30,3 +30,9 @@ type TypePrefixer interface {
 	ReflectTypePrefixer
 	InterfaceTypePrefixer
 }
+
+// Detyper takes in serialized data and returns the type of the data and the
+// rest of the data (minus the type information).
+type Detyper interface {
+	GetType(data []byte) (t reflect.Type, rest []byte, err error)
+}
