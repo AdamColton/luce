@@ -20,6 +20,10 @@ func errSerializeFn(i interface{}, w io.Writer) error {
 	return errSerialize
 }
 
+func mockDeserialize(i interface{}, r io.Reader) error {
+	return json.NewDecoder(r).Decode(i)
+}
+
 var (
 	jsonStr    = "{\"Name\":\"Adam\",\"Age\":39}\n"
 	testPerson = person{
