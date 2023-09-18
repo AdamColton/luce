@@ -82,3 +82,35 @@ func TestRoundTrip(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, &testPerson, got)
 }
+
+type mockTypeRegistrar func(zeroValue interface{}) error
+
+func (fn mockTypeRegistrar) RegisterType(zeroValue interface{}) error {
+	return fn(zeroValue)
+}
+
+func TestRegisterTypes(t *testing.T) {
+	seen := make(map[string]bool)
+	tr := mockTypeRegistrar(func(zeroValue interface{}) error {
+		str := reflect.TypeOf(zeroValue).String()
+		seen[str] = true
+		return nil
+	})
+
+	err := serial.RegisterTypes(tr, (*person)(nil), "", int(0))
+	assert.NoError(t, err)
+
+	expected := map[string]bool{
+		"string":              true,
+		"int":                 true,
+		"*serial_test.person": true,
+	}
+	assert.Equal(t, expected, seen)
+
+	errTest := lerr.Str("test err")
+	tr = mockTypeRegistrar(func(zeroValue interface{}) error {
+		return errTest
+	})
+	err = serial.RegisterTypes(tr, 1.1)
+	assert.Equal(t, errTest, err)
+}
