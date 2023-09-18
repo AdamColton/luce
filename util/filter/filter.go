@@ -26,3 +26,14 @@ func (f Filter[T]) Not() Filter[T] {
 		return !f(val)
 	}
 }
+
+// Returns all values that return true when passed to Int.
+func (f Filter[T]) Slice(vals []T) []T {
+	var out []T
+	for _, val := range vals {
+		if f(val) {
+			out = append(out, val)
+		}
+	}
+	return out
+}
