@@ -36,3 +36,21 @@ func (f Filter[T]) Slice(vals []T) slice.Slice[T] {
 		return t, f(t)
 	})
 }
+
+// Chan runs a go routine listening on ch and any int that passes the Int is
+// passed to the channel that is returned.
+func (f Filter[T]) Chan(ch <-chan T, buf int) <-chan T {
+	// TODO: reconsider how this works
+	// should it use channel.Pipe?
+	// should there be a way to pass in the receive channel
+	out := make(chan T, buf)
+	go func() {
+		for in := range ch {
+			if f(in) {
+				out <- in
+			}
+		}
+		close(out)
+	}()
+	return out
+}
