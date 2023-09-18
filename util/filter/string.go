@@ -17,3 +17,11 @@ func Suffix(suffix string) Filter[string] {
 		return strings.HasSuffix(s, suffix)
 	}
 }
+
+// Contains creates a string Filter that returns true when passed a string that
+// contains the given substr.
+func Contains(substr string) Filter[string] {
+	return func(s string) bool {
+		return strings.Contains(s, substr)
+	}
+}
