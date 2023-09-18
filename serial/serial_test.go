@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"io"
 	"reflect"
+	"testing"
 
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/serial"
 	"github.com/adamcolton/luce/util/reflector"
+	"github.com/stretchr/testify/assert"
 )
 
 type person struct {
@@ -59,4 +62,23 @@ func (typeMap) GetType(data []byte) (t reflect.Type, rest []byte, err error) {
 		return personType, data[1:], nil
 	}
 	return personPtrType, nil, errBadPrefix
+}
+
+func TestRoundTrip(t *testing.T) {
+	tm := typeMap{}
+	s := serial.PrefixSerializer{
+		InterfaceTypePrefixer: serial.WrapPrefixer(tm),
+		Serializer:            serial.WriterSerializer(mockSerialize),
+	}
+	d := serial.PrefixDeserializer{
+		Detyper:      tm,
+		Deserializer: serial.ReaderDeserializer(mockDeserialize),
+	}
+
+	b, err := s.SerializeType(&testPerson, nil)
+	assert.NoError(t, err)
+
+	got, err := d.DeserializeType(b)
+	assert.NoError(t, err)
+	assert.Equal(t, &testPerson, got)
 }
