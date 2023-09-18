@@ -36,3 +36,21 @@ type TypePrefixer interface {
 type Detyper interface {
 	GetType(data []byte) (t reflect.Type, rest []byte, err error)
 }
+
+// TypeRegistrar is generally required for automatic deserialization. A
+// zeroValue is provided (for instance a nil pointer) to register a type that
+// can then be deserialized.
+type TypeRegistrar interface {
+	RegisterType(zeroValue interface{}) error
+}
+
+// RegisterTypes is a helper to register multiple types in one call.
+func RegisterTypes(typeRegistrar TypeRegistrar, zeroValues ...interface{}) error {
+	for _, z := range zeroValues {
+		err := typeRegistrar.RegisterType(z)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
