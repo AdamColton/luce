@@ -30,15 +30,6 @@ func (d *Deserializer) Sub(ln int) *Deserializer {
 	}
 }
 
-// CompactSub returns a Sub-Deserializer where the underlying slice is from
-// CompactSlice. The index of the parent is placed at the end of the data
-// allocated to the Sub-Deserializer.
-// func (d *Deserializer) CompactSub() *Deserializer {
-// 	return &Deserializer{
-// 		Data: d.CompactSlice(),
-// 	}
-// }
-
 // Slice returns the next ln bytes, which share memory with Data, and increases
 // the index.
 func (d *Deserializer) Slice(ln int) []byte {
