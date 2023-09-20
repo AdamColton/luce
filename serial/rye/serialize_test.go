@@ -33,6 +33,9 @@ func TestSerializeUint16(t *testing.T) {
 			b := make([]byte, 2)
 			rye.Serialize.Uint16(b, tc.x)
 			assert.Equal(t, tc.expected, b)
+
+			x := rye.Deserialize.Uint16(tc.expected)
+			assert.Equal(t, tc.x, x)
 		})
 	}
 }
@@ -62,6 +65,8 @@ func TestSerializeUint32(t *testing.T) {
 			b := make([]byte, 4)
 			rye.Serialize.Uint32(b, tc.x)
 			assert.Equal(t, tc.expected, b)
+			x := rye.Deserialize.Uint32(tc.expected)
+			assert.Equal(t, tc.x, x)
 		})
 	}
 }
@@ -87,6 +92,8 @@ func TestSerializeUint64(t *testing.T) {
 			b := make([]byte, 8)
 			rye.Serialize.Uint64(b, tc.x)
 			assert.Equal(t, tc.expected, b)
+			x := rye.Deserialize.Uint64(tc.expected)
+			assert.Equal(t, tc.x, x)
 		})
 	}
 }
