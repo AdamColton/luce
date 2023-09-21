@@ -80,6 +80,21 @@ func TestType(t *testing.T) {
 			f:        filter.NumOut(filter.EQ(4)),
 			v:        func() (a, b, c int) { return 1, 2, 3 },
 		},
+		"out-true": {
+			expected: true,
+			f:        filter.IsType(ltype.Int).Out(1),
+			v:        func() (a, b, c int) { return 1, 2, 3 },
+		},
+		"out-negative-true": {
+			expected: true,
+			f:        filter.IsType(ltype.String).Out(-1),
+			v:        func() (a, b int, c string) { return 1, 2, "3" },
+		},
+		"out-false": {
+			expected: false,
+			f:        filter.IsType(ltype.String).Out(1),
+			v:        func() (a, b, c int) { return 1, 2, 3 },
+		},
 	}
 
 	for n, tc := range tt {

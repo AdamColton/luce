@@ -39,6 +39,17 @@ func (t Type) In(i int) Type {
 	}}
 }
 
+// Out checks the filter type's return number i against the given filter. It
+// panics if the type it is given is not a function. If i
+// is less than 0, it will be indexed relative to the number of returns, so -1
+// will return the last return.
+func (t Type) Out(i int) Type {
+	return Type{func(t2 reflect.Type) bool {
+		idx, inRange := ints.Idx(i, t2.NumOut())
+		return inRange && t2 != nil && t2.Kind() == reflect.Func && t.Filter(t2.Out(idx))
+	}}
+}
+
 // IsKind creates a Type filter that returns true when given a type that
 // matches the specified kind.
 func IsKind(kind reflect.Kind) Type {
