@@ -40,3 +40,10 @@ func IsType(referenceType reflect.Type) Type {
 		return referenceType == filterType
 	}}
 }
+
+// NumIn checks the filter type's NumIn value against the given filter.
+func NumIn(f func(int) bool) Type {
+	return Type{func(t reflect.Type) (out bool) {
+		return t != nil && t.Kind() == reflect.Func && f(t.NumIn())
+	}}
+}
