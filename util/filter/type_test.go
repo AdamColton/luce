@@ -45,6 +45,16 @@ func TestType(t *testing.T) {
 			f:        filter.IsKind(reflect.String).Elem(),
 			v:        123,
 		},
+		"numIn-true": {
+			expected: true,
+			f:        filter.NumIn(filter.EQ(3)),
+			v:        func(a, b, c int) {},
+		},
+		"numIn-false": {
+			expected: false,
+			f:        filter.NumIn(filter.EQ(4)),
+			v:        func(a, b, c int) {},
+		},
 	}
 
 	for n, tc := range tt {
