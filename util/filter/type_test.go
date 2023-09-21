@@ -55,6 +55,21 @@ func TestType(t *testing.T) {
 			f:        filter.NumIn(filter.EQ(4)),
 			v:        func(a, b, c int) {},
 		},
+		"in-true": {
+			expected: true,
+			f:        filter.IsType(ltype.Int).In(1),
+			v:        func(a, b, c int) {},
+		},
+		"in-negative-true": {
+			expected: true,
+			f:        filter.IsType(ltype.String).In(-1),
+			v:        func(a, b int, c string) {},
+		},
+		"in-false": {
+			expected: false,
+			f:        filter.IsType(ltype.String).In(1),
+			v:        func(a, b, c int) {},
+		},
 	}
 
 	for n, tc := range tt {
