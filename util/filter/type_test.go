@@ -35,6 +35,16 @@ func TestType(t *testing.T) {
 			f:        filter.IsKind(reflect.String),
 			v:        "foo",
 		},
+		"elem-string-true": {
+			expected: true,
+			f:        filter.IsKind(reflect.String).Elem(),
+			v:        []string{},
+		},
+		"cannot-elem-false": {
+			expected: false,
+			f:        filter.IsKind(reflect.String).Elem(),
+			v:        123,
+		},
 	}
 
 	for n, tc := range tt {
