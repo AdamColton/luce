@@ -141,3 +141,10 @@ func TestMethodName(t *testing.T) {
 	assert.True(t, f(reflector.MethodOn(t, "Errorf")))
 	assert.False(t, f(reflector.MethodOn(t, "Log")))
 }
+
+func TestMethodFirst(t *testing.T) {
+	// TODO: use something other than t
+	ms := reflector.MethodsOn(t)
+	f, _ := filter.NumOut(filter.EQ(2)).Method().First(ms...)
+	assert.Equal(t, "Deadline", f.Name)
+}
