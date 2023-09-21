@@ -35,6 +35,16 @@ func TestType(t *testing.T) {
 			f:        filter.IsKind(reflect.String),
 			v:        "foo",
 		},
+		"elem-string-true": {
+			expected: true,
+			f:        filter.IsKind(reflect.String).Elem(),
+			v:        []string{},
+		},
+		"cannot-elem-false": {
+			expected: false,
+			f:        filter.IsKind(reflect.String).Elem(),
+			v:        123,
+		},
 	}
 
 	for n, tc := range tt {
@@ -42,4 +52,6 @@ func TestType(t *testing.T) {
 			assert.Equal(t, tc.expected, tc.f.OnInterface(tc.v))
 		})
 	}
+
+	assert.False(t, filter.CanElem(nil))
 }
