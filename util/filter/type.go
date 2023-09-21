@@ -48,3 +48,10 @@ func CanElem(t reflect.Type) bool {
 		k == reflect.Pointer ||
 		k == reflect.Slice
 }
+
+// NumIn checks the filter type's NumIn value against the given filter.
+func NumIn(f Filter[int]) Type {
+	return Type{func(t reflect.Type) (out bool) {
+		return t != nil && t.Kind() == reflect.Func && f(t.NumIn())
+	}}
+}
