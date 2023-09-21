@@ -47,6 +47,13 @@ func (t Type) Out(i int) Type {
 	}}
 }
 
+// Method applies the Type filter to the method function.
+func (t Type) Method() Filter[*reflector.Method] {
+	return func(m *reflector.Method) bool {
+		return t.Filter(m.Func.Type())
+	}
+}
+
 // TypeChecker checks a value's type against a filter. It returns the underlying
 // type. It returns an error if the type fails the underlying filter.
 type TypeChecker func(i any) (reflect.Type, error)
