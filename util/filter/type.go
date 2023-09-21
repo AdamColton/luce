@@ -113,3 +113,10 @@ func NumOut(f Filter[int]) Type {
 		return t != nil && t.Kind() == reflect.Func && f(t.NumOut())
 	}}
 }
+
+// TODO
+func MethodName(f func(string) bool) Filter[*reflector.Method] {
+	return func(m *reflector.Method) bool {
+		return f(m.Name)
+	}
+}
