@@ -32,3 +32,23 @@ func ExampleToType() {
 	// Output: t is reflect.Type on string
 	// t2 is reflect.Type on string
 }
+
+func TestToValue(t *testing.T) {
+	s := "foo"
+	sv := reflect.ValueOf(s)
+	str := reflector.ToValue(s).Type().String()
+	assert.Equal(t, "string", str)
+
+	assert.Equal(t, sv.Interface(), reflector.ToValue(s).Interface())
+	assert.Equal(t, sv, reflector.ToValue(sv))
+}
+
+func ExampleToValue() {
+	v := reflector.ToValue("test")
+	fmt.Println("v is reflect.Value on", v.Kind())
+
+	v2 := reflector.ToValue(v)
+	fmt.Println("v2 is reflect.Value on", v2.Kind())
+	// Output: v is reflect.Value on string
+	// v2 is reflect.Value on string
+}

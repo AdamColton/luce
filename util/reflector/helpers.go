@@ -15,3 +15,12 @@ func ToType(i any) reflect.Type {
 	}
 	return reflect.TypeOf(i)
 }
+
+// ToValue returns reflect.Value of i unless it is already an instance of
+// reflect.Value.
+func ToValue(i any) reflect.Value {
+	if v, ok := i.(reflect.Value); ok {
+		return v
+	}
+	return reflect.ValueOf(i)
+}
