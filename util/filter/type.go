@@ -2,6 +2,8 @@ package filter
 
 import (
 	"reflect"
+
+	"github.com/adamcolton/luce/util/reflector"
 )
 
 // TODO
@@ -44,6 +46,21 @@ func (t Type) Out(i int) Type {
 		}
 		return t2 != nil && t2.Kind() == reflect.Func && idx >= 0 && idx < nOut && t.Filter(t2.Out(idx))
 	}}
+}
+
+// TypeChecker checks a value's type against a filter. It returns the underlying
+// type. It returns an error if the type fails the underlying filter.
+type TypeChecker func(i any) (reflect.Type, error)
+
+// TODO
+func (t Type) Check(errFn func(reflect.Type) error) TypeChecker {
+	return func(i any) (reflect.Type, error) {
+		it := reflector.ToType(i)
+		if t.Filter(it) {
+			return it, nil
+		}
+		return it, errFn(it)
+	}
 }
 
 // IsKind filter checks Kind.

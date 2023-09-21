@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/filter"
 	"github.com/adamcolton/luce/util/reflector/ltype"
 	"github.com/stretchr/testify/assert"
@@ -104,4 +105,22 @@ func TestType(t *testing.T) {
 	}
 
 	assert.False(t, filter.CanElem(nil))
+}
+
+func TestTypeChecker(t *testing.T) {
+	expectedErr := lerr.Str("expected string, got int")
+
+	errFn := func(t reflect.Type) error {
+		return lerr.Str("expected string, got " + t.String())
+	}
+
+	c := filter.IsType(ltype.String).Check(errFn)
+
+	ct, err := c("test")
+	assert.NoError(t, err)
+	assert.Equal(t, ltype.String, ct)
+
+	ct, err = c(123)
+	assert.Equal(t, expectedErr, err)
+	assert.Equal(t, ltype.Int, ct)
 }
