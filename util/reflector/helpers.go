@@ -18,3 +18,12 @@ func ToType(i any) reflect.Type {
 	}
 	return reflect.TypeOf(i)
 }
+
+// ToValue returns the reflect.Value of i. If i is already a reflect.Value, it is
+// returned as it is.
+func ToValue(i any) reflect.Value {
+	if v, ok := i.(reflect.Value); ok {
+		return v
+	}
+	return reflect.ValueOf(i)
+}
