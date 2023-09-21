@@ -93,3 +93,10 @@ func NumOut(f func(int) bool) Type {
 		return t != nil && t.Kind() == reflect.Func && f(t.NumOut())
 	}}
 }
+
+// MethodName takes a string filter and applies it to a Method name.
+func MethodName(f func(string) bool) Filter[*reflector.Method] {
+	return func(m *reflector.Method) bool {
+		return f(m.Name)
+	}
+}
