@@ -63,6 +63,15 @@ func (t Type) Check(errFn func(reflect.Type) error) TypeChecker {
 	}
 }
 
+// Panic if i fails the underlying filter. Return the type of i if it succeeds.
+func (tc TypeChecker) Panic(i any) reflect.Type {
+	t, err := tc(i)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
 // IsKind filter checks Kind.
 func IsKind(kind reflect.Kind) Type {
 	return Type{func(t reflect.Type) bool {
