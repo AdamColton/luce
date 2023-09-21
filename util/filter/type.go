@@ -47,6 +47,23 @@ func (t Type) Out(i int) Type {
 	}}
 }
 
+// TypeChecker checks a value's type against a filter. It returns the underlying
+// type. It returns an error if the type fails the underlying filter.
+type TypeChecker func(i any) (reflect.Type, error)
+
+// Check creates a TypeChecker from a Type filter. It uses reflector.ToType,
+// so that it can accept either a reflect.Type and use it directly or an
+// interface which it will call reflect.ToType on.
+func (t Type) Check(errFn func(reflect.Type) error) TypeChecker {
+	return func(i any) (reflect.Type, error) {
+		it := reflector.ToType(i)
+		if t.Filter(it) {
+			return it, nil
+		}
+		return it, errFn(it)
+	}
+}
+
 // IsKind creates a Type filter that returns true when given a type that
 // matches the specified kind.
 func IsKind(kind reflect.Kind) Type {
