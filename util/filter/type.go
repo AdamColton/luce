@@ -2,6 +2,8 @@ package filter
 
 import (
 	"reflect"
+
+	"github.com/adamcolton/luce/util/reflector"
 )
 
 // Type is a wrapper around Filter[reflect.Type] to provide helper logic
@@ -13,6 +15,14 @@ type Type struct {
 // OnInterface applies the filter to the TypeOf i.
 func (t Type) OnInterface(i any) bool {
 	return t.Filter(reflect.TypeOf(i))
+}
+
+// Elem checks the filter type's Elem against the underlying filter.
+func (t Type) Elem() Type {
+	return Type{func(t2 reflect.Type) (out bool) {
+		e, ok := reflector.Elem(t2)
+		return ok && t.Filter(e)
+	}}
 }
 
 // IsKind creates a Type filter that returns true when given a type that
