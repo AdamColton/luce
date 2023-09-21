@@ -121,4 +121,13 @@ func TestTypeChecker(t *testing.T) {
 	ct, err = c(123)
 	assert.Equal(t, expectedErr, err)
 	assert.Equal(t, ltype.Int, ct)
+
+	defer func() {
+		assert.Equal(t, expectedErr, recover())
+	}()
+
+	ct = lerr.Must(c("test"))
+	assert.Equal(t, ltype.String, ct)
+
+	lerr.Must(c(123))
 }
