@@ -59,3 +59,10 @@ func NumIn(f func(int) bool) Type {
 		return t != nil && t.Kind() == reflect.Func && f(t.NumIn())
 	}}
 }
+
+// NumOut checks the filter type's NumOut value against the given filter.
+func NumOut(f func(int) bool) Type {
+	return Type{func(t reflect.Type) (out bool) {
+		return t != nil && t.Kind() == reflect.Func && f(t.NumOut())
+	}}
+}
