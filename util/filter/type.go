@@ -3,6 +3,7 @@ package filter
 import (
 	"reflect"
 
+	"github.com/adamcolton/luce/math/ints"
 	"github.com/adamcolton/luce/util/reflector"
 )
 
@@ -22,6 +23,17 @@ func (t Type) Elem() Type {
 	return Type{func(t2 reflect.Type) (out bool) {
 		e, ok := reflector.Elem(t2)
 		return ok && t.Filter(e)
+	}}
+}
+
+// In checks the filter type's agument number i against the given filter. If i
+// is less than 0, it will be indexed relative to the number of arguments, so -1
+// will return the last argument.
+func (t Type) In(i int) Type {
+	return Type{func(t2 reflect.Type) bool {
+		idx, inRange := ints.Idx(i, t2.NumIn())
+		return inRange && t2 != nil && t2.Kind() == reflect.Func && t.Filter(t2.In(idx))
+
 	}}
 }
 
