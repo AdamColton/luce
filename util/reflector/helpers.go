@@ -7,3 +7,11 @@ import "reflect"
 func Type[T any]() reflect.Type {
 	return reflect.TypeOf((*T)(nil)).Elem()
 }
+
+// ToType returns reflect.Type unless it is already an instance reflect.Type.
+func ToType(i any) reflect.Type {
+	if t, ok := i.(reflect.Type); ok {
+		return t
+	}
+	return reflect.TypeOf(i)
+}
