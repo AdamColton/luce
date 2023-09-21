@@ -34,6 +34,18 @@ func (t Type) In(i int) Type {
 	}}
 }
 
+// Out checks the filter type's agument number i against the given filter.
+func (t Type) Out(i int) Type {
+	return Type{func(t2 reflect.Type) bool {
+		nOut := t2.NumOut()
+		idx := i
+		if idx < 0 {
+			idx += nOut
+		}
+		return t2 != nil && t2.Kind() == reflect.Func && idx >= 0 && idx < nOut && t.Filter(t2.Out(idx))
+	}}
+}
+
 // IsKind filter checks Kind.
 func IsKind(kind reflect.Kind) Type {
 	return Type{func(t reflect.Type) bool {
