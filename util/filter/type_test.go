@@ -6,6 +6,7 @@ import (
 
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/filter"
+	"github.com/adamcolton/luce/util/reflector"
 	"github.com/adamcolton/luce/util/reflector/ltype"
 	"github.com/stretchr/testify/assert"
 )
@@ -130,4 +131,11 @@ func TestTypeChecker(t *testing.T) {
 	assert.Equal(t, ltype.String, ct)
 
 	lerr.Must(c(123))
+}
+
+func TestMethodName(t *testing.T) {
+	f := filter.MethodName(filter.Prefix("Err"))
+	assert.True(t, f(reflector.MethodOn(t, "Error")))
+	assert.True(t, f(reflector.MethodOn(t, "Errorf")))
+	assert.False(t, f(reflector.MethodOn(t, "Log")))
 }
