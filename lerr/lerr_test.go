@@ -116,3 +116,41 @@ func ExampleMany() {
 	// first error
 	// second error
 }
+
+func TestHandlerFunc(t *testing.T) {
+
+	var called error
+	fn := func(err error) {
+		called = err
+	}
+	got, err := lerr.HandlerFunc(fn)
+	assert.NoError(t, err)
+	expected := lerr.Str("test1")
+	assert.True(t, got.Handle(expected))
+	assert.Equal(t, expected, called)
+
+	assert.False(t, got.Handle(nil))
+
+	ch := make(chan error, 1)
+	got, err = lerr.HandlerFunc(ch)
+	assert.NoError(t, err)
+	expected = lerr.Str("test2")
+	assert.True(t, got.Handle(expected))
+	assert.Equal(t, expected, <-ch)
+
+	var chIn chan<- error = ch
+	got, err = lerr.HandlerFunc(chIn)
+	assert.NoError(t, err)
+	expected = lerr.Str("test3")
+	assert.True(t, got.Handle(expected))
+	assert.Equal(t, expected, <-ch)
+
+	got, err = lerr.HandlerFunc(func(string) {})
+	assert.Equal(t, lerr.ErrHandlerFunc, err)
+	assert.Nil(t, got)
+
+	got, err = lerr.HandlerFunc(nil)
+	assert.Nil(t, got)
+	assert.Nil(t, err)
+	got.Handle(testErr) // Make sure this doesn't panic
+}
