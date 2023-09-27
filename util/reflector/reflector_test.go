@@ -52,3 +52,78 @@ func ExampleToValue() {
 	// Output: v is reflect.Value on string
 	// v2 is reflect.Value on string
 }
+
+func TestReturnsErrCheck(t *testing.T) {
+	tt := map[string]struct {
+		fn       any
+		args     []reflect.Value
+		expected error
+	}{
+		"no-returns": {
+			fn: func() {
+			},
+			expected: nil,
+		},
+		"one-return-no-error": {
+			fn: func(str string) string {
+				return "hello"
+			},
+			args:     []reflect.Value{reflect.ValueOf("hi")},
+			expected: nil,
+		},
+		"one-return-is-error": {
+			fn: func(str string) error {
+				return fmt.Errorf("hello")
+			},
+			args:     []reflect.Value{reflect.ValueOf("hi")},
+			expected: fmt.Errorf("hello"),
+		},
+		"one-return-is-nil-error": {
+			fn: func(str string) error {
+				return nil
+			},
+			args:     []reflect.Value{reflect.ValueOf("hi")},
+			expected: nil,
+		},
+		"two-returns-is-error": {
+			fn: func(str string) (string, error) {
+				return "hello", fmt.Errorf("goodbye")
+			},
+			args:     []reflect.Value{reflect.ValueOf("hi")},
+			expected: fmt.Errorf("goodbye"),
+		},
+	}
+
+	for n, tc := range tt {
+		t.Run(n, func(t *testing.T) {
+			vfn := reflect.ValueOf(tc.fn)
+			err := reflector.ReturnsErrCheck(vfn.Call(tc.args))
+			assert.Equal(t, tc.expected, err)
+		})
+	}
+}
+
+func ExampleReturnsErrCheck() {
+	v := reflect.ValueOf(func(i int) (int, error) {
+		if i > 0 {
+			return i + 10, nil
+		}
+		return 0, fmt.Errorf("i should be > 0, got: %d", i)
+	})
+
+	args := []reflect.Value{
+		reflect.ValueOf(10),
+	}
+	got := v.Call(args)
+	err := reflector.ReturnsErrCheck(got)
+	fmt.Println(err)
+
+	args[0] = reflect.ValueOf(-1)
+	got = v.Call(args)
+	err = reflector.ReturnsErrCheck(got)
+	fmt.Println(err)
+
+	// Output:
+	// <nil>
+	// i should be > 0, got: -1
+}
