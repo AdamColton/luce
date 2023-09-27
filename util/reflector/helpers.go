@@ -27,3 +27,16 @@ func ToValue(i any) reflect.Value {
 	}
 	return reflect.ValueOf(i)
 }
+
+// ReturnsErrCheck checks the return values from a function call to see if the
+// last value is an error. It returns that error, or nil if there are no values,
+// the last one is not an error or the error is nil.
+func ReturnsErrCheck(returnVals []reflect.Value) error {
+	if l := len(returnVals); l > 0 {
+		err, ok := returnVals[l-1].Interface().(error)
+		if ok {
+			return err
+		}
+	}
+	return nil
+}
