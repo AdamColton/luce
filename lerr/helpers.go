@@ -21,3 +21,42 @@ func Except(err error, except ...error) bool {
 	}
 	return false
 }
+
+const (
+	// ErrHandlerFunc is returned from HandlerFunc if the provided handler
+	// is not func(error), chan<- error or chan error.
+	ErrHandlerFunc = Str("handler argument to HandlerFunc must be func(error) or chan error")
+)
+
+// ErrHandler is a function that can handle an error.
+type ErrHandler func(error)
+
+func (fn ErrHandler) Handle(err error) {
+	if fn != nil && err != nil {
+		fn(err)
+	}
+}
+
+// HandlerFunc return an ErrHandler. If the errHandler argument is an
+// ErrHandler, that will be returned. If it is an error channel then that will
+// be wrapped in a function and returned.
+func HandlerFunc(handler any) (fn ErrHandler, err error) {
+	if handler == nil {
+		return
+	}
+	switch t := handler.(type) {
+	case func(error):
+		fn = t
+	case chan<- error:
+		fn = func(err error) {
+			t <- err
+		}
+	case chan error:
+		fn = func(err error) {
+			t <- err
+		}
+	default:
+		err = ErrHandlerFunc
+	}
+	return
+}
