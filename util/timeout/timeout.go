@@ -25,10 +25,15 @@ package timeout
 import (
 	"fmt"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/reflector"
+)
+
+var (
+	wgType = reflector.Type[*sync.WaitGroup]()
 )
 
 const (
@@ -53,6 +58,9 @@ func After(ms int, wait interface{}) error {
 		return chRecv(d, v)
 	case reflect.Func:
 		return fn(d, v)
+	}
+	if v.Type() == wgType {
+		return wg(d, wait.(*sync.WaitGroup))
 	}
 	return fmt.Errorf(InvalidWaitMsg, v.Type())
 }
@@ -105,4 +113,18 @@ func chRecv(d time.Duration, v reflect.Value) error {
 	}
 	err, _ := r.Interface().(error)
 	return err
+}
+
+func wg(d time.Duration, wg *sync.WaitGroup) (err error) {
+	ch := make(chan struct{})
+	go func() {
+		wg.Wait()
+		ch <- struct{}{}
+	}()
+	select {
+	case <-time.After(d):
+		err = ErrTimeout
+	case <-ch:
+	}
+	return
 }
