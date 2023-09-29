@@ -23,6 +23,12 @@ const (
 	InvalidWaitMsg = "expected wait to be function, got %s"
 )
 
+// Must calls After and will panic if an error is returned. The value of the
+// panic is the error, for example ErrTimeout.
+func Must(ms int, wait interface{}) {
+	lerr.Panic(After(ms, wait))
+}
+
 // After waits for wait and returns ErrTimeout if it has not completed after ms
 // milliseconds. It does not stop what it is waiting for: on a timeout the
 // function keeps running in its Go routine.
