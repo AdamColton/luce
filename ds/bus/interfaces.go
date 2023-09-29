@@ -34,3 +34,15 @@ type Receiver interface {
 	// a channel of errors, as lerr.HandlerFunc accepts.
 	SetErrorHandler(any) error
 }
+
+// Listener combines a Receiver and a ListenerSwitcher to take in data from a
+// bus, convert the data to an interface value and multiplex them out to the
+// correct handlers.
+type Listener interface {
+	ListenerSwitcher
+	// RegisterHandlers registers each handler with the ListenerSwitcher and the
+	// type of its argument with the Receiver.
+	RegisterHandlers(handler ...any) error
+	// RegisterType tells the Receiver about a type of value it may receive.
+	RegisterType(zeroValue any) error
+}
