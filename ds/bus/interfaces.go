@@ -46,3 +46,24 @@ type Listener interface {
 	// RegisterType tells the Receiver about a type of value it may receive.
 	RegisterType(zeroValue any) error
 }
+
+// Sender handles the operations to place a message on a bus. For instance, it
+// may contain the logic to serialize the message.
+type Sender interface {
+	// Send places the message on the bus.
+	Send(msg any) error
+}
+
+// MultiSender will send a message to multiple busses at once. This can reduce
+// duplication of work. For instance, if a message needs to be serialized, it
+// will only be serialized once.
+type MultiSender interface {
+	// Send sends the message to the busses added with the ids. If no ids are
+	// given it is sent to all of them, and an id that was not added is skipped.
+	Send(msg any, ids ...string) error
+	// Add adds a bus and names it key. It returns an error if 'to' is not a kind
+	// of bus that the MultiSender accepts.
+	Add(key string, to any) error
+	// Delete removes the bus that was added as key.
+	Delete(key string)
+}
