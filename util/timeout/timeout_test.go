@@ -88,3 +88,13 @@ func TestErrors(t *testing.T) {
 	err := timeout.After(10, 3.1415)
 	assert.Equal(t, fmt.Sprintf(timeout.InvalidWaitMsg, "float64"), err.Error())
 }
+
+func TestMust(t *testing.T) {
+	ch := make(chan bool)
+
+	defer func() {
+		assert.Equal(t, timeout.ErrTimeout, recover())
+	}()
+
+	timeout.Must(0, ch)
+}

@@ -44,6 +44,11 @@ const (
 	InvalidWaitMsg = "expected wait to be function, got %s"
 )
 
+// Must calls After and will panic if an error is returned.
+func Must(ms int, wait interface{}) {
+	lerr.Panic(After(ms, wait))
+}
+
 // After returns Timeout when a specified number of milliseconds (ms) have
 // passed if wait has not completed. If wait is not a valid type InvalidWait is
 // returned.
