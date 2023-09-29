@@ -31,3 +31,18 @@ type Listener interface {
 	RegisterHandlers(handler ...any) error
 	RegisterType(zeroValue any) error
 }
+
+// Sender handles the operations to place a message on a bus. For instance, it
+// may contain the logic to serialize the message.
+type Sender interface {
+	Send(msg any) error
+}
+
+// MultiSender will send a message to multiple busses at once. This can reduce
+// duplication of work. For instance, if a message needs to be serialized, it
+// will only be serialized once.
+type MultiSender interface {
+	Send(msg any, ids ...string) error
+	Add(key string, to any) error
+	Delete(key string)
+}
