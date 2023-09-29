@@ -46,6 +46,11 @@ func After(ms int, wait interface{}) error {
 	d := time.Millisecond * time.Duration(ms)
 	v := reflect.ValueOf(wait)
 	switch v.Kind() {
+	case reflect.Chan:
+		if v.Type().ChanDir() == reflect.SendDir {
+			return chSend(d, v)
+		}
+		return chRecv(d, v)
 	case reflect.Func:
 		return fn(d, v)
 	}
@@ -64,4 +69,40 @@ func fn(d time.Duration, v reflect.Value) (err error) {
 		err = reflector.ReturnsErrCheck(out)
 	}
 	return
+}
+
+func chSend(d time.Duration, v reflect.Value) error {
+	i, _, _ := reflect.Select([]reflect.SelectCase{
+		{
+			Dir:  reflect.SelectSend,
+			Chan: v,
+			Send: reflect.Zero(v.Type().Elem()),
+		},
+		{
+			Dir:  reflect.SelectRecv,
+			Chan: reflect.ValueOf(time.After(d)),
+		},
+	})
+	if i == 1 {
+		return ErrTimeout
+	}
+	return nil
+}
+
+func chRecv(d time.Duration, v reflect.Value) error {
+	i, r, _ := reflect.Select([]reflect.SelectCase{
+		{
+			Dir:  reflect.SelectRecv,
+			Chan: v,
+		},
+		{
+			Dir:  reflect.SelectRecv,
+			Chan: reflect.ValueOf(time.After(d)),
+		},
+	})
+	if i == 1 {
+		return ErrTimeout
+	}
+	err, _ := r.Interface().(error)
+	return err
 }
