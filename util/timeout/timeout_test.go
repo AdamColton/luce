@@ -3,6 +3,7 @@ package timeout_test
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/adamcolton/luce/util/timeout"
@@ -64,6 +65,24 @@ func TestFunc(t *testing.T) {
 		return errors.New("testing")
 	})
 	assert.Equal(t, "testing", err.Error())
+}
+
+func TestWaitGroup(t *testing.T) {
+	wg := &sync.WaitGroup{}
+
+	err := timeout.After(1000, wg)
+	assert.NoError(t, err)
+
+	wg.Add(1)
+	go wg.Done()
+	err = timeout.After(1000, wg)
+	assert.NoError(t, err)
+
+	// Nothing calls Done, so it times out.
+	wg.Add(1)
+	err = timeout.After(4, wg)
+	assert.Equal(t, timeout.ErrTimeout, err)
+	wg.Done()
 }
 
 func TestErrors(t *testing.T) {
