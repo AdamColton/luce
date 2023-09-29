@@ -22,3 +22,12 @@ type Receiver interface {
 	SetOut(out chan<- any)
 	SetErrorHandler(any) error
 }
+
+// Listener combines a Receiver and a ListenerSwitcher to take in data from a
+// bus, convert the data to an interface value and multiplex them out to the
+// correct handlers.
+type Listener interface {
+	ListenerSwitcher
+	RegisterHandlers(handler ...any) error
+	RegisterType(zeroValue any) error
+}
