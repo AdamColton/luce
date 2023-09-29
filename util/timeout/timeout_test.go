@@ -10,6 +10,45 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestChan(t *testing.T) {
+	intCh := make(chan int)
+	go func() {
+		intCh <- 10
+	}()
+
+	err := timeout.After(2, intCh)
+	assert.NoError(t, err)
+
+	err = timeout.After(2, intCh)
+	assert.Equal(t, timeout.ErrTimeout, err)
+
+	err = timeout.After(2, chan<- int(intCh))
+	assert.Equal(t, timeout.ErrTimeout, err)
+
+	go func() {
+		assert.Equal(t, 0, <-intCh)
+	}()
+	err = timeout.After(2, chan<- int(intCh))
+	assert.NoError(t, err)
+
+	errCh := make(chan error)
+	go func() {
+		errCh <- nil
+	}()
+
+	err = timeout.After(2, errCh)
+	assert.NoError(t, err)
+
+	err = timeout.After(2, errCh)
+	assert.Equal(t, timeout.ErrTimeout, err)
+
+	go func() {
+		errCh <- errors.New("testing")
+	}()
+	err = timeout.After(2, errCh)
+	assert.Equal(t, "testing", err.Error())
+}
+
 func TestFunc(t *testing.T) {
 	err := timeout.After(2, func() {})
 	assert.NoError(t, err)
