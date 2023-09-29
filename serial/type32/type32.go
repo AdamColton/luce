@@ -1,5 +1,7 @@
 package type32
 
+import "github.com/adamcolton/luce/serial/rye"
+
 func checkLn(b []byte) []byte {
 	// TODO: move this to slice
 	ln := len(b)
@@ -9,4 +11,11 @@ func checkLn(b []byte) []byte {
 		b = cp
 	}
 	return b
+}
+
+func sliceToUint32(b []byte) uint32 {
+	if len(b) < 4 {
+		return 0
+	}
+	return rye.Deserialize.Uint32(b)
 }
