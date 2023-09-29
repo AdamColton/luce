@@ -3,6 +3,7 @@ package timeout_test
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -62,6 +63,25 @@ func TestFunc(t *testing.T) {
 		return errors.New("testing")
 	})
 	assert.Equal(t, "testing", err.Error())
+}
+
+func TestWaitGroup(t *testing.T) {
+	wg := &sync.WaitGroup{}
+
+	err := timeout.After(2, wg)
+	assert.NoError(t, err)
+
+	wg.Add(1)
+	go func() {
+		time.Sleep(time.Millisecond)
+		wg.Done()
+	}()
+	err = timeout.After(4, wg)
+	assert.NoError(t, err)
+
+	wg.Add(1)
+	err = timeout.After(4, wg)
+	assert.Equal(t, timeout.ErrTimeout, err)
 }
 
 func TestErrors(t *testing.T) {
