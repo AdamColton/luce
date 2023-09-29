@@ -1,7 +1,10 @@
 package type32
 
 import (
+	"reflect"
+
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/serial"
 )
 
 // Sentinal Errors
@@ -17,4 +20,19 @@ const (
 // it should allow for plenty of TypeID32 types, but uses little overhead.
 type TypeIDer32 interface {
 	TypeID32() uint32
+}
+
+// TypeMap tracks the mapping between types and their uint32 values.
+type TypeMap interface {
+	serial.TypeRegistrar
+	serial.TypePrefixer
+	serial.Detyper
+	Add(t reflect.Type, id uint32)
+	RegisterType32(zeroValue TypeIDer32)
+	RegisterType32s(zeroValues ...TypeIDer32)
+	Serializer(s serial.Serializer) serial.PrefixSerializer
+	WriterSerializer(s serial.WriterSerializer) serial.PrefixSerializer
+	Deserializer(d serial.Deserializer) serial.PrefixDeserializer
+	ReaderDeserializer(d serial.ReaderDeserializer) serial.PrefixDeserializer
+	private()
 }
