@@ -127,3 +127,33 @@ func ExampleReturnsErrCheck() {
 	// <nil>
 	// i should be > 0, got: -1
 }
+
+func TestIsNil(t *testing.T) {
+	var strPtr *string
+
+	v := reflect.ValueOf(strPtr)
+	assert.True(t, reflector.IsNil(v))
+
+	v = reflect.ValueOf(123)
+	assert.False(t, reflector.IsNil(v))
+}
+
+func ExampleIsNil() {
+	str := "test"
+	strPtr := &str
+	v := reflect.ValueOf(strPtr)
+	fmt.Println(reflector.IsNil(v))
+
+	strPtr = nil
+	v = reflect.ValueOf(strPtr)
+	fmt.Println(reflector.IsNil(v))
+
+	v = reflect.ValueOf(123)
+	// calling v.IsNil() would panic
+	fmt.Println(reflector.IsNil(v))
+
+	// Output:
+	// false
+	// true
+	// false
+}
