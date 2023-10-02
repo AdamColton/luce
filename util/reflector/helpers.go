@@ -36,3 +36,22 @@ func ReturnsErrCheck(returnVals []reflect.Value) error {
 	}
 	return nil
 }
+
+// CanNil reports wether k is a nilable kind.
+func CanNil(k reflect.Kind) bool {
+	return k == reflect.Chan ||
+		k == reflect.Func ||
+		k == reflect.Interface ||
+		k == reflect.Map ||
+		k == reflect.Pointer ||
+		k == reflect.Slice
+}
+
+// IsNil reports whether its argument t is nil. Unlike the underlying t.IsNil,
+// it will not panic.
+func IsNil(t reflect.Value) bool {
+	if CanNil(t.Kind()) {
+		return t.IsNil()
+	}
+	return false
+}
