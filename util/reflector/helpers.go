@@ -55,3 +55,12 @@ func IsNil(t reflect.Value) bool {
 	}
 	return false
 }
+
+// Make a reflect.Value of type t.
+func Make(t reflect.Type) reflect.Value {
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+		return reflect.New(t)
+	}
+	return reflect.New(t).Elem()
+}
