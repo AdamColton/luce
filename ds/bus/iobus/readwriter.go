@@ -1,6 +1,8 @@
 package iobus
 
-import "io"
+import (
+	"io"
+)
 
 // ReadWriter runs both a Reader and a BusWriter on an io.ReaderWriter.
 type ReadWriter struct {
