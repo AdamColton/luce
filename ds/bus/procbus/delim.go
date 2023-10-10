@@ -12,6 +12,7 @@ func Delim(in <-chan []byte, delim rune) <-chan []byte {
 	return out
 }
 
+// TODO: circular buffer
 func runDelim(in <-chan []byte, out chan<- []byte, delim rune) {
 	var msg []byte
 	for b := range in {
