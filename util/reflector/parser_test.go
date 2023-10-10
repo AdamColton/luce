@@ -7,6 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type person struct {
+	Name string
+	Age  int
+}
+
 func TestParser(t *testing.T) {
 	p := reflector.Parser[string]{
 		reflector.Type[*string]():  reflector.Parsers.String,
@@ -28,6 +33,15 @@ func TestParser(t *testing.T) {
 	err = p.Parse(&f, "3.14")
 	assert.NoError(t, err)
 	assert.Equal(t, 3.14, f)
+
+	psn := &person{}
+	err = p.ParseFieldName(psn, "Name", "Adam")
+	assert.NoError(t, err)
+	assert.Equal(t, "Adam", psn.Name)
+
+	err = p.ParseFieldName(psn, "Age", "39")
+	assert.NoError(t, err)
+	assert.Equal(t, 39, psn.Age)
 
 	// var set string
 	// from := "test"
