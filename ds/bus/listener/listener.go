@@ -101,3 +101,9 @@ func (l *Listener) SetErrorHandler(errHandler any) error {
 	}
 	return l.Receiver.SetErrorHandler(errHandler)
 }
+
+// SetOut sets the channel that the Receiver sends on. A Listener connects it to
+// its ListenerSwitcher, so this replaces that connection.
+func (l *Listener) SetOut(out chan<- any) {
+	l.Receiver.SetOut(out)
+}

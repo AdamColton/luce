@@ -121,6 +121,16 @@ func TestSetErrorHandlerErrors(t *testing.T) {
 	assert.EqualError(t, l.SetErrorHandler(func(error) {}), "receiver refused")
 }
 
+func TestSetOut(t *testing.T) {
+	r := newMockReceiver()
+	l, err := listener.New(10, r, nil)
+	assert.NoError(t, err)
+
+	out := make(chan any)
+	l.SetOut(out)
+	assert.Equal(t, (chan<- any)(out), r.out)
+}
+
 func TestNewErrors(t *testing.T) {
 	// An error handler that can't be used.
 	l, err := listener.New(10, newMockReceiver(), "not an error handler")
