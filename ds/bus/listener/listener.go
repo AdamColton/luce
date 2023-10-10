@@ -79,3 +79,7 @@ func (l *Listener) SetErrorHandler(errHandler any) error {
 	}
 	return l.Receiver.SetErrorHandler(errHandler)
 }
+
+func (l *Listener) SetOut(out chan<- any) {
+	l.Receiver.SetOut(out)
+}
