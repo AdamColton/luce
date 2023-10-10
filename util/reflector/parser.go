@@ -1,8 +1,10 @@
 package reflector
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
+	"unsafe"
 
 	"github.com/adamcolton/luce/lerr"
 )
@@ -12,6 +14,9 @@ const (
 	ErrParserSet = lerr.Str("could not set")
 	// ErrExpectedPtr is returned if the type is not a pointer
 	ErrExpectedPtr = lerr.Str("expected ptr")
+	// ErrExpectedStruct is returned if a field is set on something that is not a
+	// struct.
+	ErrExpectedStruct = lerr.Str("expected struct")
 )
 
 // ErrParserNotFound is returned when a parser does not contain a given Type.
@@ -49,6 +54,33 @@ func (p Parser[T]) ParseValue(v reflect.Value, t T) error {
 		return ErrParserNotFound{tp}
 	}
 	return fn(v, t)
+}
+
+// ParseFieldName gets the field by name from onStruct, which must be a pointer
+// to a struct, and parses toParse into the field. Unexported fields can be set.
+func (p Parser[T]) ParseFieldName(onStruct any, name string, toParse T) error {
+	v := reflect.ValueOf(onStruct)
+	return p.ParseValueFieldName(v, name, toParse)
+}
+
+// ParseValueFieldName is ParseFieldName for a reflect.Value. It returns
+// ErrExpectedPtr if onStruct is not a pointer and ErrExpectedStruct if it does
+// not point to a struct.
+func (p Parser[T]) ParseValueFieldName(onStruct reflect.Value, name string, toParse T) error {
+	if onStruct.Kind() != reflect.Ptr {
+		return ErrExpectedPtr
+	}
+	onStruct = onStruct.Elem()
+	if onStruct.Kind() != reflect.Struct {
+		return ErrExpectedStruct
+	}
+	sf, found := onStruct.Type().FieldByName(name)
+	if !found {
+		return fmt.Errorf("field '%s' not found", name)
+	}
+	fv := onStruct.FieldByName(name)
+	f := reflect.NewAt(sf.Type, unsafe.Pointer(fv.UnsafeAddr()))
+	return p.ParseValue(f, toParse)
 }
 
 // ParserFunc can be any function that takes two arguments using the second
