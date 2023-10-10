@@ -61,3 +61,14 @@ func IsNil(t reflect.Value) bool {
 	}
 	return false
 }
+
+// Make creates a new zero reflect.Value of type t. If t is a pointer type, it
+// allocates the value it points to and returns the pointer. Otherwise the value
+// returned is addressable, so it can be set.
+func Make(t reflect.Type) reflect.Value {
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+		return reflect.New(t)
+	}
+	return reflect.New(t).Elem()
+}

@@ -157,3 +157,19 @@ func ExampleIsNil() {
 	// true
 	// false
 }
+
+func TestMake(t *testing.T) {
+	type Person struct {
+		Name string
+		Age  int
+	}
+
+	pt := reflector.Type[*Person]()
+	pp := reflector.Make(pt).Interface().(*Person)
+	pp.Name = "Adam"
+	assert.Equal(t, pp.Name, "Adam")
+
+	p := reflector.Make(pt.Elem()).Interface().(Person)
+	p.Name = "Lauren"
+	assert.Equal(t, p.Name, "Lauren")
+}
