@@ -96,6 +96,7 @@ func (c *context) Read(p []byte) (n int, err error) {
 }
 
 var (
+	// allows for ctrl+x to cancel an operation
 	cancel = string([]rune{24}) // 24 is ascii cancel
 	Parser = reflector.Parser[string]{}
 )
@@ -104,6 +105,8 @@ func init() {
 	reflector.ParserAdd(Parser, parsers.String)
 	reflector.ParserAdd(Parser, parsers.Float64)
 	reflector.ParserAdd(Parser, parsers.Int)
+	reflector.ParserAdd(Parser, parsers.Int64)
+	reflector.ParserAdd(Parser, parsers.Bool)
 }
 
 // Input provides a prompt and populates a value. Currently supports string or
