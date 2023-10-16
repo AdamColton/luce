@@ -45,6 +45,12 @@ func (s Slice[T]) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
+// Len is a strongly typed version of the builtin len for slices. It is useful
+// when a func value is needed.
+func Len[T any](s []T) int {
+	return len(s)
+}
+
 // AppendNotZero appends any values from ts that are not the zero value for the
 // type, and returns the result. Particularly useful for appending not nil
 // values. A nil interface value counts as zero.
