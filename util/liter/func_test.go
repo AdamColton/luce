@@ -32,3 +32,17 @@ func TestAppend(t *testing.T) {
 	got := liter.Appender[int]().Iter(nil, s)
 	assert.Equal(t, s.Slice, got)
 }
+
+func TestMinMax(t *testing.T) {
+	s := &sliceIter[string]{
+		Slice: []string{"one", "two", "three", "four", "five", "six", "seven", "eight", "nine"},
+	}
+	lnFn := func(str string) int { return len(str) }
+
+	got := liter.Min(lnFn).Iter(100, s)
+	assert.Equal(t, 3, got)
+
+	s.idx = 0
+	got = liter.Max(lnFn).Iter(0, s)
+	assert.Equal(t, 5, got)
+}
