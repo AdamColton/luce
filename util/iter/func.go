@@ -1,5 +1,10 @@
 package iter
 
+import (
+	"github.com/adamcolton/luce/math/cmpr"
+	"golang.org/x/exp/constraints"
+)
+
 // Reducer aggregates a value against every elemnt in the iterator.
 type Reducer[A, T any] func(aggregate A, element T, idx int) A
 
@@ -28,5 +33,17 @@ func (r Reducer[A, T]) Factory(aggregate A, f Factory[T]) A {
 func Appender[T any]() Reducer[[]T, T] {
 	return func(aggregate []T, element T, idx int) []T {
 		return append(aggregate, element)
+	}
+}
+
+func Max[N constraints.Ordered, T any](fn func(T) N) Reducer[N, T] {
+	return func(max N, element T, idx int) N {
+		return cmpr.Max(max, fn(element))
+	}
+}
+
+func Min[N constraints.Ordered, T any](fn func(T) N) Reducer[N, T] {
+	return func(max N, element T, idx int) N {
+		return cmpr.Min(max, fn(element))
 	}
 }
