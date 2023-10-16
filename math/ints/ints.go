@@ -13,3 +13,10 @@ func DivUp[T constraints.Integer](a, b T) T {
 func DivDown[T constraints.Integer](a, b T) T {
 	return a / b
 }
+
+func Mod[T constraints.Integer](a, b T) T {
+	if a < 0 {
+		return (b - (-a % b)) % b
+	}
+	return a % b
+}
