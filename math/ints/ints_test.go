@@ -39,3 +39,21 @@ func TestDiv(t *testing.T) {
 
 	assert.Equal(t, -3, ints.Div(-7, 2, ints.Dir(9)), "an unknown Dir rounds like In")
 }
+
+func TestMod(t *testing.T) {
+	assert.Equal(t, 3, ints.Mod(8, 5))
+	assert.Equal(t, 4, ints.Mod(-1, 5))
+	assert.Equal(t, 3, ints.Mod(-2, 5))
+	assert.Equal(t, 0, ints.Mod(-5, 5))
+
+	assert.Equal(t, -4, ints.Mod(1, -5))
+	assert.Equal(t, -3, ints.Mod(2, -5))
+	assert.Equal(t, 0, ints.Mod(5, -5))
+
+	assert.Equal(t, -1, ints.Mod(-1, -5))
+	assert.Equal(t, -2, ints.Mod(-2, -5))
+	assert.Equal(t, 0, ints.Mod(-5, -5))
+
+	assert.Equal(t, -2, (-2 % -5))
+
+}

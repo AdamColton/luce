@@ -56,3 +56,21 @@ func DivIn[T constraints.Integer](a, b T) T {
 func DivOut[T constraints.Integer](a, b T) T {
 	return Div(a, b, Out)
 }
+
+// Mod provides a version of modulus consistent with most other languages and
+// calculators.
+//
+// In Go, mod (%) will return a negative if either a or b is negative. In most
+// other languages and calculators the sign will always match b. Mod panics if b
+// is 0.
+func Mod[T constraints.Integer](a, b T) T {
+	if a < 0 {
+		m := (b - (-a % b)) % b
+		return m
+	}
+	m := a % b
+	if m > 0 && b < 0 {
+		m += b
+	}
+	return m
+}
