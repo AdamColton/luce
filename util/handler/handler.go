@@ -36,6 +36,16 @@ func (h *Handler) Name() string {
 	return h.name
 }
 
+func (h *Handler) key() (k key) {
+	t := h.fn.Type()
+	if t.NumIn() == 0 {
+		k.name = h.name
+	} else {
+		k.Type = t.In(0)
+	}
+	return
+}
+
 func (h *Handler) Type() reflect.Type {
 	t := h.fn.Type()
 	if t.NumIn() == 0 {
@@ -73,6 +83,7 @@ func New(i any, name string) (h *Handler, err error) {
 	return ByValue(reflector.ToValue(i), name)
 }
 
+// TODO: only accept zero args if name != ""
 func ByValue(v reflect.Value, name string) (h *Handler, err error) {
 	t := v.Type()
 	if t.Kind() != reflect.Func {
