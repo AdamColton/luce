@@ -2,6 +2,10 @@ package merkle
 
 import (
 	"hash"
+
+	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/math/cmpr"
+	"github.com/adamcolton/luce/serial/rye"
 )
 
 // ValidatorRow represents a Branch in a Merkle Tree. It provides the digests
@@ -31,8 +35,11 @@ type Leaf struct {
 // starting assembly. The digest of each additional Leaf will be checked by the
 // assembler.
 func (l *Leaf) Digest(h hash.Hash, buf []byte) []byte {
+	buf = slice.NewBuffer(buf).Empty(cmpr.Max(4, h.Size()))
+
 	h.Reset()
-	h.Write(uint32ToSlice(l.Index))
+	rye.Serialize.Uint32(buf[:4], l.Index)
+	h.Write(buf[:4])
 	h.Write(l.Data)
 	dig := h.Sum(buf[:0])
 	for i := len(l.Rows) - 1; i >= 0; i-- {

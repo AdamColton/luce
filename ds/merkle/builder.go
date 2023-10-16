@@ -2,6 +2,8 @@ package merkle
 
 import (
 	"hash"
+
+	"github.com/adamcolton/luce/math/ints"
 )
 
 type builder struct {
@@ -37,7 +39,7 @@ func makeTree(idx uint32, maxLeafSize int, data []byte) (node, uint32) {
 		return newDataLeaf(data, idx), idx + 1
 	}
 
-	leaves := divUp(ln, maxLeafSize)
+	leaves := ints.DivUp(ln, maxLeafSize)
 	split := (leaves / 2) * maxLeafSize
 
 	n := &branch{

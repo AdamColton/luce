@@ -2,6 +2,10 @@ package merkle
 
 import (
 	"hash"
+
+	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/math/cmpr"
+	"github.com/adamcolton/luce/serial/rye"
 )
 
 type dataLeaf struct {
@@ -17,10 +21,13 @@ func newDataLeaf(data []byte, idx uint32) *dataLeaf {
 }
 
 func (dl *dataLeaf) update(h hash.Hash) (ln, leaves int) {
+	buf := slice.NewBuffer(dl.digest).Empty(cmpr.Max(4, h.Size()))
+
 	h.Reset()
-	h.Write(uint32ToSlice(dl.idx))
+	rye.Serialize.Uint32(buf[:4], dl.idx)
+	h.Write(buf[:4])
 	h.Write(dl.data)
-	dl.digest = h.Sum(dl.digest)
+	dl.digest = h.Sum(buf)
 	return len(dl.data), 1
 }
 
