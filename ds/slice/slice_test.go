@@ -292,3 +292,8 @@ func TestIdxCheck(t *testing.T) {
 	assert.False(t, data.IdxCheck(len(data)))
 	assert.False(t, data.IdxCheck(len(data)+1))
 }
+
+func TestLen(t *testing.T) {
+	s := []int{2, 3, 5, 7, 11, 13, 17, 19, 23}
+	assert.Equal(t, len(s), slice.Len(s))
+}
