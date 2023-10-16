@@ -55,6 +55,11 @@ func Vals[K comparable, V any](m map[K]V) Slice[V] {
 	return out
 }
 
+// Len creates a strongly typed version of builtin len for slices.
+func Len[T any](s []T) int {
+	return len(s)
+}
+
 // AppendNotZero will append any values from ts that are not the zero
 // value for the type. Particularly useful for appending not nil values.
 func (s Slice[T]) AppendNotZero(ts ...T) []T {
