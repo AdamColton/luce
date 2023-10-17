@@ -1,6 +1,9 @@
 package handler_test
 
 import (
+	"bytes"
+	"fmt"
+	"strconv"
 	"sync"
 	"testing"
 
@@ -82,4 +85,65 @@ func TestSwitch(t *testing.T) {
 	// a, err = s.Handle("sayHi")
 	// assert.NoError(t, err)
 	// assert.Equal(t, "hello", a)
+}
+
+type handlerObj struct {
+	name         string
+	includeFloat bool
+}
+
+func (ho handlerObj) StringHandler(s string) string {
+	return ho.name + s
+}
+
+func (ho handlerObj) StringUsage() *handler.CommandDetails {
+	return &handler.CommandDetails{
+		Usage: "combine ho.name and s",
+	}
+}
+
+func (ho handlerObj) IntHandler(i int) string {
+	return strconv.Itoa(i)
+}
+
+func (ho handlerObj) Float64Handler(f float64) string {
+	return fmt.Sprint(f)
+}
+
+func (ho handlerObj) Float64Usage() *handler.CommandDetails {
+	return &handler.CommandDetails{
+		Usage:    "convert float64 to string",
+		Disabled: !ho.includeFloat,
+	}
+}
+
+func (ho handlerObj) IAmNotAHandler(i int, s string) {
+}
+
+func TestMagic(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
+	handler.DefaultRegistrar.Log = buf
+
+	hm := handler.NewSwitch(10)
+	ho := handlerObj{
+		name: "test",
+	}
+
+	handler.DefaultRegistrar.Register(hm, ho)
+	got := buf.String()
+	assert.Contains(t, got, "On Type handler_test.handlerObj")
+	assert.Contains(t, got, "Float64Handler <func(float64) string Value>")
+	assert.Contains(t, got, "IntHandler <func(int) string Value>")
+	assert.Contains(t, got, "StringHandler <func(string) string Value>")
+
+	a, err := hm.Handle(" foo")
+	assert.NoError(t, err)
+	assert.Equal(t, "test foo", a)
+
+	cmds := handler.DefaultRegistrar.Commands(ho).
+		Vals(nil).
+		Sort(handler.CmdNameLT)
+	assert.Equal(t, "int", cmds[0].Name)
+	assert.Equal(t, "string", cmds[1].Name)
+	assert.Equal(t, ho.StringUsage().Usage, cmds[1].Usage)
 }
