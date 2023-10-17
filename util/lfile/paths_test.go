@@ -82,17 +82,17 @@ func TestIter(t *testing.T) {
 	assert.True(t, i.Done())
 	assert.Equal(t, len(fs), c)
 
-	// mh := &mockHandler{
-	// 	autoload: false,
-	// }
-	// err := RunHandlerSource(fs, mh)
-	// assert.NoError(t, err)
-	// assert.Equal(t, []string(fs), mh.got)
+	mh := &mockHandler{
+		autoload: false,
+	}
+	err := RunHandlerSource(fs, mh)
+	assert.NoError(t, err)
+	assert.Equal(t, []string(fs), mh.got)
 
-	// mh.got = nil
-	// err = RunHandler(i, mh)
-	// assert.NoError(t, err)
-	// assert.Equal(t, []string(fs), mh.got)
+	mh.got = nil
+	err = RunHandler(i, mh)
+	assert.NoError(t, err)
+	assert.Equal(t, []string(fs), mh.got)
 
 }
 
