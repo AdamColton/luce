@@ -6,6 +6,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestPathLength(t *testing.T) {
+	tt := map[string]string{
+		"this/is/a/test.txt": "is/a/test.txt",
+		"a/test.txt":         "a/test.txt",
+		"/a/test.txt":        "a/test.txt",
+	}
+
+	pl := PathLength(3)
+	for n, tc := range tt {
+		t.Run(n, func(t *testing.T) {
+			assert.Equal(t, tc, pl.Trim(n))
+		})
+	}
+}
+
+func TestPathLengthEdges(t *testing.T) {
+	// nothing is left after a trailing separator
+	assert.Equal(t, "", PathLength(1).Trim("a/b/"))
+	assert.Equal(t, "b", PathLength(1).Trim("a/b"))
+	assert.Equal(t, "", PathLength(1).Trim(""))
+	assert.Equal(t, "", PathLength(3).Trim(""))
+	assert.Equal(t, "", PathLength(0).Trim("a"))
+	assert.Equal(t, "", PathLength(-1).Trim("a/b"))
+	assert.Equal(t, "test.txt", PathLength(3).Trim("test.txt"))
+	assert.Equal(t, "a/b/", PathLength(3).Trim("a/b/"))
+}
+
 func TestSlash(t *testing.T) {
 	tt := map[string][2]string{
 		// path: {with a trailing slash, without}
