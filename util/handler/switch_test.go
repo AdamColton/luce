@@ -4,8 +4,10 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/handler"
+	"github.com/adamcolton/luce/util/reflector"
 	"github.com/adamcolton/luce/util/timeout"
 	"github.com/stretchr/testify/assert"
 )
@@ -82,4 +84,32 @@ func TestSwitch(t *testing.T) {
 	a, err = s.Handle("sayHi")
 	assert.NoError(t, err)
 	assert.Equal(t, "hello", a)
+}
+
+type handlerObj struct {
+	name string
+}
+
+func (ho handlerObj) HandleString(s string) string {
+	return ho.name + s
+}
+
+func (ho handlerObj) NotAHandler(i int, s string) {
+}
+
+func TestMagic(t *testing.T) {
+	hm := handler.NewSwitch(10)
+	ho := handlerObj{
+		name: "test",
+	}
+
+	handler.DefaultRegistrar.Register(hm, ho)
+
+	a, err := hm.Handle(" foo")
+	assert.NoError(t, err)
+	assert.Equal(t, "test foo", a)
+
+	i := slice.New(reflector.MethodsOn(ho)).Iter()
+	_, err = handler.RegisterSwitchHandlerMethods(hm, i)
+	assert.Equal(t, "expected func(T?) (U?, error?) where ? indicates optional, got: func(int, string)", err.Error())
 }
