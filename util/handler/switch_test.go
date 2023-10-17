@@ -1,6 +1,8 @@
 package handler_test
 
 import (
+	"fmt"
+	"strconv"
 	"sync"
 	"testing"
 
@@ -82,4 +84,53 @@ func TestSwitch(t *testing.T) {
 	// a, err = s.Handle("sayHi")
 	// assert.NoError(t, err)
 	// assert.Equal(t, "hello", a)
+}
+
+type handlerObj struct {
+	name         string
+	includeFloat bool
+}
+
+func (ho handlerObj) StringHandler(s string) string {
+	return ho.name + s
+}
+
+func (ho handlerObj) StringUsage() string {
+	return "combine ho.name and s"
+}
+
+func (ho handlerObj) IntHandler(i int) string {
+	return strconv.Itoa(i)
+}
+
+func (ho handlerObj) Float64Handler(f float64) string {
+	return fmt.Sprint(f)
+}
+
+func (ho handlerObj) Float64Usage() (string, bool) {
+	return "convert float64 to string", ho.includeFloat
+}
+
+func (ho handlerObj) IAmNotAHandler(i int, s string) {
+}
+
+func TestMagic(t *testing.T) {
+	hm := handler.NewSwitch(10)
+	ho := handlerObj{
+		name: "test",
+	}
+
+	handler.DefaultRegistrar.Register(hm, ho)
+
+	a, err := hm.Handle(" foo")
+	assert.NoError(t, err)
+	assert.Equal(t, "test foo", a)
+
+	cmds := handler.DefaultRegistrar.Commands(ho).
+		Sort(func(i, j handler.Command) bool {
+			return i.Name < j.Name
+		})
+	assert.Equal(t, "int", cmds[0].Name)
+	assert.Equal(t, "string", cmds[1].Name)
+	assert.Equal(t, ho.StringUsage(), cmds[1].Usage)
 }
