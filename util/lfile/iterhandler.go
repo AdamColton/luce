@@ -39,3 +39,14 @@ func (bt *GetByTypeHandler) HandleIter(i Iterator) {
 		bt.Files = append(bt.Files, i.Path())
 	}
 }
+
+// GetContentsHandler reads the contents of all files into a map.
+type GetContentsHandler map[string][]byte
+
+// HandleIter fulfills IterHandler. If the current value of the Iterator is a
+// file, it's contents are entered into the GetContentsHandler map.
+func (c GetContentsHandler) HandleIter(i Iterator) {
+	if !i.Stat().IsDir() {
+		c[i.Path()] = i.Data()
+	}
+}
