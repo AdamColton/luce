@@ -2,6 +2,7 @@ package lfile_test
 
 import (
 	"io/fs"
+	"os"
 	"testing"
 
 	"github.com/adamcolton/luce/lerr"
@@ -108,4 +109,16 @@ func TestGetDirContents(t *testing.T) {
 	got, err = lfile.GetDirContents(repo)
 	assert.Equal(t, repo.Err, err)
 	assert.Nil(t, got)
+}
+
+func TestFoo(t *testing.T) {
+	var f fs.File
+	var err error
+	f, err = os.Open("lfilemock")
+	assert.NoError(t, err)
+
+	s, err := f.Stat()
+	assert.NoError(t, err)
+
+	assert.True(t, s.IsDir())
 }
