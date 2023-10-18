@@ -22,6 +22,22 @@ func TestGetByTypeHandler(t *testing.T) {
 	assert.Equal(t, expected, bt)
 }
 
+func TestGetContentsHandler(t *testing.T) {
+	restore := setupForHandlersTest()
+	defer restore()
+
+	fs := Paths{"foo/", "foo.txt", "bar.txt", "bar/"}
+	gt := make(GetContentsHandler)
+	err := RunHandlerSource(fs, gt)
+	assert.NoError(t, err)
+
+	expected := GetContentsHandler{
+		"foo.txt": []byte("foo.txt"),
+		"bar.txt": []byte("bar.txt"),
+	}
+	assert.Equal(t, expected, gt)
+}
+
 func setupForHandlersTest() func() {
 	restoreStat := Stat
 	restoreReadFile := ReadFile
