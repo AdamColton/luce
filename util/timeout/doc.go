@@ -1,3 +1,2 @@
-// Package timeout is a test utility that checks that something completes within
-// a time limit.
+// Package timeout provides test utilities for working with time.
 package timeout
