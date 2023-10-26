@@ -55,6 +55,21 @@ func (t Type) Method() Filter[*reflector.Method] {
 	}
 }
 
+// TODO
+func (t Type) And(t2 Type) Type {
+	return Type{t.Filter.And(t2.Filter)}
+}
+
+// TODO
+func (t Type) Or(t2 Type) Type {
+	return Type{t.Filter.Or(t2.Filter)}
+}
+
+// TODO
+func (t Type) Not() Type {
+	return Type{t.Filter.Not()}
+}
+
 // TypeChecker checks a value's type against a filter. It returns the underlying
 // type. It returns an error if the type fails the underlying filter.
 type TypeChecker func(i any) (reflect.Type, error)
