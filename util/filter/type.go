@@ -13,6 +13,26 @@ type Type struct {
 	Filter[reflect.Type]
 }
 
+// TODO
+func NumInEq(n int) Type {
+	return NumIn(EQ(n))
+}
+
+// TODO
+func NumOutEq(n int) Type {
+	return NumOut(EQ(n))
+}
+
+// TODO
+func InType(n int, t reflect.Type) Type {
+	return IsType(t).In(n)
+}
+
+// TODO
+func OutType(n int, t reflect.Type) Type {
+	return IsType(t).Out(n)
+}
+
 // OnInterface applies the filter to the TypeOf i.
 func (t Type) OnInterface(i any) bool {
 	return t.Filter(reflect.TypeOf(i))
