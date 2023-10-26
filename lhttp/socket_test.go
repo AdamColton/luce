@@ -1,6 +1,8 @@
 package lhttp_test
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"testing"
 
@@ -36,26 +38,50 @@ func (f *fakeConn) WriteMessage(messageType int, data []byte) error {
 	return nil
 }
 
-func TestSocketRunReader(t *testing.T) {
-	conn := &fakeConn{in: [][]byte{[]byte("hello"), []byte("world")}}
-	from := make(chan []byte, 4)
-	lhttp.NewSocket(conn).RunReader(from)
-
-	assert.Equal(t, "hello", string(<-from))
-	assert.Equal(t, "world", string(<-from))
-	_, open := <-from
-	assert.False(t, open, "the channel is closed when the socket fails")
+func TestSocketRead(t *testing.T) {
+	conn := &fakeConn{in: [][]byte{[]byte("hello "), []byte("world!")}}
+	got, err := io.ReadAll(lhttp.NewSocket(conn))
+	assert.NoError(t, err)
+	assert.Equal(t, "hello world!", string(got))
 }
 
-func TestSocketRunSender(t *testing.T) {
-	to := make(chan []byte, 4)
-	for _, msg := range []string{"a", "b", "c"} {
-		to <- []byte(msg)
-	}
-	close(to)
+func TestSocketReadSmallBuffer(t *testing.T) {
+	conn := &fakeConn{in: [][]byte{[]byte("hello")}}
+	s := lhttp.NewSocket(conn)
+	p := make([]byte, 3)
 
-	conn := &fakeConn{failAfter: 2}
-	lhttp.NewSocket(conn).RunSender(to)
-	assert.Equal(t, [][]byte{[]byte("a"), []byte("b")}, conn.out)
-	assert.Empty(t, to, "the message that failed was taken off the channel")
+	n, err := s.Read(p)
+	assert.NoError(t, err)
+	assert.Equal(t, "hel", string(p[:n]), "the first Read returns data")
+
+	n, err = s.Read(p)
+	assert.NoError(t, err)
+	assert.Equal(t, "lo", string(p[:n]), "the rest of the message")
+
+	_, err = s.Read(p)
+	assert.Equal(t, io.EOF, err)
+}
+
+func TestSocketReadError(t *testing.T) {
+	boom := errors.New("boom")
+	s := lhttp.NewSocket(&fakeConn{err: boom})
+	n, err := s.Read(make([]byte, 4))
+	assert.Equal(t, 0, n)
+	assert.Equal(t, boom, err)
+}
+
+func TestSocketWrite(t *testing.T) {
+	conn := &fakeConn{}
+	s := lhttp.NewSocket(conn)
+	n, err := fmt.Fprint(s, "hi there")
+	assert.NoError(t, err)
+	assert.Equal(t, len("hi there"), n)
+	assert.Equal(t, [][]byte{[]byte("hi there")}, conn.out)
+}
+
+func TestSocketWriteError(t *testing.T) {
+	s := lhttp.NewSocket(&fakeConn{failAfter: 1, out: [][]byte{nil}})
+	n, err := s.Write([]byte("hi"))
+	assert.Equal(t, 0, n)
+	assert.Equal(t, io.ErrClosedPipe, err)
 }
