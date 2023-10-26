@@ -12,6 +12,26 @@ type Type struct {
 }
 
 // TODO
+func NumInEq(n int) Type {
+	return NumIn(EQ(n))
+}
+
+// TODO
+func NumOutEq(n int) Type {
+	return NumOut(EQ(n))
+}
+
+// TODO
+func InType(n int, t reflect.Type) Type {
+	return IsType(t).In(n)
+}
+
+// TODO
+func OutType(n int, t reflect.Type) Type {
+	return IsType(t).Out(n)
+}
+
+// TODO
 func (t Type) OnInterface(i any) bool {
 	return t.Filter(reflect.TypeOf(i))
 }
