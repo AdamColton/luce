@@ -6,6 +6,7 @@ import (
 	"github.com/adamcolton/luce/util/reflector"
 )
 
+// All base types are defined in ltype
 var (
 	Err       = reflector.Type[error]()
 	String    = reflector.Type[string]()
@@ -28,3 +29,16 @@ var (
 	Float32 = reflector.Type[float32]()
 	Float64 = reflector.Type[float64]()
 )
+
+// CheckStructPtr returns nil if t is not a pointer to a struct. If it is, it
+// returns the struct.
+func CheckStructPtr(t reflect.Type) reflect.Type {
+	if t == nil || t.Kind() != reflect.Ptr {
+		return nil
+	}
+	t = t.Elem()
+	if t.Kind() != reflect.Struct {
+		return nil
+	}
+	return t
+}
