@@ -97,6 +97,23 @@ func TestType(t *testing.T) {
 			f:        filter.IsType(ltype.String).Out(1),
 			v:        func() (a, b, c int) { return 1, 2, 3 },
 		},
+		"and": {
+			expected: true,
+			f: filter.IsType(ltype.Int).In(0).
+				And(filter.IsType(ltype.Int).Out(0)),
+			v: func(a, b, c int) (d, e, f int) { return 1, 2, 3 },
+		},
+		"or": {
+			expected: true,
+			f: filter.IsType(ltype.String).In(0).
+				Or(filter.IsType(ltype.Int).Out(0)),
+			v: func(a, b, c int) (d, e, f int) { return 1, 2, 3 },
+		},
+		"not": {
+			expected: true,
+			f:        filter.IsType(ltype.String).In(0).Not(),
+			v:        func(a, b, c int) (d, e, f int) { return 1, 2, 3 },
+		},
 	}
 
 	for n, tc := range tt {
