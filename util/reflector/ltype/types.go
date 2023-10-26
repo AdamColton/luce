@@ -8,6 +8,8 @@ import (
 	"github.com/adamcolton/luce/util/reflector"
 )
 
+// The reflect.Type of the builtin types. Err is the type of the error interface
+// and Byte is the same type as Uint8.
 var (
 	Err       = reflector.Type[error]()
 	String    = reflector.Type[string]()
@@ -30,3 +32,16 @@ var (
 	Float32 = reflector.Type[float32]()
 	Float64 = reflector.Type[float64]()
 )
+
+// CheckStructPtr returns the struct type that t points to. It returns nil if t is
+// nil or is not a pointer to a struct.
+func CheckStructPtr(t reflect.Type) reflect.Type {
+	if t == nil || t.Kind() != reflect.Ptr {
+		return nil
+	}
+	t = t.Elem()
+	if t.Kind() != reflect.Struct {
+		return nil
+	}
+	return t
+}
