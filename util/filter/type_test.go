@@ -49,69 +49,69 @@ func TestType(t *testing.T) {
 		},
 		"numIn-true": {
 			expected: true,
-			f:        filter.NumIn(filter.EQ(3)),
+			f:        filter.NumInEq(3),
 			v:        func(a, b, c int) {},
 		},
 		"numIn-false": {
 			expected: false,
-			f:        filter.NumIn(filter.EQ(4)),
+			f:        filter.NumInEq(4),
 			v:        func(a, b, c int) {},
 		},
 		"in-true": {
 			expected: true,
-			f:        filter.IsType(ltype.Int).In(1),
+			f:        filter.InType(1, ltype.Int),
 			v:        func(a, b, c int) {},
 		},
 		"in-negative-true": {
 			expected: true,
-			f:        filter.IsType(ltype.String).In(-1),
+			f:        filter.InType(-1, ltype.String),
 			v:        func(a, b int, c string) {},
 		},
 		"in-false": {
 			expected: false,
-			f:        filter.IsType(ltype.String).In(1),
+			f:        filter.InType(1, ltype.String),
 			v:        func(a, b, c int) {},
 		},
 		"numOut-true": {
 			expected: true,
-			f:        filter.NumOut(filter.EQ(3)),
+			f:        filter.NumOutEq(3),
 			v:        func() (a, b, c int) { return 1, 2, 3 },
 		},
 		"numOut-false": {
 			expected: false,
-			f:        filter.NumOut(filter.EQ(4)),
+			f:        filter.NumOutEq(4),
 			v:        func() (a, b, c int) { return 1, 2, 3 },
 		},
 		"out-true": {
 			expected: true,
-			f:        filter.IsType(ltype.Int).Out(1),
+			f:        filter.OutType(1, ltype.Int),
 			v:        func() (a, b, c int) { return 1, 2, 3 },
 		},
 		"out-negative-true": {
 			expected: true,
-			f:        filter.IsType(ltype.String).Out(-1),
+			f:        filter.OutType(-1, ltype.String),
 			v:        func() (a, b int, c string) { return 1, 2, "3" },
 		},
 		"out-false": {
 			expected: false,
-			f:        filter.IsType(ltype.String).Out(1),
+			f:        filter.OutType(1, ltype.String),
 			v:        func() (a, b, c int) { return 1, 2, 3 },
 		},
 		"and": {
 			expected: true,
-			f: filter.IsType(ltype.Int).In(0).
-				And(filter.IsType(ltype.Int).Out(0)),
+			f: filter.InType(0, ltype.Int).
+				And(filter.InType(0, ltype.Int)),
 			v: func(a, b, c int) (d, e, f int) { return 1, 2, 3 },
 		},
 		"or": {
 			expected: true,
-			f: filter.IsType(ltype.String).In(0).
-				Or(filter.IsType(ltype.Int).Out(0)),
+			f: filter.InType(0, ltype.String).
+				Or(filter.InType(0, ltype.Int)),
 			v: func(a, b, c int) (d, e, f int) { return 1, 2, 3 },
 		},
 		"not": {
 			expected: true,
-			f:        filter.IsType(ltype.String).In(0).Not(),
+			f:        filter.InType(0, ltype.String).Not(),
 			v:        func(a, b, c int) (d, e, f int) { return 1, 2, 3 },
 		},
 	}
