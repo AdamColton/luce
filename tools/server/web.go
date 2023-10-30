@@ -16,7 +16,7 @@ type TemplateNames struct {
 }
 
 func (s *Server) setRoutes() {
-	m := midware.NewMagic(
+	m := midware.New(
 		s.Users,
 		midware.NewDecoder(formdecoder.New(), "Form"),
 	)
