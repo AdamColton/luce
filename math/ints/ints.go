@@ -40,3 +40,24 @@ func Mod[T constraints.Integer](a, b T) T {
 	}
 	return a % b
 }
+
+func GCD[T constraints.Integer](a, b T) T {
+	gcd, _, _ := GCDX(a, b)
+	return gcd
+}
+
+func GCDX[T constraints.Integer](a, b T) (gcd, q, r T) {
+	if a == 0 {
+		return b, 0, 1
+	}
+	gcd, u, v := GCDX(b%a, a)
+
+	q = v - (b/a)*u
+	r = u
+
+	return gcd, q, r
+}
+
+func LCM[T constraints.Integer](a, b T) T {
+	return (a / GCD(a, b)) * b
+}
