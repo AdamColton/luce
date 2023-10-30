@@ -14,7 +14,7 @@ import (
 )
 
 func (s *Server) routes() {
-	m := midware.NewMagic(
+	m := midware.New(
 		s.Users,
 		midware.NewDecoder(formdecoder.New(), "Form"),
 	)
