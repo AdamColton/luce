@@ -62,3 +62,30 @@ func Mod[T constraints.Integer](a, b T) T {
 	}
 	return m
 }
+
+// GCD finds the greatest common divisor of a and b. It is intended for
+// non-negative values, the sign of the result is not reliable for negative ones.
+func GCD[T constraints.Integer](a, b T) T {
+	gcd, _, _ := GCDX(a, b)
+	return gcd
+}
+
+// GCDX implements the extended GCD algorithm. It returns the GCD of a and b,
+// and the coefficients x and y where a*x + b*y equals the GCD (Bezout's
+// identity).
+func GCDX[T constraints.Integer](a, b T) (gcd, x, y T) {
+	if a == 0 {
+		return b, 0, 1
+	}
+	gcd, u, v := GCDX(b%a, a)
+
+	x = v - (b/a)*u
+	y = u
+
+	return gcd, x, y
+}
+
+// LCM finds the least common multiple of a and b. It panics if both are 0.
+func LCM[T constraints.Integer](a, b T) T {
+	return (a / GCD(a, b)) * b
+}

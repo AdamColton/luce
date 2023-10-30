@@ -71,3 +71,26 @@ func TestConsts(t *testing.T) {
 	u64++
 	assert.Equal(t, uint64(0), u64)
 }
+
+func TestGCD(t *testing.T) {
+	expected := 5
+	a := 2 * expected
+	b := 3 * expected
+	assert.Equal(t, expected, ints.GCD(a, b))
+}
+
+func TestGCDX(t *testing.T) {
+	for _, pair := range [][2]int{{240, 46}, {17, 5}, {0, 9}, {9, 0}, {12, 18}} {
+		a, b := pair[0], pair[1]
+		gcd, x, y := ints.GCDX(a, b)
+		assert.Equal(t, ints.GCD(a, b), gcd)
+		assert.Equal(t, gcd, a*x+b*y, "a*x + b*y should equal the GCD of %d and %d", a, b)
+	}
+}
+
+func TestLCM(t *testing.T) {
+	expected := 2 * 3 * 5
+	a := 2 * 5
+	b := 3 * 5
+	assert.Equal(t, expected, ints.LCM(a, b))
+}
