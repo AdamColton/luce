@@ -71,3 +71,17 @@ func TestConsts(t *testing.T) {
 	u64++
 	assert.Equal(t, uint64(0), u64)
 }
+
+func TestGCD(t *testing.T) {
+	expected := 5
+	a := 2 * expected
+	b := 3 * expected
+	assert.Equal(t, expected, ints.GCD(a, b))
+}
+
+func TestLCM(t *testing.T) {
+	expected := 2 * 3 * 5
+	a := 2 * 5
+	b := 3 * 5
+	assert.Equal(t, expected, ints.LCM(a, b))
+}
