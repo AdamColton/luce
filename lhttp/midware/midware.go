@@ -7,10 +7,13 @@ import (
 	"github.com/adamcolton/luce/util/linject"
 )
 
+// Midware holds the Initilizers that build the DataInserters for dataType.
 type Midware struct {
 	linject.FuncInitilizers
 }
 
+// New creates a set of midware initilizers that can be used to convert
+// midwareFuncs to http.HandlerFuncs.
 func New(initilizers ...linject.FuncInitilizer) *Midware {
 	return &Midware{
 		FuncInitilizers: initilizers,
