@@ -1,5 +1,14 @@
 package list
 
+// NewGenerator creates a Wrapper for a Generator with length ln that gets its
+// values from fn.
+func NewGenerator[T any](ln int, fn func(int) T) Wrapper[T] {
+	return Wrapper[T]{Generator[T]{
+		Fn:     fn,
+		Length: ln,
+	}}
+}
+
 // Generator fulfills List using a function to generate values by index.
 type Generator[T any] struct {
 	// Fn is called with the index to generate a value.
