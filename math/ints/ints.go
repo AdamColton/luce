@@ -55,3 +55,28 @@ func Mod[T constraints.Integer](a, b T) T {
 	}
 	return m
 }
+
+// GCD finds the greatest common denominator of a and b.
+func GCD[T constraints.Integer](a, b T) T {
+	gcd, _, _ := GCDX(a, b)
+	return gcd
+}
+
+// GCDX implements the extended GCD algorithm. I do not understand what x and
+// y represent.
+func GCDX[T constraints.Integer](a, b T) (gcd, x, y T) {
+	if a == 0 {
+		return b, 0, 1
+	}
+	gcd, u, v := GCDX(b%a, a)
+
+	x = v - (b/a)*u
+	y = u
+
+	return gcd, x, y
+}
+
+// LCM finds the least common multiple of a and b.
+func LCM[T constraints.Integer](a, b T) T {
+	return (a / GCD(a, b)) * b
+}
