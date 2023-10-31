@@ -189,3 +189,9 @@ func TestAnyType(t *testing.T) {
 	a := filter.AnyType()
 	assert.True(t, a.OnInterface("string"))
 }
+
+func TestTypeErr(t *testing.T) {
+	fn := filter.TypeErr("Foo: %v")
+	got := fn(ltype.String)
+	assert.Equal(t, "Foo: string", got.Error())
+}
