@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/adamcolton/luce/math/ints"
@@ -205,5 +206,12 @@ func NumOut(f func(int) bool) Type {
 func MethodName(f func(string) bool) Filter[*reflector.Method] {
 	return func(m *reflector.Method) bool {
 		return f(m.Name)
+	}
+}
+
+// TypeErr formats an error using reflect.Type.
+func TypeErr(format string) func(t reflect.Type) error {
+	return func(t reflect.Type) error {
+		return fmt.Errorf(format, t)
 	}
 }
