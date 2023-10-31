@@ -22,7 +22,11 @@ type DecoderInitilizer struct {
 	lhttp.RequestDecoder
 }
 
-var decoderCheck = filter.TypeCheck(isPtrToStruct, typeErr("Invalid Decoder field: "))
+var (
+	isPtrToStruct = filter.IsKind(reflect.Ptr).
+			And(filter.IsKind(reflect.Struct).Elem())
+	decoderCheck = isPtrToStruct.Check(filter.TypeErr("expected pointer to struct, got: %s"))
+)
 
 // Initilize fulfills FieldSetterInitilizer. It validates that the Type t is a
 // pointer to a struct.
@@ -33,16 +37,16 @@ func (di DecoderInitilizer) Initilize(fieldType reflect.Type) FieldSetter {
 	}
 }
 
-<<<<<<< HEAD
-func (di *decoderInserter) Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) (func(), error) {
-	v := reflect.New(di.t)
-	err := di.Decode(v.Interface(), r)
-	if err != nil {
-		return nil, err
-	}
-	dst.FieldByIndex(di.idx).Set(v)
-	return nil, nil
-=======
+// func (di *decoderInserter) Insert(w http.ResponseWriter, r *http.Request, dst reflect.Value) (func(), error) {
+// 	v := reflect.New(di.t)
+// 	err := di.Decode(v.Interface(), r)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	dst.FieldByIndex(di.idx).Set(v)
+// 	return nil, nil
+// }
+
 type decoderSetter struct {
 	lhttp.RequestDecoder
 	reflect.Type
@@ -59,5 +63,4 @@ func (ds decoderSetter) Set(w http.ResponseWriter, r *http.Request, field reflec
 	}
 
 	return nil, err
->>>>>>> 29cbcfe75 (lhttp/midware.Decoder refactor)
 }

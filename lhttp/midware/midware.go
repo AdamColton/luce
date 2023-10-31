@@ -1,6 +1,7 @@
 package midware
 
 import (
+	"fmt"
 	"net/http"
 	"reflect"
 
@@ -27,7 +28,7 @@ func (m *Midware) Initilizer(i Initilizer) {
 func (m *Midware) Handle(fn any) http.HandlerFunc {
 	t := reflect.TypeOf(fn)
 	if !linject.IsHttpHandler(t) {
-		panic("Decode.Handler requires a func with 3 args")
+		panic(fmt.Errorf("invalid Midware funce: %s", t))
 	}
 
 	ifn := m.Apply(fn)

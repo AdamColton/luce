@@ -4,8 +4,10 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/adamcolton/luce/ds/bus/iobus"
 	"github.com/adamcolton/luce/lhttp"
 	"github.com/adamcolton/luce/util/filter"
+	"github.com/adamcolton/luce/util/reflector"
 	"github.com/gorilla/websocket"
 )
 
@@ -18,7 +20,7 @@ type WebSocket struct {
 	lhttp.ErrHandler
 }
 
-// NewWebSocket with default buffer sizes.
+// // NewWebSocket with default buffer sizes.
 func NewWebSocket() WebSocket {
 	return WebSocket{
 		Upgrader: websocket.Upgrader{
@@ -28,8 +30,8 @@ func NewWebSocket() WebSocket {
 	}
 }
 
-// ChannelInitilizer creates an Initilizer that will abstract the websocket to
-// a pair of []byte channels.
+// // ChannelInitilizer creates an Initilizer that will abstract the websocket to
+// // a pair of []byte channels.
 func (ws WebSocket) Initilizer(to, from, conn string) Initilizer {
 	return webSocketInitilizer{
 		WebSocket: ws,
@@ -45,18 +47,17 @@ type webSocketInitilizer struct {
 }
 
 var (
-	checkSend = filter.
-			IsNilRef((*chan<- []byte)(nil)).
-			Check(typeErr("Invalid Websocket 'To' type: "))
+	inChanType = reflector.Type[chan<- []byte]()
+	checkSend  = filter.IsType(inChanType).
+			Check(filter.TypeErr("Invalid Websocket 'To' type: %s"))
 
-	checkRecv = filter.
-			IsNilRef((*<-chan []byte)(nil)).
-			Check(typeErr("Invalid Websocket 'From' type: "))
+	outChanType = reflector.Type[<-chan []byte]()
+	checkRecv   = filter.IsType(outChanType).
+			Check(filter.TypeErr("Invalid Websocket 'From' type: %s"))
 
-	checkConn = filter.TypeCheck(
-		filter.IsType((*websocket.Conn)(nil)),
-		typeErr("Invalid Websocket 'Conn' type: "),
-	)
+	connType  = reflector.Type[*websocket.Conn]()
+	checkConn = filter.IsType(connType).
+			Check(filter.TypeErr("Invalid Websocket 'Conn' type: %s"))
 )
 
 // Initilize checks the "to" and "from" fields to validate the names and types.
@@ -104,13 +105,16 @@ type webSocketDataInserter struct {
 // Insert sets the "to" and "from" channels on the data field.
 func (di webSocketDataInserter) Insert(w http.ResponseWriter, r *http.Request, data reflect.Value) (func(), error) {
 	fbi := data.Elem().FieldByIndex
+	set := func(idx []int, v any) {
+		fbi(idx).Set(reflect.ValueOf(v))
+	}
 
 	conn, err := di.Upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return nil, err
 	}
 	if di.conn != nil {
-		fbi(di.conn).Set(reflect.ValueOf(conn))
+		set(di.conn, conn)
 	}
 
 	var to chan []byte
@@ -118,13 +122,16 @@ func (di webSocketDataInserter) Insert(w http.ResponseWriter, r *http.Request, d
 		sw := lhttp.NewSocket(conn)
 		if di.to != nil {
 			to = make(chan []byte, di.ToBuf)
-			fbi(di.to).Set(reflect.ValueOf(to))
-			go sw.RunSender(to)
+			set(di.to, to)
+			go iobus.Writer(sw, to, nil)
 		}
 		if di.from != nil {
 			from := make(chan []byte, di.FromBuf)
-			fbi(di.from).Set(reflect.ValueOf(from))
-			go sw.RunReader(from)
+			set(di.from, from)
+
+			go (iobus.Config{
+				CloseOnEOF: true,
+			}).Reader(sw, from, nil)
 		}
 	}
 

@@ -13,7 +13,8 @@ import (
 // and invoked at the end of the call.
 type Redirect struct{}
 
-var checkRedirect = filter.TypeCheck(filter.IsKind(reflect.String), typeErr("Invalid Redirect field: "))
+var checkRedirect = filter.IsKind(reflect.String).
+	Check(filter.TypeErr("expected string, got: %s"))
 
 // NewRedirect creates a Redirect Initilizer. It should be the last Initilizer
 // in the Midware.

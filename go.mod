@@ -18,6 +18,8 @@ require (
 
 require github.com/gorilla/securecookie v1.1.1 // indirect
 
+require github.com/quasoft/memstore v0.0.0-20191010062613-2bce066d2b0b
+
 require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect

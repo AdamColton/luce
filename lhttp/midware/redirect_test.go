@@ -5,12 +5,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/adamcolton/luce/lerr"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestRedirect(t *testing.T) {
-	m := New(NewRedirect("Redirect"))
+	m := New()
+	m.Initilizer(NewRedirect("Redirect"))
 	fn := m.Handle(func(w http.ResponseWriter, r *http.Request, data *struct {
 		Redirect string
 	}) {
@@ -25,10 +25,12 @@ func TestRedirect(t *testing.T) {
 }
 
 func TestRedirectErr(t *testing.T) {
-	m := New(NewRedirect("Redirect"))
+	m := New()
+	m.Initilizer(NewRedirect("Redirect"))
 
 	defer func() {
-		assert.Equal(t, lerr.Str("Invalid Redirect field: int"), recover())
+		err := recover().(error)
+		assert.Equal(t, "expected string, got: int", err.Error())
 	}()
 
 	m.Handle(func(w http.ResponseWriter, r *http.Request, data *struct {
