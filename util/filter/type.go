@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/adamcolton/luce/util/reflector"
@@ -160,5 +161,11 @@ func NumOut(f Filter[int]) Type {
 func MethodName(f func(string) bool) Filter[*reflector.Method] {
 	return func(m *reflector.Method) bool {
 		return f(m.Name)
+	}
+}
+
+func TypeErr(format string) func(t reflect.Type) error {
+	return func(t reflect.Type) error {
+		return fmt.Errorf(format, t)
 	}
 }
