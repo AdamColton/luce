@@ -3,6 +3,7 @@ package ltype
 import (
 	"reflect"
 
+	"github.com/adamcolton/luce/util/filter"
 	"github.com/adamcolton/luce/util/reflector"
 )
 
@@ -28,6 +29,11 @@ var (
 
 	Float32 = reflector.Type[float32]()
 	Float64 = reflector.Type[float64]()
+
+	// IsPtrToStruct checks that a type is a pointer and the underlying Kind is a
+	// struct.
+	IsPtrToStruct = filter.IsKind(reflect.Ptr).
+			And(filter.IsKind(reflect.Struct).Elem())
 )
 
 // CheckStructPtr returns nil if t is not a pointer to a struct. If it is, it
