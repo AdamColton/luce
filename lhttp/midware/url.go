@@ -1,9 +1,9 @@
 package midware
 
 import (
-	"net/http"
 	"reflect"
 
+	"github.com/adamcolton/luce/util/linject"
 	"github.com/gorilla/mux"
 )
 
@@ -15,7 +15,7 @@ type URLFieldSetter struct {
 }
 
 // Initilize fulfills FieldSetterInitilizer.
-func (u URLFieldSetter) Initilize(fieldType reflect.Type) FieldSetter {
+func (u URLFieldSetter) InitilizeField(fn linject.Func, t reflect.Type) linject.FieldSetter {
 	return u
 }
 
@@ -24,13 +24,14 @@ var Vars = mux.Vars
 
 // Set fulfills FieldSetter by setting field to a value from the URL using
 // mux.Vars.
-func (u URLFieldSetter) Set(w http.ResponseWriter, r *http.Request, field reflect.Value) (func(), error) {
+func (u URLFieldSetter) Set(args []reflect.Value, field reflect.Value) (func(), error) {
+	_, r := GetWR(args)
 	field.Set(reflect.ValueOf(Vars(r)[u.Var]))
 	return nil, nil
 }
 
 // URL creates a magic Initilizer to extract a segment from the URL by name and
 // set it to a magic data field by fieldName.
-func URL(segment, fieldName string) Initilizer {
+func URL(segment, fieldName string) linject.FieldInitilizer {
 	return NewFieldInitilizer(URLFieldSetter{segment}, fieldName)
 }

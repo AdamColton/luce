@@ -21,13 +21,16 @@ func New(initilizers ...linject.FuncInitilizer) *Midware {
 	}
 }
 
-func (m *Midware) Initilizer(i Initilizer) {
-	m.FuncInitilizers = append(m.FuncInitilizers, wrappedInitilizer{i})
+func (m *Midware) Initilizers(initilizers ...Initilizer) *Midware {
+	for _, i := range initilizers {
+		m.FuncInitilizers = append(m.FuncInitilizers, wrappedInitilizer{i})
+	}
+	return m
 }
 
 func (m *Midware) Handle(fn any) http.HandlerFunc {
 	t := reflect.TypeOf(fn)
-	if !linject.IsHttpHandler(t) {
+	if !HttpHandlerType.Filter(t) {
 		panic(fmt.Errorf("invalid Midware funce: %s", t))
 	}
 

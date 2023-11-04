@@ -30,9 +30,7 @@ func (mf *magicFinalizer) Insert(w http.ResponseWriter, r *http.Request, dst ref
 func TestWebSocketChannelInitilizer(t *testing.T) {
 	ws := NewWebSocket()
 	mf := &magicFinalizer{}
-	m := New()
-	m.Initilizer(ws.Initilizer("To", "From", ""))
-	m.Initilizer(mf)
+	m := New().Initilizers(ws.Initilizer("To", "From", ""), mf)
 
 	shouldclose := make(chan bool)
 	s := httptest.NewServer(m.Handle(func(w http.ResponseWriter, r *http.Request, data *struct {
@@ -69,8 +67,7 @@ func TestWebSocketChannelInitilizer(t *testing.T) {
 
 func TestWebSocketInitilizer(t *testing.T) {
 	ws := NewWebSocket()
-	m := New()
-	m.Initilizer(ws.Initilizer("", "", "Socket"))
+	m := New().Initilizers(ws.Initilizer("", "", "Socket"))
 
 	shouldclose := make(chan bool)
 	s := httptest.NewServer(m.Handle(func(w http.ResponseWriter, r *http.Request, data *struct {

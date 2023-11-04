@@ -7,6 +7,7 @@ import (
 	"github.com/adamcolton/luce/ds/bus/iobus"
 	"github.com/adamcolton/luce/lhttp"
 	"github.com/adamcolton/luce/util/filter"
+	"github.com/adamcolton/luce/util/linject"
 	"github.com/adamcolton/luce/util/reflector"
 	"github.com/gorilla/websocket"
 )
@@ -66,13 +67,13 @@ func (i webSocketInitilizer) Initilize(fieldType reflect.Type) DataInserter {
 	var hasToField, hasFromField, hasConnField bool
 	var toField, fromField, connField reflect.StructField
 
-	if fieldName(i.to) {
+	if linject.FieldName(i.to) {
 		toField, hasToField = fieldType.FieldByName(i.to)
 	}
-	if fieldName(i.from) {
+	if linject.FieldName(i.from) {
 		fromField, hasFromField = fieldType.FieldByName(i.from)
 	}
-	if fieldName(i.conn) {
+	if linject.FieldName(i.conn) {
 		connField, hasConnField = fieldType.FieldByName(i.conn)
 	}
 

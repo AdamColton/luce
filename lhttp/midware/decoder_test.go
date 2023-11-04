@@ -27,8 +27,7 @@ func personFunc(w http.ResponseWriter, r *http.Request, data *struct {
 
 func TestDecoder(t *testing.T) {
 	d := midware.NewDecoder(formdecoder.New(), "Form")
-	m := midware.New()
-	m.Initilizer(d)
+	m := midware.New(d)
 	h := m.Handle(personFunc)
 
 	form := url.Values{

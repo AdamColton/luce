@@ -1,16 +1,16 @@
-package midware
+package midware_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/adamcolton/luce/lhttp/midware"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestRedirect(t *testing.T) {
-	m := New()
-	m.Initilizer(NewRedirect("Redirect"))
+	m := midware.New(midware.NewRedirect("Redirect"))
 	fn := m.Handle(func(w http.ResponseWriter, r *http.Request, data *struct {
 		Redirect string
 	}) {
@@ -25,8 +25,7 @@ func TestRedirect(t *testing.T) {
 }
 
 func TestRedirectErr(t *testing.T) {
-	m := New()
-	m.Initilizer(NewRedirect("Redirect"))
+	m := midware.New(midware.NewRedirect("Redirect"))
 
 	defer func() {
 		err := recover().(error)

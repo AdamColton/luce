@@ -1,31 +1,36 @@
-package midware
+package midware_test
 
 import (
 	"net/http"
-	"reflect"
+	"net/http/httptest"
 	"testing"
 
+	"github.com/adamcolton/luce/lhttp/midware"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestURL(t *testing.T) {
-	u := URL("foo", "TestField").(FieldInitilizer).FieldSetterInitilizer.(URLFieldSetter)
-	assert.Equal(t, u, u.Initilize(reflect.TypeOf("")))
+	u := midware.URL("foo", "TestField")
+	m := midware.New(u)
 
-	restoreVars := Vars
+	restoreVars := midware.Vars
 	defer func() {
-		Vars = restoreVars
+		midware.Vars = restoreVars
 	}()
-	Vars = func(r *http.Request) map[string]string {
+	midware.Vars = func(r *http.Request) map[string]string {
 		return map[string]string{
 			"foo": "bar",
 		}
 	}
-	var got struct {
-		Foo string
-	}
-	rg := reflect.ValueOf(&got).Elem().FieldByName("Foo")
-	_, err := u.Set(nil, nil, rg)
-	assert.NoError(t, err)
-	assert.Equal(t, "bar", got.Foo)
+
+	r := httptest.NewRequest("Get", "/", nil)
+	w := httptest.NewRecorder()
+	fn := m.Handle(func(w http.ResponseWriter, r *http.Request, data *struct {
+		TestField string
+	}) {
+		w.Write([]byte(data.TestField))
+	})
+	fn(w, r)
+
+	assert.Equal(t, w.Body.String(), "bar")
 }
