@@ -1,4 +1,6 @@
 github.com/BurntSushi/toml v1.3.2/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
+github.com/adamcolton/geom v0.0.0-20220831181609-9c88ebf2c706 h1:obY3uxx9mn4buK6wgHsws62BfQCTaNBq5BUGT3DFta0=
+github.com/adamcolton/geom v0.0.0-20220831181609-9c88ebf2c706/go.mod h1:DBA1Liga+xZB9C4fJZNKJxJLSes0NHvcj6kPnLE+dyc=
 github.com/boltdb/bolt v1.3.1 h1:JQmyP4ZBrce+ZQu0dY660FMfatumYDLun9hBCUVIkF4=
 github.com/boltdb/bolt v1.3.1/go.mod h1:clJnj/oiGkjum5o1McbSZDSLxVThjynRyGBgiAx27Ps=
 github.com/cpuguy83/go-md2man/v2 v2.0.2 h1:p1EgwI/C7NhT0JmVkwCD2ZBK8j4aeHQX2pMHHBfMQ6w=

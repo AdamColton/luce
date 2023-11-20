@@ -1,6 +1,7 @@
 package midware
 
 import (
+	"net/http"
 	"reflect"
 
 	"github.com/adamcolton/luce/lhttp"
@@ -30,10 +31,11 @@ var (
 // Initilize fulfills FieldSetterInitilizer. It validates that the Type t is a
 // pointer to a struct.
 func (di DecoderInitilizer) InitilizeField(fn linject.Func, t reflect.Type) linject.FieldSetter {
-	return &decoderSetter{
+	ds := &decoderSetter{
 		RequestDecoder: di.RequestDecoder,
 		Type:           decoderCheck.Panic(t).Elem(),
 	}
+	return linject.NewFieldSetter(ds.set)
 }
 
 type decoderSetter struct {
@@ -41,16 +43,9 @@ type decoderSetter struct {
 	reflect.Type
 }
 
-// Set fulfills FieldSetter. It creates and instance of the field to set, which
-// will be a pointer to struct and calls Decode on the underlying RequestDecoder
-// to set the field value.
-func (ds decoderSetter) Set(args []reflect.Value, field reflect.Value) (func(), error) {
-	_, r := GetWR(args)
+func (ds decoderSetter) set(w http.ResponseWriter, r *http.Request) (any, func(), error) {
 	v := reflect.New(ds.Type)
 	err := ds.Decode(v.Interface(), r)
-	if err == nil {
-		field.Set(v)
-	}
 
-	return nil, err
+	return v.Interface(), nil, err
 }
