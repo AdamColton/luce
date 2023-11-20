@@ -216,3 +216,32 @@ func TestElem(t *testing.T) {
 		})
 	}
 }
+
+func TestSet(t *testing.T) {
+	str := "this is a test"
+	set := "set value"
+
+	strv := reflect.ValueOf(str)
+	setv := reflect.ValueOf(set)
+	got := reflector.Set(strv, setv)
+	assert.False(t, got)
+	assert.Equal(t, str, "this is a test")
+
+	strptr := &str
+	strv = reflect.ValueOf(strptr).Elem()
+	setv = reflect.ValueOf(set)
+	got = reflector.Set(strv, setv)
+	assert.True(t, got)
+	assert.Equal(t, set, *strptr)
+
+	set = "set interface"
+	wrap := struct {
+		Inf any
+	}{
+		Inf: set,
+	}
+	setv = reflect.ValueOf(wrap).FieldByName("Inf")
+	got = reflector.Set(strv, setv)
+	assert.True(t, got)
+	assert.Equal(t, set, *strptr)
+}

@@ -95,3 +95,20 @@ func Make(t reflect.Type) reflect.Value {
 	}
 	return reflect.New(t).Elem()
 }
+
+// Set attempts to set the 'to' value on the target and returns a bool to
+// indicate success or failure. Will not panic. If the types differ and 'to' is
+// an interface, the value inside the interface is set.
+func Set(target, to reflect.Value) (out bool) {
+	defer func() {
+		recover()
+	}()
+	if target.Type() != to.Type() {
+		if to.Kind() == reflect.Interface {
+			to = to.Elem()
+		}
+	}
+	target.Set(to)
+	out = true
+	return
+}
