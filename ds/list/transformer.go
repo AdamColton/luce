@@ -6,6 +6,13 @@ type Transformer[In, Out any] struct {
 	Fn func(In) Out
 }
 
+func NewTransformer[In, Out any](l List[In], fn func(In) Out) Wrapper[Out] {
+	return Transformer[In, Out]{
+		List: l,
+		Fn:   fn,
+	}.Wrap()
+}
+
 // Note that Transformer should not have an Upgrade for the same reason as
 // Reverse.
 
