@@ -84,3 +84,17 @@ func Make(t reflect.Type) reflect.Value {
 	}
 	return reflect.New(t).Elem()
 }
+
+func Set(target, to reflect.Value) (out bool) {
+	defer func() {
+		recover()
+	}()
+	if target.Type() != to.Type() {
+		if to.Kind() == reflect.Interface {
+			to = to.Elem()
+		}
+	}
+	target.Set(to)
+	out = true
+	return
+}
