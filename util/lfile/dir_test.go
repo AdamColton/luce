@@ -1,10 +1,12 @@
-package lfile
+package lfile_test
 
 import (
 	"io/fs"
 	"testing"
 
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/util/lfile"
+	"github.com/adamcolton/luce/util/lfile/lfilemock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,32 +52,51 @@ func (md mockDirEntry) Info() (fs.FileInfo, error) {
 }
 
 func TestGetDirContents(t *testing.T) {
-	mock := mockDir{
-		name: "foo/bar/baz/",
-		entries: []fs.DirEntry{
-			mockDirEntry{
-				name:  "dir2",
-				isDir: true,
-			},
-			mockDirEntry{
-				name:  "x.txt",
-				isDir: false,
-			},
-			mockDirEntry{
-				name:  "dir1",
-				isDir: true,
-			},
-			mockDirEntry{
-				name:  "b.txt",
-				isDir: false,
+	// mock := mockDir{
+	// 	name: "foo/bar/baz/",
+	// 	entries: []fs.DirEntry{
+	// 		mockDirEntry{
+	// 			name:  "dir2",
+	// 			isDir: true,
+	// 		},
+	// 		mockDirEntry{
+	// 			name:  "x.txt",
+	// 			isDir: false,
+	// 		},
+	// 		mockDirEntry{
+	// 			name:  "dir1",
+	// 			isDir: true,
+	// 		},
+	// 		mockDirEntry{
+	// 			name:  "b.txt",
+	// 			isDir: false,
+	// 		},
+	// 	},
+	// }
+
+	mock := lfilemock.Parse(map[string]any{
+		"foo": map[string]any{
+			"bar": map[string]any{
+				"baz": map[string]any{
+					"dir2":  map[string]any{},
+					"x.txt": "",
+					"dir1":  map[string]any{},
+					"b.txt": "",
+				},
 			},
 		},
-	}
+	})
 
-	got, err := GetDirContents(mock)
+	// lfile.GetDirContents is looking at repo.Name()
+	// this is set in node.File()
+	node, found := mock.Get("foo/bar/baz")
+	assert.True(t, found)
+	repo := node.File()
+
+	got, err := lfile.GetDirContents(repo)
 	assert.NoError(t, err)
 
-	expected := &DirContents{
+	expected := &lfile.DirContents{
 		Name:    "baz",
 		Path:    "foo/bar/",
 		SubDirs: []string{"dir1", "dir2"},
@@ -83,8 +104,8 @@ func TestGetDirContents(t *testing.T) {
 	}
 	assert.Equal(t, expected, got)
 
-	mock.err = lerr.Str("test error")
-	got, err = GetDirContents(mock)
-	assert.Equal(t, mock.err, err)
+	repo.Err = lerr.Str("test error")
+	got, err = lfile.GetDirContents(repo)
+	assert.Equal(t, repo.Err, err)
 	assert.Nil(t, got)
 }
