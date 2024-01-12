@@ -54,6 +54,33 @@ func ExamplePanic() {
 	// Output: this will panic
 }
 
+func TestMust(t *testing.T) {
+	noErr := func() (int, error) {
+		return 5, nil
+	}
+	hasErr := func() (int, error) {
+		return 10, testErr
+	}
+
+	i := lerr.Must(noErr())
+	fmt.Println("No error, got:", i)
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Panic:", r)
+		}
+	}()
+
+	i = lerr.Must(hasErr())
+	fmt.Println("This line is never reached", i)
+	// Output: No error, got: 5
+	// Panic: TestError
+}
+
+func ExampleMust() {
+
+}
+
 func TestWrap(t *testing.T) {
 	w := lerr.Wrap(nil, "No Error")
 	assert.NoError(t, w)
