@@ -12,6 +12,15 @@ func Panic(err error, except ...error) bool {
 	return false
 }
 
+// Must takes a value and an error. If the error is not nil, it panics. If
+// the error is nil, it returns only the value.
+func Must[T any](t T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
 // LogTo can be set to handle errors when Log is called.
 var LogTo func(err error)
 
