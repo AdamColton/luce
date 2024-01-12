@@ -26,7 +26,7 @@ func TestRepository(t *testing.T) {
 			"dir3":      map[string]any{},
 			"file4.txt": "this is file 4",
 		},
-	})
+	}).Repository()
 
 	f, err := r.Open("file1.txt")
 	assert.NoError(t, err)
