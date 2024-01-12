@@ -119,6 +119,7 @@ type Node interface {
 type Directory struct {
 	Name     string
 	Children map[string]Node
+	Err      error
 }
 
 // DirEntry fulfills Node. It creates a DirEntry instance for the Directory.
@@ -148,7 +149,7 @@ func (d *Directory) File() *File {
 			Dir:      true,
 		},
 		FileMode: 0,
-		Err:      nil,
+		Err:      d.Err,
 	}
 }
 
@@ -161,6 +162,37 @@ func (d *Directory) Next(key string, create bool, _ navigator.VoidContext) (Node
 		found = true
 	}
 	return n, found
+}
+
+// TODO: This seems like a terrible hack indicative of a larger issue with
+// not tracking the path correctly
+type pathNode struct {
+	name string
+	Node
+}
+
+func (pn pathNode) File() *File {
+	f := pn.Node.File()
+	f.FileName = pn.name
+	return f
+}
+
+func (d *Directory) Get(path string) (n Node, found bool) {
+	vc := navigator.VoidContext{}
+	n = d
+	for _, key := range strings.Split(path, "/") {
+		n, found = n.Next(key, false, vc)
+		if !found {
+			break
+		}
+	}
+	if found {
+		n = pathNode{
+			name: path,
+			Node: n,
+		}
+	}
+	return
 }
 
 // AddDir adds a sub directory. This can be used when modifying the mock
@@ -185,17 +217,27 @@ func (d *Directory) AddFile(name string, contents []byte) *ByteFile {
 	return f
 }
 
+// Parse allows for mock directory trees to be setup easily. To create a
+// File the value can be either a string or a []byte. To create a sub directory
+// the value should be another map[string]any which will be recursivly parsed.
+// The returned Repository fulfills lfile.Repository.
+func (d *Directory) Repository() lfile.Repository {
+	return &Repository{
+		Node: d,
+	}
+}
+
 // ParseDir allows for mock directory trees to be setup easily. To create a
 // File the value can be either a string or a []byte. To create a sub directory
 // the value should be another map[string]any which will be recursivly parsed.
-func ParseDir(root map[string]any) *Directory {
+func Parse(root map[string]any) *Directory {
 	out := &Directory{
 		Children: make(map[string]Node),
 	}
 	for name, f := range root {
 		switch x := f.(type) {
 		case map[string]any:
-			s := ParseDir(x)
+			s := Parse(x)
 			s.Name = name
 			out.Children[name] = s
 		case string:
@@ -207,14 +249,4 @@ func ParseDir(root map[string]any) *Directory {
 		}
 	}
 	return out
-}
-
-// Parse allows for mock directory trees to be setup easily. To create a
-// File the value can be either a string or a []byte. To create a sub directory
-// the value should be another map[string]any which will be recursivly parsed.
-// The returned Repository fulfills lfile.Repository.
-func Parse(root map[string]any) lfile.Repository {
-	return &Repository{
-		Node: ParseDir(root),
-	}
 }
