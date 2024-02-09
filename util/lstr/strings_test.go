@@ -52,3 +52,13 @@ func TestStringsFloat64(t *testing.T) {
 	s.Err = lerr.Str("test error")
 	assert.Equal(t, 0.0, s.Float64())
 }
+
+func TestStringsInt(t *testing.T) {
+	s := lstr.NewStrings(strings.Split(",,3,1,4,,1,5,9,2,6,,,", ","))
+	expect := slice.NewIter([]int{3, 1, 4, 1, 5, 9, 2, 6})
+	for !s.Done() {
+		assert.Equal(t, expect.Pop(), s.Int())
+	}
+	s.Err = lerr.Str("test error")
+	assert.Equal(t, 0, s.Int())
+}
