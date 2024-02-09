@@ -57,3 +57,7 @@ func (w Wrapper[T]) Channel(buf int) <-chan T {
 	t, done := w.Cur()
 	return channel(w.Iter, t, done, buf)
 }
+
+func (w Wrapper[T]) Pop() T {
+	return Pop(w)
+}
