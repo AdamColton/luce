@@ -141,3 +141,15 @@ func (s *Strings) Float64() (f float64) {
 	f, s.Err = strconv.ParseFloat(str, 64)
 	return
 }
+
+// Int attempts to parse the current value as an int, after applying the
+// NumericReplacer, and moves to the next value. If it fails, the error is
+// written to s.Err, which finishes the iteration.
+func (s *Strings) Int() (i int) {
+	if s.Done() {
+		return
+	}
+	str := s.NumericReplacer.Replace(liter.Pop(s))
+	i, s.Err = strconv.Atoi(str)
+	return
+}
