@@ -1,6 +1,7 @@
 package lstr
 
 import (
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -149,4 +150,18 @@ func (s *Strings) Date(layout string) (t time.Time) {
 	}
 	t, s.Err = time.Parse(layout, liter.Pop(s))
 	return
+}
+
+// Regex invokes FindStringSubmatch on the provided Regexp. If skipEmpty is
+// true it will try it against each string starting at the current index until
+// it finds a match.
+func (s *Strings) Regex(re *regexp.Regexp, skipEmpty bool) []string {
+	if s.Done() {
+		return nil
+	}
+	out := re.FindStringSubmatch(liter.Pop(s))
+	for skipEmpty && len(out) == 0 {
+		out = re.FindStringSubmatch(liter.Pop(s))
+	}
+	return out
 }
