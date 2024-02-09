@@ -191,3 +191,9 @@ func (s Slice[T]) Search(fn func(T) bool) int {
 func (s Slice[T]) IdxCheck(idx int) bool {
 	return idx >= 0 && idx < len(s)
 }
+
+// Sort wraps slice.Sort. Sorts the Slice in place. The slice is also returned
+// for chaining.
+func (s Slice[T]) Sort(less Less[T]) Slice[T] {
+	return less.Sort(s)
+}
