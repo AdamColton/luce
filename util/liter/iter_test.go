@@ -252,3 +252,20 @@ func TestFactoryWrap(t *testing.T) {
 		assert.Equal(t, s[idx], i)
 	})
 }
+
+func TestPop(t *testing.T) {
+	s := liter.Wrap(&sliceIter[int]{
+		Slice: []int{3, 1, 4, 1, 5, 9},
+	})
+
+	assert.Equal(t, 3, s.Pop())
+	assert.Equal(t, 1, s.Pop())
+	assert.Equal(t, 4, s.Pop())
+	assert.Equal(t, 1, s.Pop())
+	assert.Equal(t, 5, s.Pop())
+	assert.False(t, s.Done())
+	assert.Equal(t, 9, s.Pop())
+	assert.True(t, s.Done())
+	assert.Equal(t, 0, s.Pop())
+	assert.Equal(t, 0, s.Pop())
+}
