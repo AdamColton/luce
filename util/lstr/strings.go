@@ -3,6 +3,7 @@ package lstr
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/adamcolton/luce/util/liter"
 )
@@ -120,5 +121,13 @@ func (s *Strings) Int() (i int) {
 	}
 	str := s.NumericReplacer.Replace(liter.Pop(s))
 	i, s.Err = strconv.Atoi(str)
+	return
+}
+
+func (s *Strings) Date(layout string) (t time.Time) {
+	if s.Done() {
+		return
+	}
+	t, s.Err = time.Parse(layout, liter.Pop(s))
 	return
 }
