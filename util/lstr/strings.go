@@ -1,13 +1,20 @@
 package lstr
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/adamcolton/luce/util/iter"
+)
+
+var NumericReplacer = NewRemover(",", "$", "%")
 
 // Strings is helpful when processing a list of strings, often the result of
 // splitting.
 type Strings struct {
-	Strings    []string
-	Err        error
-	Preprocess func(string) (skip bool, cleaned string)
+	Strings         []string
+	Err             error
+	Preprocess      func(string) (skip bool, cleaned string)
+	NumericReplacer *strings.Replacer
 
 	idx int
 	cur string
@@ -21,8 +28,9 @@ var DefaultPreprocess = func(str string) (skip bool, cleaned string) {
 
 func NewStrings(strs []string) *Strings {
 	return (&Strings{
-		Strings:    strs,
-		Preprocess: DefaultPreprocess,
+		Strings:         strs,
+		Preprocess:      DefaultPreprocess,
+		NumericReplacer: NumericReplacer,
 	}).init()
 }
 
@@ -77,4 +85,21 @@ func (s *Strings) Start() (str string, done bool) {
 	s.idx = 0
 	s.init()
 	return s.Cur()
+}
+
+func (s *Strings) Sub(split string) *Strings {
+	done := s.Done()
+	if done {
+		return nil
+	}
+	strs := strings.Split(iter.Pop(s), split)
+	sub := (&Strings{
+		Strings:         strs,
+		Preprocess:      s.Preprocess,
+		NumericReplacer: s.NumericReplacer,
+	}).init()
+	if sub.Done() {
+		return s.Sub(split)
+	}
+	return sub
 }
