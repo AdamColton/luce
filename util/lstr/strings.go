@@ -1,6 +1,7 @@
 package lstr
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/adamcolton/luce/util/liter"
@@ -115,4 +116,15 @@ func (s *Strings) Sub(split string) *Strings {
 		return s.Sub(split)
 	}
 	return sub
+}
+
+// Float64 attempts to parse the current value as a float64. If it fails, the
+// error is written to s.Err.
+func (s *Strings) Float64() (f float64) {
+	if s.Done() {
+		return
+	}
+	str := s.NumericReplacer.Replace(liter.Pop(s))
+	f, s.Err = strconv.ParseFloat(str, 64)
+	return
 }
