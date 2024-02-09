@@ -3,6 +3,7 @@ package lstr_test
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
@@ -61,4 +62,19 @@ func TestStringsInt(t *testing.T) {
 	}
 	s.Err = lerr.Str("test error")
 	assert.Equal(t, 0, s.Int())
+}
+
+func TestStringsDate(t *testing.T) {
+	layout := "2006_01_02"
+	s := lstr.NewStrings(strings.Split("1984_07_12 , 2017_07_03", ","))
+	expect := slice.NewIter([]time.Time{
+		lerr.Must(time.Parse(layout, "1984_07_12")),
+		lerr.Must(time.Parse(layout, "2017_07_03")),
+	})
+	for !s.Done() {
+		assert.Equal(t, expect.Pop(), s.Date(layout))
+	}
+	s.Err = lerr.Str("test error")
+	var defaultTime time.Time
+	assert.Equal(t, defaultTime, s.Date(layout))
 }
