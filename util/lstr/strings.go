@@ -1,6 +1,7 @@
 package lstr
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/adamcolton/luce/util/liter"
@@ -102,4 +103,13 @@ func (s *Strings) Sub(split string) *Strings {
 		return s.Sub(split)
 	}
 	return sub
+}
+
+func (s *Strings) Float64() (f float64) {
+	if s.Done() {
+		return
+	}
+	str := s.NumericReplacer.Replace(liter.Pop(s))
+	f, s.Err = strconv.ParseFloat(str, 64)
+	return
 }
