@@ -1,6 +1,7 @@
 package lstr_test
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -77,4 +78,20 @@ func TestStringsDate(t *testing.T) {
 	s.Err = lerr.Str("test error")
 	var defaultTime time.Time
 	assert.Equal(t, defaultTime, s.Date(layout))
+}
+
+func TestStringsRegex(t *testing.T) {
+	re := regexp.MustCompile(`((?: *[^\d ]+)*) *(\d+)`)
+	s := lstr.NewStrings(strings.Split("Adam Colton 39; Stephen38; xyz; Lauren TG Colton 37; 5", ";"))
+	expect := slice.NewIter([][]string{
+		{"Adam Colton 39", "Adam Colton", "39"},
+		{"Stephen38", "Stephen", "38"},
+		{"Lauren TG Colton 37", "Lauren TG Colton", "37"},
+		{"5", "", "5"},
+	})
+	for !s.Done() {
+		assert.Equal(t, expect.Pop(), s.Regex(re, true))
+	}
+	s.Err = lerr.Str("test error")
+	assert.Nil(t, s.Regex(re, true))
 }
