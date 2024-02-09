@@ -58,3 +58,8 @@ func (w Wrapper[T]) Channel(buf int) <-chan T {
 	t, done := w.Cur()
 	return channel(w.Iter, t, done, buf)
 }
+
+// Pop returns the current value of iterator and if it is not done, calls Next.
+func (w Wrapper[T]) Pop() T {
+	return Pop(w)
+}
