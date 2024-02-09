@@ -37,6 +37,30 @@ func TestLess(t *testing.T) {
 	assert.Equal(t, expected, i)
 }
 
+func TestSort(t *testing.T) {
+	type person struct {
+		Name string
+		Age  int
+	}
+	people := slice.Slice[person]{
+		{"Adam", 39},
+		{"Lauren", 37},
+		{"Stephen", 38},
+		{"Alex", 35},
+		{"Fletcher", 5},
+	}.Sort(func(i, j person) bool {
+		return i.Age < j.Age
+	})
+	expect := slice.Slice[person]{
+		{"Fletcher", 5},
+		{"Alex", 35},
+		{"Lauren", 37},
+		{"Stephen", 38},
+		{"Adam", 39},
+	}
+	assert.Equal(t, expect, people)
+}
+
 func TestIter(t *testing.T) {
 	s := slice.Slice[int]{3, 1, 4, 1, 5, 9, 2, 6, 5, 3}
 	it := s.Iter()
