@@ -3,6 +3,7 @@ package lstr
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/adamcolton/luce/util/liter"
 )
@@ -151,5 +152,16 @@ func (s *Strings) Int() (i int) {
 	}
 	str := s.NumericReplacer.Replace(liter.Pop(s))
 	i, s.Err = strconv.Atoi(str)
+	return
+}
+
+// Date attempts to parse the current value as a time.Time using the provided
+// layout and moves to the next value. If it fails, the error is written to
+// s.Err, which finishes the iteration.
+func (s *Strings) Date(layout string) (t time.Time) {
+	if s.Done() {
+		return
+	}
+	t, s.Err = time.Parse(layout, liter.Pop(s))
 	return
 }
