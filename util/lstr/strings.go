@@ -1,13 +1,20 @@
 package lstr
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/adamcolton/luce/util/liter"
+)
+
+var NumericReplacer = NewRemover(",", "$", "%")
 
 // Strings is helpful when processing a list of strings, often the result of
 // splitting. Fulfills liter.Iter.
 type Strings struct {
-	Strings    []string
-	Err        error
-	Preprocess func(string) (skip bool, cleaned string)
+	Strings         []string
+	Err             error
+	Preprocess      func(string) (skip bool, cleaned string)
+	NumericReplacer *strings.Replacer
 
 	idx int
 	cur string
@@ -24,8 +31,9 @@ var DefaultPreprocess = func(str string) (skip bool, cleaned string) {
 // NewStrings from the provided strings with DefaultPreprocess.
 func NewStrings(strs []string) *Strings {
 	return (&Strings{
-		Strings:    strs,
-		Preprocess: DefaultPreprocess,
+		Strings:         strs,
+		Preprocess:      DefaultPreprocess,
+		NumericReplacer: NumericReplacer,
 	}).init()
 }
 
@@ -86,4 +94,25 @@ func (s *Strings) Start() (str string, done bool) {
 	s.idx = 0
 	s.init()
 	return s.Cur()
+}
+
+// Sub takes the current value of Strings, splits using the provided argument
+// and creates a new instance of Strings. This can, for instance, be useful to
+// have one instance of Strings that splits on newline and use Sub to split on
+// commas.
+func (s *Strings) Sub(split string) *Strings {
+	done := s.Done()
+	if done {
+		return nil
+	}
+	strs := strings.Split(liter.Pop(s), split)
+	sub := (&Strings{
+		Strings:         strs,
+		Preprocess:      s.Preprocess,
+		NumericReplacer: s.NumericReplacer,
+	}).init()
+	if sub.Done() {
+		return s.Sub(split)
+	}
+	return sub
 }
