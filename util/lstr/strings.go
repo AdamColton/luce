@@ -113,3 +113,12 @@ func (s *Strings) Float64() (f float64) {
 	f, s.Err = strconv.ParseFloat(str, 64)
 	return
 }
+
+func (s *Strings) Int() (i int) {
+	if s.Done() {
+		return
+	}
+	str := s.NumericReplacer.Replace(liter.Pop(s))
+	i, s.Err = strconv.Atoi(str)
+	return
+}
