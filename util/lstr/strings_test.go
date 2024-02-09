@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/liter"
 	"github.com/adamcolton/luce/util/lstr"
 	"github.com/stretchr/testify/assert"
@@ -40,4 +41,14 @@ func TestStringsSub(t *testing.T) {
 		})
 	}
 	assert.Nil(t, s.Sub(","))
+}
+
+func TestStringsFloat64(t *testing.T) {
+	s := lstr.NewStrings(strings.Split(",3.1415,1.414,,1.618,", ","))
+	expect := slice.NewIter([]float64{3.1415, 1.414, 1.618})
+	for !s.Done() {
+		assert.Equal(t, expect.Pop(), s.Float64())
+	}
+	s.Err = lerr.Str("test error")
+	assert.Equal(t, 0.0, s.Float64())
 }
