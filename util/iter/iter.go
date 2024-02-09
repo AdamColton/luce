@@ -54,3 +54,11 @@ func Channel[T any](i Iter[T], buf int) <-chan T {
 	t, done := i.Cur()
 	return channel(i, t, done, buf)
 }
+
+func Pop[T any](i Iter[T]) T {
+	t, done := i.Cur()
+	if !done {
+		i.Next()
+	}
+	return t
+}
