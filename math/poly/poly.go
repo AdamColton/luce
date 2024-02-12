@@ -200,6 +200,89 @@ func (p Poly) IntegralAt(x, y float64) Poly {
 	return Poly{i}
 }
 
+// == projects.Code.luce.math ==
+// [ ] Durand-Kerner for degree > 5
+//  https://en.wikipedia.org/wiki/Durand%E2%80%93Kerner_method may be better for
+//  finding all the roots when degree>5.
+
+// Roots finds the real roots of the polynomial. If an algebraic solution
+// exists, that will be used. Otherwise it will use Halley's method to get it
+// down to an order 5 solution. Because Halley's method is an approximation,
+// errors tend to compound and this seems to become unreliable above a degree 10
+// polynomial. It is not safe to use p as the buffer. If the order of p>5 then
+// the optimal buffer size is 5*p.Len()-6. The number of roots returned is set
+// by the length of the buffer passed in. If the length is 0 then the max number
+// of roots is returned.
+func (p Poly) Roots(buf []float64) []float64 {
+	ln := p.Len()
+
+	if ln < 2 {
+		return nil
+	}
+	if p.AtIdx(ln-1) == 0 {
+		return Poly{RemoveLeadingZero{p.Coefficients}}.Roots(buf)
+	}
+	if ln == 2 {
+		return append(buf[:0], -p.AtIdx(0)/p.AtIdx(1))
+	}
+	if ln == 3 {
+		return Quad(p.AtIdx(0), p.AtIdx(1), p.AtIdx(2), buf)
+	}
+	if ln == 4 {
+		return Cubic(p.AtIdx(0), p.AtIdx(1), p.AtIdx(2), p.AtIdx(3), buf)
+	}
+	if ln == 5 {
+		return Quartic(p.AtIdx(0), p.AtIdx(1), p.AtIdx(2), p.AtIdx(3), p.AtIdx(4), buf)
+	}
+
+	outLn := len(buf)
+	if outLn == 0 || outLn > ln-1 {
+		outLn = ln - 1
+	}
+
+	const (
+		want cmpr.Tolerance = 1e-15
+		need cmpr.Tolerance = 1e-2
+	)
+
+	// Note that for optimization, cp and roots are sharing the same buf of
+	// length ln. This works because roots grows at the same rate cp shrinks. If
+	// buf is not at least length ln, this optimization is wasted. This is also
+	// why the length of roots is not set to outLn - it's already sharing space
+	// with cp, so that doesn't save any buffer space.
+	buf = BufEmpty(buf, ln)
+	cur := p.Copy(buf)
+	roots, buf := BufSplit(buf, ln)
+	dbuf, buf := BufSplit(buf, ln-1)
+	ddbuf, buf := BufSplit(buf, ln-2)
+	d := p.D().Copy(dbuf)
+	dd := d.D().Copy(ddbuf)
+	dbuf, buf = BufSplit(buf, ln-1)
+	ddbuf = BufEmpty(buf, ln-2)
+
+	// cur is a polynomial that starts equal to p. Halley's method is used to
+	// find roots. As roots are found they are divided out of cur. With this
+	// approach, errors will accumulate. So cur is used to get close to a root
+	// and then that value is passed into Halley on the original p to find the
+	// actual root.
+	for cur.Len() > 5 && len(roots) < outLn {
+		dCur := cur.D().Copy(dbuf)
+		ddCur := dCur.D().Copy(ddbuf)
+		r, y := cur.Halley(0, need, 50, dCur, ddCur)
+		if !need.Zero(y) {
+			return roots
+		}
+		r, _ = p.Halley(r, want, 50, d, dd)
+		cur, _ = cur.Divide(r, cur.Buf()[1:])
+		roots = append(roots, r)
+	}
+	if ln := len(roots); ln < outLn {
+		roots = append(roots, cur.Roots(roots[ln:outLn])...)
+	}
+
+	return roots
+}
+
 // Newton's method to find one root of the polynomial. The initial guess is
 // passed in as x; min sets how close to 0 is acceptible and it will return if a
 // value closer than that is found; steps limits the maximum number of
