@@ -240,6 +240,50 @@ func (p Poly) Newton(x float64, min cmpr.Tolerance, steps int, d Coefficients) (
 	return bestX, bestY
 }
 
+// Halley's method to find one root of the polynomial. The initial guess is
+// passed in as x; min sets how close to 0 is acceptible and it will return if a
+// value closer than that is found; steps limits the maximum number of
+// iterations that will; d is the derivative; d2 is the second derivative. It is
+// not required to provide d or d2, but if there is a cached instance available,
+// it reduces repeated computation.
+func (p Poly) Halley(x float64, min cmpr.Tolerance, steps int, d, d2 Coefficients) (float64, float64) {
+	const (
+		small cmpr.Tolerance = 1e-5
+	)
+
+	if d == nil {
+		d = Derivative{p}
+	}
+	if d2 == nil {
+		d2 = Derivative{d}
+	}
+	dp, ddp := Poly{d}, Poly{d2}
+
+	y := p.F(x)
+	bestY, bestX := math.Abs(y), x
+
+	for i := 0; i < steps && !min.Zero(y); i++ {
+		dy := dp.F(x)
+		d2y := ddp.F(x)
+		denom := 2*dy*dy - y*d2y
+		if small.Zero(denom) {
+			x += 1e-3
+			y = p.F(x)
+			continue
+		}
+		d := (2 * y * dy) / denom
+		d *= (200 - float64(i)) / 200
+		x -= d
+		y = p.F(x)
+		if x == bestX {
+			x += 1e-3
+		} else if absy := math.Abs(y); absy < bestY {
+			bestX, bestY = x, absy
+		}
+	}
+	return bestX, bestY
+}
+
 // Quad finds the real roots of a quadratic equation. The number of roots to
 // return is set by the length of the buffer. If the length is zero then the max
 // number of roots will be found.
