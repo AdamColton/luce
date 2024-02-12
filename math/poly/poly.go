@@ -126,3 +126,51 @@ func (p *Poly) MultSwap(p2 Poly, buf []float64) []float64 {
 	p.Coefficients = prod.Copy(buf).Coefficients
 	return out
 }
+
+// Exp raises p to the power of n. To effiently allocate the buf it should have
+// capacity of 3*(len(tc.p)*tc.pow - tc.pow + 1). A negative n gives an empty
+// polynomial and n == 0 gives the constant 1. An empty polynomial to any
+// positive power is empty.
+func (p Poly) Exp(n int, buf []float64) Poly {
+	if n < 0 {
+		if cap(buf) == 0 {
+			return Poly{Empty{}}
+		}
+		return Poly{Slice(buf[:0])}
+	} else if n == 0 {
+		if cap(buf) == 0 {
+			return Poly{D0(1)}
+		}
+		return Poly{Buf(1, buf)}
+	} else if n == 1 || p.Len() == 0 {
+		return p.Copy(buf)
+	} else if n == 2 {
+		return p.Multiply(p).Copy(buf)
+	}
+
+	// https://en.wikipedia.org/wiki/Exponentiation_by_squaring
+	//
+	// Because of the repeated multiplication, to use the buffers efficiently,
+	// a swap buffer is needed. So a total of 3 polynomials of length ln are
+	// needed: sum, cur and swap.
+	ln := p.Len()*n - n + 1
+	s, buf := BufSplit(buf, ln)
+	s = append(s, 1)
+	sum := Poly{Slice(s)}
+
+	c, buf := BufSplit(buf, ln)
+	cur := p.Copy(c[:p.Len()])
+
+	buf = BufLen(buf, ln)
+
+	for {
+		if n&1 == 1 {
+			buf = sum.MultSwap(cur, buf)
+		}
+		n >>= 1
+		if n == 0 {
+			return sum
+		}
+		buf = cur.MultSwap(cur, buf)
+	}
+}

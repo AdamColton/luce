@@ -195,3 +195,68 @@ func TestMultSwap(t *testing.T) {
 	cmprtest.Equal(t, a.Buf(), bufb[:6]) // a should now be in buf
 	assert.Equal(t, swap, buf[:3])       // swap will have the old value of a
 }
+
+func TestExp(t *testing.T) {
+	tt := map[string]struct {
+		p   poly.Poly
+		pow int
+	}{
+		"(x2+c)^5": {
+			p:   poly.New(2, -3),
+			pow: 5,
+		},
+		"(x3+x2+c)^4": {
+			p:   poly.New(1, 1, 1),
+			pow: 4,
+		},
+		"(x4+x3+x2+c)^3": {
+			p:   poly.New(4, 2, -3, 1),
+			pow: 3,
+		},
+		"(x4+x3+x2+c)^1": {
+			p:   poly.New(4, 2, -3, 1),
+			pow: 1,
+		},
+		"(x4+x3+x2+c)^2": {
+			p:   poly.New(4, 2, -3, 1),
+			pow: 2,
+		},
+		"(x4+x3+x2+c)^0": {
+			p:   poly.New(4, 2, -3, 1),
+			pow: 0,
+		},
+	}
+
+	for n, tc := range tt {
+		t.Run(n, func(t *testing.T) {
+			ln := tc.p.Len()*tc.pow - tc.pow + 1
+			prod := poly.Poly{poly.Buf(ln, nil)}
+			buf := make([]float64, ln)
+			for i := 0; i < tc.pow; i++ {
+				buf = prod.MultSwap(tc.p, buf)
+			}
+			buf = make([]float64, ln*3)
+			cmprtest.Equal(t, prod, tc.p.Exp(tc.pow, buf))
+			buf = make([]float64, ln*2+1)
+			cmprtest.Equal(t, prod, tc.p.Exp(tc.pow, buf))
+			buf = make([]float64, ln+1)
+			cmprtest.Equal(t, prod, tc.p.Exp(tc.pow, buf))
+			cmprtest.Equal(t, prod, tc.p.Exp(tc.pow, nil))
+
+		})
+	}
+
+	// when no buffer is provided the returned value is equal to Poly{Empty{}}
+	assert.Equal(t, poly.Poly{poly.Empty{}}, poly.New(4, 2, -3, 1).Exp(-1, nil))
+	assert.Equal(t, poly.Poly{poly.D0(1)}, poly.New(4, 2, -3, 1).Exp(0, nil))
+
+	// when a buffer is provided, it is used
+	assert.Equal(t, poly.Poly{poly.Slice{}}, poly.New(4, 2, -3, 1).Exp(-1, []float64{1, 2, 3}))
+	assert.Equal(t, poly.Poly{poly.Slice{1}}, poly.New(4, 2, -3, 1).Exp(0, []float64{5, 2, 3}))
+
+	// an empty polynomial to a positive power is empty
+	assert.Equal(t, poly.Poly{poly.D0(1)}, poly.New().Exp(0, nil))
+	for _, n := range []int{1, 2, 3, 10} {
+		assert.Equal(t, 0, poly.New().Exp(n, nil).Len())
+	}
+}
