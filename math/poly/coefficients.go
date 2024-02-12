@@ -130,3 +130,32 @@ type Scale struct {
 func (s Scale) AtIdx(idx int) float64 {
 	return s.Coefficients.AtIdx(idx) * s.By
 }
+
+// Product of two Coefficients
+type Product [2]Coefficients
+
+// Coefficient at idx is the sum of all p[i]*p2[j] where i+j == idx
+func (p Product) AtIdx(idx int) float64 {
+	l0 := p[0].Len()
+	l1 := p[1].Len()
+
+	var sum float64
+	i := idx - l1
+	if i < 0 {
+		i = 0
+	}
+	for j := 0; i < l0 && i <= idx; i++ {
+		j = idx - i
+		sum += p[0].AtIdx(i) * p[1].AtIdx(j)
+	}
+	return sum
+}
+
+// Len is one less than the sum of the lengths, or 0 if either is empty.
+func (p Product) Len() int {
+	l0, l1 := p[0].Len(), p[1].Len()
+	if l0 == 0 || l1 == 0 {
+		return 0
+	}
+	return l0 + l1 - 1
+}

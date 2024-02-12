@@ -101,3 +101,9 @@ func (p Poly) Scale(s float64) Poly {
 		Coefficients: p,
 	}}
 }
+
+// Multiply two polynomails. Note that it is not safe to reuse either input as
+// the buffer.
+func (p Poly) Multiply(p2 Poly) Poly {
+	return Poly{Product{p, p2}}
+}

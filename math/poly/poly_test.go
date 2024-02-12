@@ -138,3 +138,27 @@ func TestScale(t *testing.T) {
 	got = poly.New(1, 2, 3).Scale(2)
 	cmprtest.Equal(t, expected, got)
 }
+
+func TestMultiply(t *testing.T) {
+	p1 := poly.New(-1, 1)
+	p2 := poly.New(1, 1)
+
+	cmprtest.Equal(t, poly.New(-1, 0, 1), p1.Multiply(p2))
+
+	p := poly.New(1)
+	p2 = poly.New(1)
+
+	for i := 2.0; i < 6; i++ {
+		x := poly.New(-i, 1)
+		p = p.Multiply(x).Copy(nil)
+		p2 = p2.Multiply(x)
+	}
+	expected := poly.New(120, -154, 71, -14, 1)
+	cmprtest.Equal(t, expected, p)
+	cmprtest.Equal(t, expected, p2)
+
+	// an empty polynomial times anything is empty
+	assert.Equal(t, 0, poly.New().Multiply(poly.New()).Len())
+	assert.Equal(t, 0, poly.New().Multiply(p1).Len())
+	assert.Equal(t, 0, p1.Multiply(poly.New()).Copy(nil).Len())
+}
