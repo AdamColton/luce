@@ -9,9 +9,9 @@ import (
 type S func(float64) float64
 
 func (fn S) DPrecise(x float64, small cmpr.Tolerance) float64 {
-	step := 1e-2
+	step := float64(small)
 	d := 1.0
-	for !small.Zero(step) {
+	for !small.Zero(d) {
 		step /= 2
 		d = fn(x+step) - fn(x-step)
 	}
@@ -24,10 +24,7 @@ func (fn S) D(x float64) float64 {
 
 func (fn S) NewtonStep(x float64) (dx, y float64) {
 	y = fn(x)
-	m := fn.D(x)
-	dx = -y / m
-
-	return
+	return fn.NewtonStepY(x, y), y
 }
 
 func (fn S) NewtonStepY(x, y float64) (dx float64) {
@@ -75,15 +72,17 @@ func (b *best) update(x, y float64, init bool) {
 	}
 }
 
-func (s Step) Run(max int) (x, y float64) {
-	const small cmpr.Tolerance = 1e-3
-	b := &best{}
+func (s Step) Run(max int, small cmpr.Tolerance) (x, y float64) {
+	x, y = s()
+	b := &best{x, y}
 	for i := 0; i < max; i++ {
 		cx, cy := s()
-		b.update(cx, cy, i == 0)
-		if small.Zero(x-cx) && small.Zero(y-cy) {
+		b.update(cx, cy, false)
+		dx, dy := x-cx, y-cy
+		if small.Zero(dx) && small.Zero(dy) {
 			break
 		}
+		x, y = cx, cy
 	}
 	return b.x, b.y
 }
