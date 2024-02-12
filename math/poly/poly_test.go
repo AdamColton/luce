@@ -1,6 +1,7 @@
 package poly_test
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/adamcolton/luce/lerr"
@@ -8,6 +9,10 @@ import (
 	"github.com/adamcolton/luce/math/poly"
 	"github.com/stretchr/testify/assert"
 )
+
+func sortFloats(fs []float64) {
+	sort.Slice(fs, func(i, j int) bool { return fs[i] < fs[j] })
+}
 
 func TestAtIdx(t *testing.T) {
 	p := poly.New(1, 2, 3)
@@ -294,4 +299,49 @@ func TestIntegral(t *testing.T) {
 	cmprtest.Equal(t, 1.0, i.F(1.0))
 	i = p.IntegralAt(1, 2)
 	cmprtest.Equal(t, 2.0, i.F(1.0))
+}
+
+func TestQuad(t *testing.T) {
+	tt := map[string]struct {
+		expected []float64
+		a, b, c  float64
+	}{
+		"2-intercepts": {
+			a: 1, b: -8, c: 12,
+			expected: []float64{2, 6},
+		},
+		"1-intercept": {
+			a: 1, b: -8, c: 16,
+			expected: []float64{4},
+		},
+		"0-intercepts": {
+			a: 1, b: -8, c: 17,
+			expected: nil,
+		},
+		"a=0": {
+			b: -8, c: 16,
+			expected: []float64{2},
+		},
+		"a=0&b=0": {
+			c:        16,
+			expected: nil,
+		},
+	}
+
+	buf := make([]float64, 2)
+	for n, tc := range tt {
+		t.Run(n, func(t *testing.T) {
+			got := poly.Quad(tc.c, tc.b, tc.a, buf)
+			sortFloats(got)
+			cmprtest.Equal(t, tc.expected, got)
+			p := poly.New(tc.c, tc.b, tc.a)
+			for _, r := range got {
+				cmprtest.Equal(t, 0.0, p.F(r))
+			}
+			if len(tc.expected) > 1 {
+				got = poly.Quad(tc.c, tc.b, tc.a, buf[:1])
+				assert.Len(t, got, 1)
+			}
+		})
+	}
 }
