@@ -184,3 +184,16 @@ func (p Poly) D() Poly {
 func (p Poly) Df(x float64) float64 {
 	return Poly{Derivative{p}}.F(x)
 }
+
+// Integral of the given polynomial with the constant set to c.
+func (p Poly) Integral(c float64) Poly {
+	return Poly{Integral{p, c}}
+}
+
+// Integral of the given polynomial with the constant set so that the value of
+// Pt1(x) == y.
+func (p Poly) IntegralAt(x, y float64) Poly {
+	i := Integral{p, 0}
+	i.C = y - Poly{i}.F(x)
+	return Poly{i}
+}

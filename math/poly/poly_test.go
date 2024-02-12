@@ -282,3 +282,16 @@ func TestD(t *testing.T) {
 	assert.Equal(t, 0, poly.New().D().Len())
 	assert.Equal(t, 0.0, poly.New().Df(2))
 }
+
+func TestIntegral(t *testing.T) {
+	p := poly.New(1, 2)
+	i := p.Integral(-1)
+	d := i.D()
+	cmprtest.Equal(t, d, p)
+	cmprtest.Equal(t, -1.0, i.F(0))
+
+	i = p.IntegralAt(1, 1)
+	cmprtest.Equal(t, 1.0, i.F(1.0))
+	i = p.IntegralAt(1, 2)
+	cmprtest.Equal(t, 2.0, i.F(1.0))
+}
