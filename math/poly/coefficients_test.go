@@ -46,3 +46,8 @@ func TestConstants(t *testing.T) {
 	assert.Equal(t, 1.0, d1.AtIdx(1))
 	assert.Equal(t, 0.0, d1.AtIdx(2))
 }
+func TestRemoveLeadingZero(t *testing.T) {
+	r := poly.RemoveLeadingZero{poly.Slice{1, 2, 0}}
+	assert.Equal(t, 2, r.Len())
+	assert.Equal(t, 2.0, r.AtIdx(1))
+}

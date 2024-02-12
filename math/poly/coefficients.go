@@ -197,3 +197,10 @@ func (i Integral) AtIdx(idx int) float64 {
 func (i Integral) Len() int {
 	return i.Coefficients.Len() + 1
 }
+
+// RemoveLeadingZero simplifies a Polynomial where the leading Coefficient is
+// zero. Note that this does no verification, it is only intended as a wrapper.
+type RemoveLeadingZero struct{ Coefficients }
+
+// Len is always one less than the underlying Coefficients.
+func (r RemoveLeadingZero) Len() int { return r.Coefficients.Len() - 1 }
