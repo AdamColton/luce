@@ -88,3 +88,8 @@ func (p Poly) Divide(n float64, buf []float64) (Poly, float64) {
 	}
 	return Poly{out}, r
 }
+
+// Add p and p2 using the Sum coefficients.
+func (p Poly) Add(p2 Poly) Poly {
+	return Poly{Sum{p, p2}}
+}

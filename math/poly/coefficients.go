@@ -102,3 +102,20 @@ func (d D1) AtIdx(idx int) float64 {
 func (D1) Len() int {
 	return 2
 }
+
+// Sum of 2 Coefficients
+type Sum [2]Coefficients
+
+// Coefficient at idx is the sum of the underlying Coefficients at idx.
+func (s Sum) AtIdx(idx int) float64 {
+	return s[0].AtIdx(idx) + s[1].AtIdx(idx)
+}
+
+// Len is the greater len of the 2 Coefficients.
+func (s Sum) Len() int {
+	ln := s[0].Len()
+	if ln2 := s[1].Len(); ln2 > ln {
+		return ln2
+	}
+	return ln
+}

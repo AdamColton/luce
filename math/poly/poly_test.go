@@ -119,3 +119,13 @@ func TestDivide(t *testing.T) {
 	assert.Equal(t, 0, p.Len())
 	assert.Equal(t, 0.0, f)
 }
+
+func TestSum(t *testing.T) {
+	p1 := poly.New(1, 2)
+	p2 := poly.New(3, 4, 5)
+
+	expected := poly.New(4, 6, 5)
+	cmprtest.Equal(t, expected, p1.Add(p2))
+
+	assert.Equal(t, 3, p2.Add(p1).Len())
+}
