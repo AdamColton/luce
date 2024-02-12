@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/adamcolton/luce/ds/list"
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/iter"
 	"github.com/adamcolton/luce/util/upgrade"
@@ -386,4 +387,11 @@ func TestIdx(t *testing.T) {
 			assert.Equal(t, tc.ok, ok)
 		})
 	}
+}
+
+func TestSliceList(t *testing.T) {
+	var l list.List[string] = slice.New([]string{"apple", "banana", "cantaloupe", "date"})
+
+	assert.Equal(t, 4, l.Len())
+	assert.Equal(t, "banana", l.AtIdx(1))
 }
