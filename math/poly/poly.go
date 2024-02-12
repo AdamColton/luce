@@ -174,3 +174,13 @@ func (p Poly) Exp(n int, buf []float64) Poly {
 		buf = cur.MultSwap(cur, buf)
 	}
 }
+
+// D returns the derivative of p.
+func (p Poly) D() Poly {
+	return Poly{Derivative{p}}
+}
+
+// Df computes the value of p'(x).
+func (p Poly) Df(x float64) float64 {
+	return Poly{Derivative{p}}.F(x)
+}
