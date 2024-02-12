@@ -393,6 +393,51 @@ func TestHalley(t *testing.T) {
 
 }
 
+func TestRoots(t *testing.T) {
+	ln := 17.0
+	bufLn := 5*int(ln) - 6
+	p := poly.Poly{poly.Buf(bufLn, nil)}
+	buf := poly.Slice(make([]float64, bufLn))
+	for i := 2.0; i < ln; i++ {
+		buf = p.MultSwap(poly.New(-i, 1), buf)
+
+		for variants := 0; variants < 4; variants++ {
+			var roots []float64
+			if variants == 0 {
+				roots = p.Roots(buf)
+			} else if variants == 1 {
+				p0 := poly.Poly{append(p.Coefficients.(poly.Slice), 0)}
+				roots = p0.Roots(buf)
+			} else if variants == 2 {
+				roots = p.Roots(nil)
+			} else {
+				for j := 1; j < int(i)-1; j++ {
+					roots = p.Roots(buf[:j])
+					assert.Len(t, roots, j)
+				}
+				continue
+			}
+			assert.Len(t, roots, int(i)-1)
+			sortFloats(roots)
+			expected := 2.0
+			for _, r := range roots {
+				assert.InDelta(t, expected, r, 6e-3)
+				expected++
+			}
+		}
+	}
+
+	assert.Nil(t, poly.New(1).Roots(nil))
+
+	p = poly.New(-2, 1, 0, 0, 0, 0, 0, 1)
+	assert.Equal(t, []float64{1}, p.Roots(nil))
+
+	// no roots to find, and a leading coefficient of 0 is ignored
+	assert.Nil(t, poly.New().Roots(nil))
+	assert.Nil(t, poly.New(5).Roots(nil))
+	assert.Equal(t, []float64{2}, poly.Poly{poly.Slice{-2, 1, 0}}.Roots(nil))
+}
+
 func TestQuad(t *testing.T) {
 	tt := map[string]struct {
 		expected []float64
