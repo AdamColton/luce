@@ -247,3 +247,13 @@ func transformRecurse[In, Out any](size int, in liter.Iter[In], fn func(In, int)
 	}
 	return make([]Out, size)
 }
+
+// AtIdx returns the value at idx. Fulfills list.List.
+func (s Slice[T]) AtIdx(idx int) T {
+	return s[idx]
+}
+
+// Len returns the length of the slice. Fulfills list.List.
+func (s Slice[T]) Len() int {
+	return len(s)
+}
