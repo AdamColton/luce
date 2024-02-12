@@ -341,6 +341,58 @@ func TestNewton(t *testing.T) {
 	assert.Equal(t, 1.0, y)
 }
 
+func TestHalley(t *testing.T) {
+	want := cmpr.Tolerance(1e-10)
+	req := cmpr.Tolerance(1e-5)
+	buf := make([]float64, 11)
+	p := poly.Poly{poly.Buf(12, nil)}
+	dBuf, ddBuf := poly.Buf(11, nil), poly.Buf(10, nil)
+
+	for i := 2.0; i < 12; i++ {
+		buf = p.MultSwap(poly.New(-i, 1), buf)
+		for j := 1.9; j < i; j++ {
+			d := p.D().Copy(dBuf).Coefficients
+			dd := poly.Poly{d}.D().Copy(ddBuf).Coefficients
+			for variants := 0; variants < 2; variants++ {
+				if variants == 1 {
+					d, dd = nil, nil
+				}
+				r, y := p.Halley(j, want, 50, d, dd)
+				cmprtest.EqualInDelta(t, 0.0, y, req)
+				cmprtest.EqualInDelta(t, 0.0, p.F(r), req)
+				cmprtest.EqualInDelta(t, j+0.1, r, req)
+			}
+		}
+	}
+
+	// Start at a point that will cycle
+	p = poly.New(0, 0, -8, 0, 1)
+	r, y := p.Halley(2, want, 50, nil, nil)
+	cmprtest.EqualInDelta(t, 0.0, y, req)
+	cmprtest.EqualInDelta(t, 0.0, p.F(r), req)
+	cmprtest.EqualInDelta(t, math.Sqrt(8), r, req)
+
+	// Start at a point that will have a denominator of 0
+	// setup a case where 2*dp*dp - p*d2p = 0 but
+	// p, dp and d2p are not 0
+	x := 1.1
+	d2p := poly.New(-6, 6)
+	d2px := d2p.F(x)
+
+	dp := d2p.IntegralAt(x, math.Sqrt(d2px))
+	dpx := dp.F(x)
+	cmprtest.Equal(t, math.Pow(dpx, 2), d2px)
+
+	p = dp.IntegralAt(x, 2)
+	px := p.F(x)
+	cmprtest.Equal(t, 2.0, px)
+	cmprtest.Equal(t, 0.0, 2*dpx*dpx-px*d2px)
+	r, y = p.Halley(x, want, 50, dp, d2p)
+	cmprtest.EqualInDelta(t, 0.0, y, req)
+	cmprtest.EqualInDelta(t, 0.0, p.F(r), req)
+
+}
+
 func TestQuad(t *testing.T) {
 	tt := map[string]struct {
 		expected []float64
