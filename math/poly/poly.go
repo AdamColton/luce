@@ -227,3 +227,85 @@ func Quad(c, b, a float64, buf []float64) []float64 {
 	}
 	return buf
 }
+
+const (
+	third float64 = 1.0 / 3.0
+	sqrt3         = 1.732050807568877293527446341505872366942805253810380628055806
+)
+
+// Cubic finds the real roots of a cubic equation. The number of roots to return
+// is set by the length of the buffer. If the length is zero then the max number
+// of roots will be found.
+func Cubic(d, c, b, a float64, buf []float64) []float64 {
+	if a == 0 {
+		return Quad(d, c, b, buf)
+	}
+	outLn := len(buf)
+	if outLn == 0 {
+		outLn = 3
+	}
+
+	//https://github.com/shril/CubicEquationSolver/blob/master/CubicEquationSolver.py
+	a2 := a * a
+	b2 := b * b
+
+	f := ((3 * c / a) - (b2 / a2)) / 3
+
+	a3 := a2 * a
+	b3 := b2 * b
+	g := (2*b3/a3 - 9*b*c/a2 + 27*d/a) / 27
+
+	g2 := g * g
+	f3 := f * f * f
+	h := g2/4 + f3/27
+
+	if f == 0 && g == 0 && h == 0 {
+		return append(buf, -powThird(d/a))
+	}
+
+	var z0, z1, z2 float64
+	if h <= 0 {
+		i := math.Sqrt(g2/4 - h)
+		j := math.Pow(i, third)
+		k := math.Acos(-g/(2*i)) / 3
+		L := -j
+		M := math.Cos(k)
+		N := sqrt3 * math.Sin(k)
+		P := -b / (3 * a)
+
+		z0 = 2*j*math.Cos(k) - (b / (3 * a))
+		z1 = L*(M+N) + P
+		z2 = L*(M-N) + P
+
+	} else {
+
+		srh := math.Sqrt(h)
+		g = -g / 2
+		a *= 3
+
+		i := powThird(g + srh)
+		j := powThird(g - srh)
+
+		z0 = (i + j) - (b / (a))
+
+		// one real root, the other two are a complex pair
+		z1 = math.NaN()
+		z2 = z1
+	}
+
+	buf = append(buf[:0], z0)
+	if z0 != z1 && !math.IsNaN(z1) && outLn > 1 {
+		buf = append(buf, z1)
+	}
+	if z0 != z2 && z1 != z2 && !math.IsNaN(z2) && outLn > 2 {
+		buf = append(buf, z2)
+	}
+	return buf
+}
+
+func powThird(x float64) float64 {
+	if x >= 0 {
+		return math.Pow(x, third)
+	}
+	return -math.Pow(-x, third)
+}

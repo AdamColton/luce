@@ -345,3 +345,55 @@ func TestQuad(t *testing.T) {
 		})
 	}
 }
+func TestCubic(t *testing.T) {
+	tt := map[string]struct {
+		a, b, c, d float64
+		expected   []float64
+	}{
+		"3-intercepts": {
+			a: 1, b: -9, c: 26, d: -24,
+			expected: []float64{2, 3, 4},
+		},
+		"2-intercepts-positive-slope": {
+			a: 1, b: -11, c: 40, d: -48,
+			expected: []float64{3, 4},
+		},
+		"2-intercepts-negative-slope": {
+			a: -1, b: +11, c: -40, d: 48,
+			expected: []float64{3, 4},
+		},
+		"1-intercept": {
+			a: 1, b: -11, c: 40, d: -50,
+			expected: []float64{5},
+		},
+		"top-branch-positive": {
+			a: 1, b: 3, c: 3, d: 1,
+			expected: []float64{-1},
+		},
+		"top-branch-negative": {
+			a: 1, b: -3, c: 3, d: -1,
+			expected: []float64{1},
+		},
+		"a=0": {
+			b: 1, c: -8, d: 12,
+			expected: []float64{2, 6},
+		},
+	}
+
+	buf := make([]float64, 3)
+	for n, tc := range tt {
+		t.Run(n, func(t *testing.T) {
+			got := poly.Cubic(tc.d, tc.c, tc.b, tc.a, buf[:0])
+			sortFloats(got)
+			cmprtest.Equal(t, tc.expected, got)
+			p := poly.New(tc.d, tc.c, tc.b, tc.a)
+			for _, r := range got {
+				cmprtest.Equal(t, 0.0, p.F(r))
+			}
+			for i := 1; i < len(tc.expected); i++ {
+				got = poly.Cubic(tc.d, tc.c, tc.b, tc.a, buf[:i])
+				assert.Len(t, got, i)
+			}
+		})
+	}
+}
