@@ -202,3 +202,13 @@ func (s Slice[T]) Reverse() {
 		s.Swap(i, ln-i)
 	}
 }
+
+// AtIdx returns the value at idx. Fulfills list.List.
+func (s Slice[T]) AtIdx(idx int) T {
+	return s[idx]
+}
+
+// Len returns the length of the slice. Fulfills list.List.
+func (s Slice[T]) Len() int {
+	return len(s)
+}
