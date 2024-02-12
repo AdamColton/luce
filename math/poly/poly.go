@@ -1,6 +1,8 @@
 package poly
 
 import (
+	"math"
+
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/math/cmpr"
 )
@@ -196,4 +198,32 @@ func (p Poly) IntegralAt(x, y float64) Poly {
 	i := Integral{p, 0}
 	i.C = y - Poly{i}.F(x)
 	return Poly{i}
+}
+
+// Quad finds the real roots of a quadratic equation. The number of roots to
+// return is set by the length of the buffer. If the length is zero then the max
+// number of roots will be found.
+func Quad(c, b, a float64, buf []float64) []float64 {
+	outLn := len(buf)
+	if a == 0 {
+		if b == 0 {
+			return nil
+		}
+		return append(buf[:0], -c/b)
+	}
+
+	s := b*b - 4*a*c
+	if s < 0 {
+		return nil
+	}
+	if s == 0 {
+		return append(buf[:0], -b/(2*a))
+	}
+	s = math.Sqrt(s)
+	a *= 2
+	buf = append(buf[:0], (-b+s)/(a))
+	if outLn != 1 {
+		buf = append(buf, (-b-s)/(a))
+	}
+	return buf
 }
