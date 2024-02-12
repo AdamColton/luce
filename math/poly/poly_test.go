@@ -88,3 +88,34 @@ func TestAssertEqual(t *testing.T) {
 	assert.IsType(t, lerr.ErrTypeMismatch{}, err)
 
 }
+
+func TestDivide(t *testing.T) {
+	p := poly.New(120, 154, 71, 14, 1) // (x+2)(x+3)(x+4)(x+5)
+	f := 0.0
+
+	expected := poly.New(60, 47, 12, 1)
+	p, f = p.Divide(-2, p.Buf())
+	cmprtest.Equal(t, expected, p)
+	cmprtest.Equal(t, 0.0, f)
+	assert.Equal(t, 4, p.Len())
+	cmprtest.Equal(t, 0.0, p.F(-3))
+	cmprtest.Equal(t, 6.0, p.F(-2))
+
+	expected = poly.New(12, 7, 1)
+	p, f = p.Divide(-5, p.Buf())
+	cmprtest.Equal(t, expected, p)
+	cmprtest.Equal(t, 0.0, f)
+	assert.Equal(t, 3, p.Len())
+	cmprtest.Equal(t, 0.0, p.F(-3))
+	cmprtest.Equal(t, 2.0, p.F(-5))
+
+	// a constant divides to nothing, and is the remainder
+	p, f = poly.New(5).Divide(2, nil)
+	assert.Equal(t, 0, p.Len())
+	assert.Equal(t, 5.0, f)
+
+	// an empty polynomial divides to an empty polynomial with no remainder
+	p, f = poly.New().Divide(1, nil)
+	assert.Equal(t, 0, p.Len())
+	assert.Equal(t, 0.0, f)
+}

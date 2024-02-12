@@ -71,3 +71,20 @@ func (p Poly) AssertEqual(to any, t cmpr.Tolerance) error {
 		return lerr.NewNotEqual(c0 == c1, c0, c1)
 	})
 }
+
+// Divide creates a new polynomial by dividing p by (x-n). The float64 returned
+// is the remainder. If (x-n) is a root of p this value will be 0. Dividing a
+// constant gives an empty polynomial and the constant as the remainder, and
+// dividing an empty polynomial gives an empty polynomial and a remainder of 0.
+func (p Poly) Divide(n float64, buf []float64) (Poly, float64) {
+	ln := p.Len() - 1
+	if ln < 0 {
+		return Poly{Empty{}}, 0
+	}
+	out := BufLen(buf, ln)
+	r := p.AtIdx(ln)
+	for i := ln - 1; i >= 0; i-- {
+		out[i], r = r, p.AtIdx(i)+r*n
+	}
+	return Poly{out}, r
+}
