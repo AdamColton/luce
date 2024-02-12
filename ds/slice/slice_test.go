@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/adamcolton/luce/ds/list"
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/liter"
 	"github.com/adamcolton/luce/util/upgrade"
@@ -411,4 +412,11 @@ func TestReverse(t *testing.T) {
 
 	s.Reverse()
 	assert.Equal(t, expected, s)
+}
+
+func TestSliceList(t *testing.T) {
+	var l list.List[string] = slice.New([]string{"apple", "banana", "cantaloupe", "date"})
+
+	assert.Equal(t, 4, l.Len())
+	assert.Equal(t, "banana", l.AtIdx(1))
 }
