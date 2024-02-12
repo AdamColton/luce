@@ -107,3 +107,22 @@ func (p Poly) Scale(s float64) Poly {
 func (p Poly) Multiply(p2 Poly) Poly {
 	return Poly{Product{p, p2}}
 }
+
+// MultSwap does a multiply and swap. It is used for effiency when doing
+// consecutive multiplications. It is equivalent to:
+//
+// p = p.Multiply(p2)
+//
+// but it swaps the slice backing p with the buf after the multiplicaiton. It
+// will generally be used like this:
+//
+// buf = p.MultSwap(p2, buf)
+//
+// Unlike the other methods, it has a pointer receiver, because it changes p.
+// The slice that was backing p is returned, so it can be used as the next buf.
+func (p *Poly) MultSwap(p2 Poly, buf []float64) []float64 {
+	prod := p.Multiply(p2)
+	out := p.Buf()
+	p.Coefficients = prod.Copy(buf).Coefficients
+	return out
+}

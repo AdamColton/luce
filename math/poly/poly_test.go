@@ -162,3 +162,36 @@ func TestMultiply(t *testing.T) {
 	assert.Equal(t, 0, poly.New().Multiply(p1).Len())
 	assert.Equal(t, 0, p1.Multiply(poly.New()).Copy(nil).Len())
 }
+
+func TestMultSwap(t *testing.T) {
+	buf, bufa, bufb := make([]float64, 10), make([]float64, 10), make([]float64, 10)
+	expa := poly.New(1, 1)
+	expb := poly.New(-1, 1)
+	a := expa.Copy(bufa)
+	b := expb.Copy(bufb)
+	swap := buf
+
+	// buf --> a
+	// bufa --> swap
+	swap = a.MultSwap(b, swap)
+	expa = expa.Multiply(expb)
+	cmprtest.Equal(t, expa, a)
+	cmprtest.Equal(t, a.Buf(), buf[:3]) // a should now be in buf
+	assert.Equal(t, swap, bufa[:2])     // swap will have the old value of a
+
+	// bufa --> b
+	// bufb --> swap
+	swap = b.MultSwap(a, swap)
+	expb = expb.Multiply(expa)
+	cmprtest.Equal(t, expb, b)
+	cmprtest.Equal(t, b.Buf(), bufa[:4]) // a should now be in buf
+	assert.Equal(t, swap, bufb[:2])      // swap will have the old value of a
+
+	// bufb --> a
+	// buf --> swap
+	swap = a.MultSwap(b, swap)
+	expa = expa.Multiply(expb)
+	cmprtest.Equal(t, expa, a)
+	cmprtest.Equal(t, a.Buf(), bufb[:6]) // a should now be in buf
+	assert.Equal(t, swap, buf[:3])       // swap will have the old value of a
+}
