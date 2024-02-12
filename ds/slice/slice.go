@@ -224,3 +224,11 @@ func (s Slice[T]) IdxCheck(idx int) bool {
 func (s Slice[T]) Sort(less Less[T]) Slice[T] {
 	return less.Sort(s)
 }
+
+func (s Slice[T]) AtIdx(idx int) T {
+	return s[idx]
+}
+
+func (s Slice[T]) Len() int {
+	return len(s)
+}
