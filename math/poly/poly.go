@@ -309,3 +309,127 @@ func powThird(x float64) float64 {
 	}
 	return -math.Pow(-x, third)
 }
+
+// Quartic finds the real roots of a Quartic equation. The number of roots to
+// return is set by the length of the buffer. If the length is zero then the max
+// number of roots will be found. Roots that are within 1e-7 of each other are
+// taken to be one root that is repeated, and are returned once.
+func Quartic(e, d, c, b, a float64, buf []float64) []float64 {
+	// https://stackoverflow.com/a/50747781
+	if a == 0 {
+		return Cubic(e, d, c, b, buf)
+	}
+	outLn := len(buf)
+	if outLn == 0 {
+		outLn = 4
+	}
+
+	b /= a
+	c /= a
+	d /= a
+	e /= a
+
+	// Depress the quartic: with x = y - b/4 it is y^4 + p*y^2 + q*y + r.
+	var out []float64
+	b2 := b * b
+	p := c - 0.375*b2
+	b3 := b2 * b
+	q := 0.125*b3 - 0.5*b*c + d
+	r := e - 0.25*b*d + 0.0625*b2*c - 0.01171875*b3*b
+	shift := -0.25 * b
+
+	if q == 0.0 {
+		// Biquadratic: y^4 + p*y^2 + r is a quadratic in z = y^2, and each
+		// z >= 0 gives the roots y = +-sqrt(z).
+		for _, z := range Quad(r, p, 1, nil) {
+			sqrt_z, ok := sqrtTol(z, 1+math.Abs(p)+math.Abs(r))
+			if !ok {
+				continue
+			}
+			out = quarticAppend(out, outLn, shift+sqrt_z)
+			out = quarticAppend(out, outLn, shift-sqrt_z)
+		}
+		return out
+	}
+
+	// Ferrari's method. m is the largest root of the resolvent cubic, which is
+	// positive when q != 0.
+	m := quarticM(p, 0.25*p*p-r, -0.125*q*q)
+	sqrt_2m := math.Sqrt(2.0 * m)
+	qs := q / sqrt_2m
+	scale := 1 + math.Abs(m) + math.Abs(p) + math.Abs(qs)
+	if delta, ok := sqrtTol(2.0*(-m-p+qs), scale); ok {
+		out = quarticAppend(out, outLn, 0.5*(-sqrt_2m+delta)+shift)
+		out = quarticAppend(out, outLn, 0.5*(-sqrt_2m-delta)+shift)
+	}
+
+	if delta, ok := sqrtTol(2.0*(-m-p-qs), scale); ok {
+		out = quarticAppend(out, outLn, 0.5*(sqrt_2m+delta)+shift)
+		out = quarticAppend(out, outLn, 0.5*(sqrt_2m-delta)+shift)
+	}
+
+	return out
+}
+
+// sqrtTol is the square root of v. A repeated root of the quartic makes v 0, but
+// rounding leaves it a little above or below, so a v within 1e-12*scale of 0 is
+// taken to be 0. ok is false if v is negative.
+func sqrtTol(v, scale float64) (sqrt float64, ok bool) {
+	tol := 1e-12 * scale
+	if v < -tol {
+		return 0, false
+	}
+	if v <= tol {
+		return 0, true
+	}
+	return math.Sqrt(v), true
+}
+
+func quarticAppend(out []float64, outLn int, r float64) []float64 {
+	const zero cmpr.Tolerance = 1e-7
+	if len(out) == outLn {
+		return out
+	}
+	for _, o := range out {
+		if zero.Equal(r, o) {
+			return out
+		}
+	}
+	return append(out, r)
+}
+
+// quarticM is the largest real root of the cubic m^3 + b*m^2 + c*m + d.
+func quarticM(b, c, d float64) float64 {
+	// depress it: with m = t - b/3 it is t^3 + p*t + q
+	p := c - b*b/3.0
+	q := 2.0*b*b*b/27.0 - b*c/3.0 + d
+
+	if p == 0.0 {
+		return -math.Cbrt(q) - b/3.0
+	}
+	if q == 0.0 {
+		if p < 0.0 {
+			return math.Sqrt(-p) - b/3.0
+		}
+		return -b / 3.0
+	}
+
+	t := math.Sqrt(math.Abs(p) / 3.0)
+	g := 1.5 * q / (p * t)
+	if p > 0.0 {
+		return -2.0*t*math.Sinh(math.Asinh(g)/3.0) - b/3.0
+	}
+
+	if 4.0*p*p*p+27.0*q*q < 0.0 {
+		return 2.0*t*math.Cos(math.Acos(clamp(g))/3.0) - b/3.0
+	}
+	if q > 0.0 {
+		return -2.0*t*math.Cosh(math.Acosh(math.Max(1, -g))/3.0) - b/3.0
+	}
+	return 2.0*t*math.Cosh(math.Acosh(math.Max(1, g))/3.0) - b/3.0
+}
+
+// clamp limits g to [-1, 1], for acos, which rounding can push just outside.
+func clamp(g float64) float64 {
+	return math.Max(-1, math.Min(1, g))
+}

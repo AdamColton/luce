@@ -1,6 +1,7 @@
 package poly_test
 
 import (
+	"math"
 	"sort"
 	"testing"
 
@@ -396,4 +397,135 @@ func TestCubic(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestQuartic(t *testing.T) {
+	tt := map[string]struct {
+		a, b, c, d, e float64
+		expected      []float64
+	}{
+		"4-intercepts": {
+			a: 1, b: -10, c: 35, d: -50, e: 24,
+			expected: []float64{1, 2, 3, 4},
+		},
+		"3-intercepts": {
+			a: 1, b: -2, c: -8,
+			expected: []float64{-2, 0, 4},
+		},
+		"2-intercepts": {
+			a: 1, d: -8,
+			expected: []float64{0, 2},
+		},
+		"1-intercepts": {
+			a: 1, d: -4, e: 3,
+			expected: []float64{1},
+		},
+		"a=0": {
+			b: 1, c: -9, d: 26, e: -24,
+			expected: []float64{2, 3, 4},
+		},
+		"x^4": {
+			a:        1,
+			expected: []float64{0},
+		},
+		"no-intercepts": {
+			a: 1, c: 4, e: 4, // (x^2+2)^2
+		},
+		"no-intercepts-with-slope": {
+			a: 1, c: 2, d: 1, e: 2, // (x^2+x+1)(x^2-x+2)
+		},
+		"one-root-four-times": {
+			a: 1, b: 12, c: 54, d: 108, e: 81, // (x+3)^4
+			expected: []float64{-3},
+		},
+		"two-roots-twice": {
+			a: 1, b: 10, c: 37, d: 60, e: 36, // (x+3)^2(x+2)^2
+			expected: []float64{-3, -2},
+		},
+		"one-root-twice": {
+			a: 1, b: 9, c: 29, d: 39, e: 18, // (x+3)^2(x+2)(x+1)
+			expected: []float64{-3, -2, -1},
+		},
+		"double-root-and-two-more-low": {
+			a: 1, b: 7, c: 17, d: 17, e: 6, // (x+1)^2(x+2)(x+3)
+			expected: []float64{-3, -2, -1},
+		},
+		"zero-and-double-root": {
+			a: 1, b: 7, c: 16, d: 12, // x(x+3)(x+2)^2
+			expected: []float64{-3, -2, 0},
+		},
+		"double-root-and-two-more": {
+			a: 1, b: 6, c: 8, d: -6, e: -9, // (x+3)^2(x+1)(x-1)
+			expected: []float64{-3, -1, 1},
+		},
+		"double-root-and-complex-pair": {
+			a: 1, b: 5, c: 4, d: -3, e: 9, // (x+3)^2(x^2-x+1)
+			expected: []float64{-3},
+		},
+		"two-roots-and-complex-pair": {
+			a: 1, b: 5, c: 8, d: 7, e: 3, // (x+3)(x+1)(x^2+x+1)
+			expected: []float64{-3, -1},
+		},
+		"three-distinct-roots-one-double": {
+			a: 1, b: 11.5, c: 48, d: 85.5, e: 54, // (x+4)(x+3)^2(x+1.5)
+			expected: []float64{-4, -3, -1.5},
+		},
+		"four-roots-mixed-signs": {
+			a: 1, b: 4, c: -7, d: -34, e: -24, // (x+4)(x+2)(x+1)(x-3)
+			expected: []float64{-4, -2, -1, 3},
+		},
+		"x^4-1": {
+			a: 1, e: -1,
+			expected: []float64{-1, 1},
+		},
+		"x^4-4": {
+			a: 1, e: -4,
+			expected: []float64{-math.Sqrt2, math.Sqrt2},
+		},
+		"x^4+1": {
+			a: 1, e: 1,
+		},
+		"three-roots-one-triple": {
+			a: 1, b: 11, c: 45, d: 81, e: 54, // (x+3)^3(x+2)
+			expected: []float64{-3, -2},
+		},
+		"double-root-low": {
+			a: 1, b: 8, c: 23, d: 28, e: 12, // (x+2)^2(x+3)(x+1)
+			expected: []float64{-3, -2, -1},
+		},
+		"zero-root": {
+			a: 1, b: 1, c: -9, d: -9, // x(x+1)(x-3)(x+3)
+			expected: []float64{-3, -1, 0, 3},
+		},
+		"roots-with-a-complex-pair": {
+			a: 1, b: 5, c: 6, d: 8, // x(x+4)(x^2+x+2)
+			expected: []float64{-4, 0},
+		},
+	}
+
+	buf := make([]float64, 4)
+	for n, tc := range tt {
+		t.Run(n, func(t *testing.T) {
+			got := poly.Quartic(tc.e, tc.d, tc.c, tc.b, tc.a, buf[:0])
+			sortFloats(got)
+			cmprtest.Equal(t, tc.expected, got)
+			p := poly.New(tc.e, tc.d, tc.c, tc.b, tc.a)
+			for _, r := range got {
+				cmprtest.Equal(t, 0.0, p.F(r))
+			}
+			for i := 1; i < len(tc.expected); i++ {
+				got = poly.Quartic(tc.e, tc.d, tc.c, tc.b, tc.a, buf[:i])
+				assert.Len(t, got, i)
+			}
+		})
+	}
+
+	// A repeated root is only known to about 1e-8, so it comes out as two values
+	// that close together. Roots within 1e-7 of each other are returned once.
+	got := poly.Quartic(-18, 19.5, 28, 9.5, 1, nil) // (x+4)(x+3)^2(x-0.5)
+	sortFloats(got)
+	assert.InDeltaSlice(t, []float64{-4, -3, 0.5}, got, 1e-7)
+	got = poly.Quartic(9, 23.25, 21.25, 8, 1, nil) // (x+4)(x+1.5)^2(x+1)
+	sortFloats(got)
+	assert.InDeltaSlice(t, []float64{-4, -1.5, -1}, got, 1e-7)
 }
