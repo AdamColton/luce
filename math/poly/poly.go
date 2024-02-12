@@ -93,3 +93,11 @@ func (p Poly) Divide(n float64, buf []float64) (Poly, float64) {
 func (p Poly) Add(p2 Poly) Poly {
 	return Poly{Sum{p, p2}}
 }
+
+// Scale will return an instace of the Scale Coefficient wrapper.
+func (p Poly) Scale(s float64) Poly {
+	return Poly{Scale{
+		By:           s,
+		Coefficients: p,
+	}}
+}

@@ -119,3 +119,14 @@ func (s Sum) Len() int {
 	}
 	return ln
 }
+
+// Scale Coefficients by a constant value
+type Scale struct {
+	By float64
+	Coefficients
+}
+
+// Coefficient is product of scale factor and the underlying Coefficient at idx.
+func (s Scale) AtIdx(idx int) float64 {
+	return s.Coefficients.AtIdx(idx) * s.By
+}
