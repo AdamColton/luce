@@ -260,3 +260,25 @@ func TestExp(t *testing.T) {
 		assert.Equal(t, 0, poly.New().Exp(n, nil).Len())
 	}
 }
+
+func TestD(t *testing.T) {
+	cmprtest.Equal(t, poly.New(1, 8), poly.New(3, 1, 4).D())
+	cmprtest.Equal(t, poly.New(1, 8, 3), poly.New(3, 1, 4, 1).D())
+
+	p := poly.New(3, 1, 4, 1)
+	d := p.D()
+	cmprtest.Equal(t, poly.New(1, 8, 3), d)
+
+	dc := poly.Poly{poly.Derivative{p}}
+
+	for x := -10.0; x < 10.0; x += 0.1 {
+		df := d.F(x)
+		assert.Equal(t, df, p.Df(x))
+		assert.Equal(t, df, dc.F(x))
+	}
+
+	// the derivative of a constant or an empty polynomial is empty
+	assert.Equal(t, 0, poly.New(5).D().Len())
+	assert.Equal(t, 0, poly.New().D().Len())
+	assert.Equal(t, 0.0, poly.New().Df(2))
+}

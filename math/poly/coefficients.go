@@ -159,3 +159,22 @@ func (p Product) Len() int {
 	}
 	return l0 + l1 - 1
 }
+
+// Derivative of the Coefficients
+type Derivative struct {
+	Coefficients
+}
+
+// Coefficient at idx is (idx+1)*AtIdx(idx+1).
+func (d Derivative) AtIdx(idx int) float64 {
+	idx++
+	return d.Coefficients.AtIdx(idx) * float64(idx)
+}
+
+// Len is one less than the underlying Coefficients, or 0 if that is empty.
+func (d Derivative) Len() int {
+	if ln := d.Coefficients.Len() - 1; ln > 0 {
+		return ln
+	}
+	return 0
+}
