@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"sort"
 
+	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/math/cmpr"
 	"github.com/adamcolton/luce/math/ints"
 	"github.com/adamcolton/luce/util/liter"
@@ -210,4 +211,19 @@ func (s Slice[T]) Reverse() {
 	for i := 0; i < end; i++ {
 		s.Swap(i, ln-i)
 	}
+}
+
+const ErrRng = lerr.Str("index out of range")
+
+// AtIdx returns the value at idx. Fulfills list.List. Uses a relative index so
+// a vaule of -1 will return the last index. If idx is outside the range, it
+// will panic.
+func (s Slice[T]) AtIdx(idx int) T {
+	idx = lerr.OK(s.Idx(idx))(ErrRng)
+	return s[idx]
+}
+
+// Len returns the length of the slice. Fulfills list.List.
+func (s Slice[T]) Len() int {
+	return len(s)
 }
