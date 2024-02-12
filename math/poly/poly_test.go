@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/math/cmpr"
 	"github.com/adamcolton/luce/math/cmpr/cmprtest"
 	"github.com/adamcolton/luce/math/poly"
 	"github.com/stretchr/testify/assert"
@@ -300,6 +301,44 @@ func TestIntegral(t *testing.T) {
 	cmprtest.Equal(t, 1.0, i.F(1.0))
 	i = p.IntegralAt(1, 2)
 	cmprtest.Equal(t, 2.0, i.F(1.0))
+}
+
+func TestNewton(t *testing.T) {
+	want := cmpr.Tolerance(1e-10)
+	req := cmpr.Tolerance(1e-5)
+	buf := make([]float64, 11)
+	p := poly.Poly{poly.Buf(12, nil)}
+	dbuf := poly.Buf(11, nil)
+
+	for i := 2.0; i < 12; i++ {
+		buf = p.MultSwap(poly.New(-i, 1), buf)
+		d := p.D().Copy(dbuf).Coefficients
+		for j := 1.9; j < i; j++ {
+			for variants := 0; variants < 2; variants++ {
+				if variants == 1 {
+					d = nil
+				}
+				r, y := p.Newton(j, want, 100, d)
+				cmprtest.EqualInDelta(t, 0.0, y, req)
+				cmprtest.EqualInDelta(t, 0.0, p.F(r), req)
+				cmprtest.EqualInDelta(t, j+0.1, r, req)
+			}
+		}
+	}
+
+	// A guess too large to evaluate: the value overflows, the guess is nudged and
+	// the best guess so far is what is returned.
+	p = poly.New(-1, 0, 1)
+	r, y := p.Newton(1e200, want, 3, nil)
+	assert.Equal(t, 1e200, r)
+	assert.True(t, math.IsInf(y, 1))
+
+	// A guess where the derivative is 0 is nudged: x^2+1 has no roots, so the
+	// closest it gets is where it started.
+	p = poly.New(1, 0, 1)
+	r, y = p.Newton(0, want, 10, nil)
+	assert.Equal(t, 0.0, r)
+	assert.Equal(t, 1.0, y)
 }
 
 func TestQuad(t *testing.T) {

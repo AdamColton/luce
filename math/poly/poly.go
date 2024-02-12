@@ -200,6 +200,46 @@ func (p Poly) IntegralAt(x, y float64) Poly {
 	return Poly{i}
 }
 
+// Newton's method to find one root of the polynomial. The initial guess is
+// passed in as x; min sets how close to 0 is acceptible and it will return if a
+// value closer than that is found; steps limits the maximum number of
+// iterations that will; d is the derivative. It is not required to provide d,
+// but if there is a cached instance available, it reduces repeated computation.
+func (p Poly) Newton(x float64, min cmpr.Tolerance, steps int, d Coefficients) (float64, float64) {
+	const (
+		small cmpr.Tolerance = 1e-5
+	)
+
+	if d == nil {
+		d = Derivative{p}
+	}
+	dp := Poly{d}
+
+	y := p.F(x)
+
+	bestY, bestX := math.Abs(y), x
+	for i := 0; i < steps && !min.Zero(y); i++ {
+		if math.IsInf(y, 0) || math.IsNaN(y) {
+			x += 1e-3
+			continue
+		}
+		d := dp.F(x)
+		if small.Zero(d) {
+			x += 1e-3
+			y = p.F(x)
+			continue
+		}
+		d = y / d
+		d *= (200 - float64(i)) / 200
+		x -= d
+		y = p.F(x)
+		if absy := math.Abs(y); absy < bestY {
+			bestX, bestY = x, absy
+		}
+	}
+	return bestX, bestY
+}
+
 // Quad finds the real roots of a quadratic equation. The number of roots to
 // return is set by the length of the buffer. If the length is zero then the max
 // number of roots will be found.
