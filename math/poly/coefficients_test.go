@@ -30,3 +30,19 @@ func TestSlice(t *testing.T) {
 	assert.Equal(t, 2, cap(s))
 	assert.Equal(t, 3, cap(rest))
 }
+func TestConstants(t *testing.T) {
+	var e poly.Coefficients = poly.Empty{}
+	assert.Equal(t, 0, e.Len())
+	assert.Equal(t, 0.0, e.AtIdx(0))
+
+	var d0 poly.Coefficients = poly.D0(5)
+	assert.Equal(t, 1, d0.Len())
+	assert.Equal(t, 5.0, d0.AtIdx(0))
+	assert.Equal(t, 0.0, d0.AtIdx(1))
+
+	var d1 poly.Coefficients = poly.D1(5)
+	assert.Equal(t, 2, d1.Len())
+	assert.Equal(t, 5.0, d1.AtIdx(0))
+	assert.Equal(t, 1.0, d1.AtIdx(1))
+	assert.Equal(t, 0.0, d1.AtIdx(2))
+}
