@@ -241,3 +241,14 @@ func TestFactoryChannel(t *testing.T) {
 	}
 	assert.Len(t, s, idx)
 }
+
+func TestFactoryWrap(t *testing.T) {
+	s := []int{3, 1, 4, 1, 5, 9}
+	var sf liter.Factory[int] = sliceFactory(s)
+	w, i, done := sf.Wrap()
+	assert.Equal(t, s[0], i)
+	assert.False(t, done)
+	w.ForIdx(func(i, idx int) {
+		assert.Equal(t, s[idx], i)
+	})
+}

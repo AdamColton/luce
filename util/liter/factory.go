@@ -42,3 +42,8 @@ func (f Factory[T]) Channel(buf int) <-chan T {
 	i, t, done := f()
 	return channel(i, t, done, buf)
 }
+
+func (f Factory[T]) Wrap() (iter Wrapper[T], t T, done bool) {
+	iter.Iter, t, done = f()
+	return
+}
