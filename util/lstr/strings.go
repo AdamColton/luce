@@ -137,7 +137,7 @@ func (s *Strings) Regex(re *regexp.Regexp, skipEmpty bool) []string {
 	if s.Done() {
 		return nil
 	}
-	out := re.FindStringSubmatch(iter.Pop(s))
+	out := re.FindStringSubmatch(liter.Pop(s))
 	if len(out) == 0 && skipEmpty {
 		return s.Regex(re, skipEmpty)
 	}
