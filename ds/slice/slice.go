@@ -197,3 +197,33 @@ func (s Slice[T]) IdxCheck(idx int) bool {
 func (s Slice[T]) Sort(less Less[T]) Slice[T] {
 	return less.Sort(s)
 }
+
+// Transform one slice to another. The transformation function's second return
+// is a bool indicating if the returned value should be included in the result.
+// The returned Slice is sized exactly to the output.
+func Transform[In, Out any](in iter.Iter[In], fn func(In, int) (Out, bool)) Slice[Out] {
+	return transform(0, in, fn)
+}
+
+// Transform one slice to another. The transformation function's second return
+// is a bool indicating if the returned value should be included in the result.
+// The returned Slice is sized exactly to the output.
+func TransformSlice[In, Out any](in []In, fn func(In, int) (Out, bool)) Slice[Out] {
+	return transform(0, NewIter(in), fn)
+}
+
+func transform[In, Out any](size int, in iter.Iter[In], fn func(In, int) (Out, bool)) Slice[Out] {
+	for i, done := in.Cur(); !done; i, done = in.Next() {
+		o, include := fn(i, in.Idx())
+		if include {
+			in.Next()
+			out := transform(size+1, in, fn)
+			out[size] = o
+			return out
+		}
+	}
+	if size == 0 {
+		return nil
+	}
+	return make([]Out, size)
+}
