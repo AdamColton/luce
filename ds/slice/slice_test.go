@@ -2,6 +2,7 @@ package slice_test
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/adamcolton/luce/ds/slice"
@@ -321,4 +322,32 @@ func TestIdxCheck(t *testing.T) {
 func TestLen(t *testing.T) {
 	s := []int{2, 3, 5, 7, 11, 13, 17, 19, 23}
 	assert.Equal(t, len(s), slice.Len(s))
+}
+
+func TestTransform(t *testing.T) {
+	in := slice.New([]int{3, -8, -15, 1, -2, 4, 1, -55, -66, 5, -7, 9})
+	fn := func(i, idx int) (string, bool) {
+		assert.Equal(t, i, in[idx])
+		if i < 0 {
+			return "", false
+		}
+		return strconv.Itoa(i), true
+	}
+	got := slice.Transform(in.Iter(), fn)
+	expected := slice.Slice[string]{"3", "1", "4", "1", "5", "9"}
+	assert.Equal(t, expected, got)
+	assert.Equal(t, len(got), cap(got))
+
+	got = slice.TransformSlice(in, fn)
+	assert.Equal(t, expected, got)
+	assert.Equal(t, len(got), cap(got))
+
+	got = slice.Transform(in.Iter(), func(i, idx int) (string, bool) {
+		return "", false
+	})
+	assert.Nil(t, got)
+
+	in = slice.New([]int{})
+	got = slice.Transform(in.Iter(), fn)
+	assert.Nil(t, got)
 }
