@@ -197,3 +197,46 @@ func (s Slice[T]) IdxCheck(idx int) bool {
 func (s Slice[T]) Sort(less Less[T]) Slice[T] {
 	return less.Sort(s)
 }
+
+// Transform one slice to another. The transformation function's second return
+// is a bool indicating if the returned value should be included in the result.
+// The returned Slice is sized exactly to the output.
+func Transform[In, Out any](in liter.Iter[In], fn func(In, int) (Out, bool)) Slice[Out] {
+	return transform(in, fn)
+}
+
+// Transform one slice to another. The transformation function's second return
+// is a bool indicating if the returned value should be included in the result.
+// The returned Slice is sized exactly to the output.
+func TransformSlice[In, Out any](in []In, fn func(In, int) (Out, bool)) Slice[Out] {
+	return transform(NewIter(in), fn)
+}
+
+func transform[In, Out any](in liter.Iter[In], fn func(In, int) (Out, bool)) (out Slice[Out]) {
+	i, done := in.Cur()
+	if done {
+		return
+	}
+	if o, include := fn(i, in.Idx()); include {
+		out = transformRecurse(1, in, fn)
+		out[0] = o
+	} else {
+		out = transformRecurse(0, in, fn)
+	}
+	return
+}
+
+func transformRecurse[In, Out any](size int, in liter.Iter[In], fn func(In, int) (Out, bool)) Slice[Out] {
+	for i, done := in.Next(); !done; i, done = in.Next() {
+		o, include := fn(i, in.Idx())
+		if include {
+			out := transformRecurse(size+1, in, fn)
+			out[size] = o
+			return out
+		}
+	}
+	if size == 0 {
+		return nil
+	}
+	return make([]Out, size)
+}
