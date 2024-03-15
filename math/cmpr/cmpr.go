@@ -1,6 +1,8 @@
 package cmpr
 
-import "golang.org/x/exp/constraints"
+import (
+	"golang.org/x/exp/constraints"
+)
 
 // Min returns the lesser value of a or b.
 func Min[T constraints.Ordered](a, b T) T {
@@ -37,4 +39,14 @@ func compound[T constraints.Ordered](fn func(a, b T) T, ts []T) (t T) {
 		t = fn(t, ti)
 	}
 	return
+}
+
+// AssertEqualizer allows a type to define an equality test. AssertEqual returns
+// an error if the value is not equal to the argument to within the Tolerance.
+//
+// Note that a pointer type fulfills an interface that its base type fulfills,
+// but not the other way. So if AssertEqual is on the base type, both the base
+// type and a pointer to it are AssertEqualizers.
+type AssertEqualizer interface {
+	AssertEqual(to interface{}, t Tolerance) error
 }
