@@ -163,3 +163,8 @@ func TestMethodFirst(t *testing.T) {
 	f, _ := filter.NumOut(filter.EQ(2)).Method().First(ms...)
 	assert.Equal(t, "Deadline", f.Name)
 }
+
+func TestAnyType(t *testing.T) {
+	a := filter.AnyType()
+	assert.True(t, a.OnInterface("string"))
+}
