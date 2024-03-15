@@ -6,6 +6,10 @@ import (
 	"github.com/adamcolton/luce/util/reflector"
 )
 
+func AnyType() Type {
+	return Type{}
+}
+
 // TODO
 type Type struct {
 	Filter[reflect.Type]
