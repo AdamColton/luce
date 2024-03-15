@@ -27,5 +27,8 @@
 //  } (string, bool)
 // we can apply the initilizers as
 //  injectFoo := fi.Apply(Foo).Interface().(func(A,B)(string, bool))
+//
+// To create an injector it generally going to be easier to call
+// NewFieldInjector than to fulfill Initilizer directly.
 
 package linject
