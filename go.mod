@@ -5,6 +5,7 @@ go 1.23
 require (
 	github.com/boltdb/bolt v1.3.1
 	github.com/google/btree v1.1.2
+	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/schema v1.3.0
 	github.com/gorilla/websocket v1.5.1
 	github.com/pmezard/go-difflib v1.0.0 // indirect
