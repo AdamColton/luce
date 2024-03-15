@@ -7,6 +7,12 @@ import (
 	"github.com/adamcolton/luce/util/reflector"
 )
 
+// AnyType is a type filter that returns True for any type. This can be useful
+// when creating checks for things like functions.
+func AnyType() Type {
+	return Type{func(t reflect.Type) bool { return true }}
+}
+
 // Type is a wrapper around Filter[reflect.Type] to provide helper logic
 // for type filtering.
 type Type struct {
