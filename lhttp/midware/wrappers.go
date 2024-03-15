@@ -27,6 +27,9 @@ type wrappedInitilizer struct {
 
 func (wi wrappedInitilizer) Initilize(fn linject.FuncType) linject.Injector {
 	di := wi.Initilizer.Initilize(fn.Target())
+	if di == nil {
+		return nil
+	}
 	return wrappedInjector{di}
 }
 
