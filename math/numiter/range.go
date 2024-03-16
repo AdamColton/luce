@@ -4,6 +4,10 @@ import (
 	"math"
 	"reflect"
 
+	"github.com/adamcolton/luce/ds/list"
+	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/math/ints"
+	"github.com/adamcolton/luce/util/liter"
 	"github.com/adamcolton/luce/util/reflector"
 	"golang.org/x/exp/constraints"
 )
@@ -64,4 +68,42 @@ func divUp[T Number](a, b T) int {
 	default:
 		return int((a + b - 1) / b)
 	}
+}
+
+func (r *Range[T]) Wrap() list.Wrapper[T] {
+	return list.Wrapper[T]{r}
+}
+
+func (r *Range[T]) Iter() liter.Wrapper[T] {
+	return list.NewIter(r)
+}
+
+const ErrBadGrid = lerr.Str("args must be multiple of 3")
+
+func Grid[T Number](args ...T) list.Wrapper[[]T] {
+	ln := len(args)
+	if ln%3 != 0 {
+		panic(ErrBadGrid)
+	}
+	ln /= 3
+	rs := make([]list.List[T], ln)
+	for i := range rs {
+		idx := i * 3
+		rs[i] = &Range[T]{
+			Start: args[idx],
+			End:   args[idx+1],
+			Step:  args[idx+2],
+		}
+	}
+
+	return list.SliceCombinator(ints.Cross[int], rs...)
+}
+
+func IntGrid[T Number](args ...T) list.Wrapper[[]T] {
+	rs := make([]list.List[T], len(args))
+	for i, end := range args {
+		rs[i] = IntRange(end)
+	}
+
+	return list.SliceCombinator(ints.Cross[int], rs...)
 }
