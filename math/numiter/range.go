@@ -6,6 +6,10 @@ import (
 	"math"
 	"reflect"
 
+	"github.com/adamcolton/luce/ds/list"
+	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/math/ints"
+	"github.com/adamcolton/luce/util/liter"
 	"github.com/adamcolton/luce/util/reflector"
 	"golang.org/x/exp/constraints"
 )
@@ -76,4 +80,52 @@ func divUp[T Number](a, b T) int {
 	default:
 		return int((a + b - 1) / b)
 	}
+}
+
+// Wrap the Range to add list.Wrapper methods.
+func (r *Range[T]) Wrap() list.Wrapper[T] {
+	return list.Wrapper[T]{r}
+}
+
+// Iter returns an iterator over the values of the Range.
+func (r *Range[T]) Iter() liter.Wrapper[T] {
+	return list.NewIter(r)
+}
+
+// ErrBadGrid is the value Grid panics with when the number of args is not a
+// multiple of 3.
+const ErrBadGrid = lerr.Str("args must be multiple of 3")
+
+// Grid takes args in sets of 3 as (start1, end1, step1, start2, end2, step2...)
+// and returns every combination of the values of the ranges, as slices with one
+// value from each range. The first range changes fastest. It panics with
+// ErrBadGrid if the number of args is not a multiple of 3.
+func Grid[T Number](args ...T) list.Wrapper[[]T] {
+	ln := len(args)
+	if ln%3 != 0 {
+		panic(ErrBadGrid)
+	}
+	ln /= 3
+	rs := make([]list.List[T], ln)
+	for i := range rs {
+		idx := i * 3
+		rs[i] = &Range[T]{
+			Start: args[idx],
+			End:   args[idx+1],
+			Step:  args[idx+2],
+		}
+	}
+
+	return list.SliceCombinator(ints.Cross[int], rs...)
+}
+
+// IntGrid takes the end of each range, which is from 0 to end with a step of 1,
+// and returns every combination like Grid.
+func IntGrid[T Number](args ...T) list.Wrapper[[]T] {
+	rs := make([]list.List[T], len(args))
+	for i, end := range args {
+		rs[i] = IntRange(end)
+	}
+
+	return list.SliceCombinator(ints.Cross[int], rs...)
 }
