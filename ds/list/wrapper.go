@@ -2,6 +2,9 @@ package list
 
 import (
 	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/math/cmpr"
+	"github.com/adamcolton/luce/math/cmpr/cmprtest"
 	"github.com/adamcolton/luce/util/iter"
 )
 
@@ -50,4 +53,21 @@ func (w Wrapper[T]) Reverse() Wrapper[T] {
 // that will be invoked.
 func (w Wrapper[T]) ToSlice(buf []T) []T {
 	return slice.IterSlice[T](w.Iter(), buf)
+}
+
+func (w Wrapper[T]) AssertEqual(to interface{}, t cmpr.Tolerance) error {
+	toList, ok := to.(List[T])
+	if !ok {
+		if s, ok := to.([]T); ok {
+			toList = Slice(s)
+		} else {
+			return lerr.NewTypeMismatch(w, to)
+		}
+	}
+	// TODO: I don't like this but leads to a whole mess of issues.
+	// by including cmprtest, this ends up including testify/assert.
+	// I really don't want that to be included in builds.
+	return lerr.NewSliceErrs(w.Len(), toList.Len(), func(i int) error {
+		return cmprtest.AssertEqual(w.AtIdx(i), toList.AtIdx(i), t)
+	})
 }
