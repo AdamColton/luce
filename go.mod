@@ -8,6 +8,7 @@ require (
 	github.com/dgraph-io/badger/v4 v4.9.6
 	github.com/fogleman/gg v1.3.0
 	github.com/google/btree v1.1.3
+	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/schema v1.4.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/stretchr/testify v1.12.1
