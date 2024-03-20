@@ -28,6 +28,7 @@ require (
 require (
 	github.com/dgraph-io/badger/v4 v4.5.1
 	github.com/fogleman/gg v1.3.0
+	github.com/gorilla/mux v1.8.1
 )
 
 require (
