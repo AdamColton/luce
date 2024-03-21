@@ -2,10 +2,12 @@ package cli_test
 
 import (
 	"bytes"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/cli"
 	"github.com/adamcolton/luce/util/handler"
@@ -78,6 +80,7 @@ func TestRunner(t *testing.T) {
 
 type cmdr struct {
 	*cli.ExitCloseHandler
+	cli.Helper
 	out chan<- string
 }
 
@@ -101,9 +104,12 @@ func (c *cmdr) SayHiUsage() *handler.CommandDetails {
 }
 
 func (c *cmdr) Handlers(rnr *cli.Runner) []any {
+	// TODO: could I do an auto-response to pull handlers from a source?
+	// because if this isn't updated the handlers don't work as expected.
 	return []any{
 		rnr.ExitRespHandler,
 		rnr.CloseRespHandler,
+		rnr.HelpRespHandler,
 		func(r *SayHiResp) {
 			c.out <- r.Msg
 		},
@@ -166,6 +172,18 @@ func TestNewRunner(t *testing.T) {
 	assert.Equal(t, "(sayHi:Name) ", r.read())
 	in <- []byte("Adam")
 	assert.Equal(t, "Hi Adam", <-do.out)
+
+	assert.Equal(t, "\n> ", r.read())
+	in <- []byte("help")
+	help := []string{
+		"q, exit Exit the client",
+		"help",
+		"sayHi   say hi",
+	}
+	tfn := slice.ForAll(func(cmd string) string { return "   " + cmd })
+	help = tfn.Slice(help, nil)
+	expected := strings.Join(help, "\n") + "\n> "
+	assert.Equal(t, expected, r.read())
 
 	in <- []byte("exit")
 
