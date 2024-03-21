@@ -13,18 +13,22 @@ type RunnerInitilizer func(*cli.Runner)
 
 func (s *Socket) Runner(ri RunnerInitilizer) *Socket {
 	s.Handler = func(conn net.Conn) {
-		in, _ := iobus.Config{
+		rdr := iobus.Config{
 			Sleep: time.Millisecond,
 		}.NewReader(conn)
 
+		ec := cli.NewExitClose(
+			func() { conn.Close() },
+			func() { s.Close() },
+		)
+
 		r := &cli.Runner{
-			OnExit:  func() { conn.Close() },
-			OnClose: func() { s.Close() },
-			Timeout: 25,
+			ExitClose: ec,
+			Timeout:   25,
 			InputProc: func(s string) []string {
 				return strings.Split(strings.TrimSpace(s), " ")
 			},
-			Context: cli.NewContext(conn, in, nil),
+			Context: cli.NewContext(conn, rdr.Out, nil),
 		}
 		ri(r)
 		r.Run()

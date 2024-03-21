@@ -12,11 +12,11 @@ import (
 )
 
 func Client() error {
-	inBus, _ := iobus.Config{
+	stdinRdr := iobus.Config{
 		CloseOnEOF: true,
 	}.NewReader(os.Stdin)
 
-	inBus = procbus.Delim(inBus, '\n')
+	inBus := procbus.Delim(stdinRdr.Out, '\n')
 	addr, err := getSock(inBus)
 	if err != nil {
 		return err
@@ -33,10 +33,10 @@ func Client() error {
 
 	go iobus.Writer(conn, inBus, nil)
 
-	in, _ := iobus.Config{
+	connRdr := iobus.Config{
 		CloseOnEOF: true,
 	}.NewReader(conn)
-	for m := range in {
+	for m := range connRdr.Out {
 		fmt.Print(string(m))
 	}
 	return nil
