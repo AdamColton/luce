@@ -17,3 +17,14 @@ func Timeout[T any](ms int, ch <-chan T) (t T, err error) {
 	}
 	return
 }
+
+func Slice[T any](s []T, ch chan<- T) (out chan T) {
+	if ch == nil {
+		out = make(chan T, len(s))
+		ch = out
+	}
+	for _, t := range s {
+		ch <- t
+	}
+	return
+}
