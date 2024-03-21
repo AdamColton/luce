@@ -10,18 +10,20 @@ import (
 )
 
 func main() {
-	in, _ := iobus.Config{
+	rdr := iobus.Config{
 		Sleep: time.Millisecond,
 	}.NewReader(os.Stdin)
 
-	enableExit := func() {}
-	r := logic.RWHandler(enableExit, nil)
-	r.Context = cli.NewContext(os.Stdout, in, nil)
-
 	args := os.Args[1:]
-	if len(args) > 0 {
-		r.Static(args)
-	} else {
+	ec := cli.NewExitClose(nil, nil)
+	ec.CanExit = len(args) == 0
+	ho := logic.New(ec)
+	r := ho.Runner()
+	r.Context = cli.NewContext(os.Stdout, rdr.Out, nil)
+
+	if r.CanExit {
 		r.Run()
+	} else {
+		r.Static(args)
 	}
 }

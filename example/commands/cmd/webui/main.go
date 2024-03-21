@@ -1,19 +1,24 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
 
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/example/commands/logic"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/lhttp/formdecoder"
+	"github.com/adamcolton/luce/util/cli"
 	"github.com/adamcolton/luce/util/luceio"
 	"github.com/adamcolton/luce/util/reflector"
 	"github.com/gorilla/mux"
 )
+
+// TODO: a lot of this logic should be moved to a util
 
 var (
 	decoder = formdecoder.New()
@@ -32,23 +37,36 @@ func main() {
 
 	ho := &logic.HandlerObject{
 		Timeout: 25,
+		ExitCloseHandler: cli.NewExitClose(
+			nil,
+			func() { s.Shutdown(context.Background()) },
+		).Commands(),
 	}
 	cmds := ho.Commands()
-	hm, err := cmds.Switch()
-	lerr.Panic(err)
+	hm := lerr.Must(cmds.Switch())
 
 	names := cmds.Names()
-	menuSlc := make([]string, 0, len(names))
-	for _, c := range names {
-		menuSlc = append(menuSlc, fmt.Sprintf(`<a href="/%s">%s</a>`, c, c))
-	}
+	menuSlc := slice.TransformSlice(names, func(name string) (string, bool) {
+		return fmt.Sprintf(`<a href="/%s">%s</a>`, name, name), true
+	})
 	menu := fmt.Sprintf("<div>%s</div>", strings.Join(menuSlc, " | "))
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		sw := luceio.NewSumWriter(w)
 		sw.WriteStrings(headerStart, "Index", headerEnd, menu, "Test Server", bodyEnd)
 	})
 
+	finish := func(sw *luceio.SumWriter, i any) {
+		ho.Exit, ho.Close = respWriter(sw, i)
+		sw.WriteStrings(bodyEnd)
+		if ho.Close {
+			ho.OnClose()
+		}
+	}
+
 	for _, name := range names {
+		if name == "" {
+			continue
+		}
 		_, h := cmds.Get(name)
 		t := h.Type()
 		frm := structToForm(t)
@@ -60,14 +78,13 @@ func main() {
 				sw.WriteStrings(headerStart, name, headerEnd, menu)
 
 				i := reflector.Make(t).Interface()
-				i, err = hm.Handle(i)
+				i, err := hm.Handle(i)
 				if err != nil {
 					sw.WriteStrings("Error: ", err.Error(), bodyEnd)
 					return
 				}
 
-				respWriter(sw, i)
-				sw.WriteStrings(bodyEnd)
+				finish(sw, i)
 			}).Methods("GET")
 		} else {
 			r.HandleFunc("/"+name, func(w http.ResponseWriter, r *http.Request) {
@@ -91,8 +108,7 @@ func main() {
 					return
 				}
 
-				respWriter(sw, i)
-				sw.WriteStrings(bodyEnd)
+				finish(sw, i)
 			}).Methods("POST")
 		}
 	}
@@ -135,10 +151,10 @@ func respWriter(sw *luceio.SumWriter, i any) (exit, cls bool) {
 		sw.WriteString(`</ul>`)
 	case int:
 		sw.WriteStrings(strconv.Itoa(r), " empty requests")
-	case *logic.ExitResp:
+	case *cli.ExitResp:
 		exit = true
 		sw.WriteString("exit has no meaning in this context")
-	case *logic.CloseResp:
+	case *cli.CloseResp:
 		exit = true
 		cls = true
 		sw.WriteString("close server not implemented")

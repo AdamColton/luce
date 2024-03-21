@@ -2,32 +2,27 @@ package logic
 
 import (
 	"strconv"
-	"strings"
 
-	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/cli"
-	"github.com/adamcolton/luce/util/handler"
 )
 
-func RWHandler(onExit, onClose func()) *cli.Runner {
-	ho := &HandlerObject{
-		Closer:  onClose != nil,
-		Exiter:  onExit != nil,
-		Timeout: 25,
+func New(ec *cli.ExitClose) *HandlerObject {
+	return &HandlerObject{
+		ExitCloseHandler: ec.Commands(),
+		Timeout:          25,
+		Helper:           "List all commands",
 	}
-	rnr := &cli.Runner{
-		Commands:     ho.Commands(),
-		OnExit:       onExit,
-		OnClose:      onClose,
-		Timeout:      ho.Timeout,
-		Prompt:       "> ",
-		StartMessage: "Welcome to the commands demo\nenter 'help' for more\n",
-		InputProc: func(s string) []string {
-			return strings.Split(strings.TrimSpace(s), " ")
-		},
-	}
+}
 
-	rnr.RespHandler = lerr.Must(handler.Handlers(
+func (ho *HandlerObject) Runner() *cli.Runner {
+	r := cli.NewRunner(ho)
+	r.Prompt = "> "
+	r.StartMessage = "Welcome to the commands demo\nenter 'help' for more\n"
+	return r
+}
+
+func (ho *HandlerObject) Handlers(rnr *cli.Runner) []any {
+	return []any{
 		func(r *PersonResp) {
 			rnr.WriteStrings("Created Person: ", r.Name)
 		},
@@ -45,20 +40,11 @@ func RWHandler(onExit, onClose func()) *cli.Runner {
 		func(r int) {
 			rnr.WriteStrings(strconv.Itoa(r), " empty requests")
 		},
-		func(r *ExitResp) {
-			rnr.Exit = true
-		},
-		func(r *CloseResp) {
-			rnr.Close = true
-			rnr.Exit = true
-		},
-		func(r *HelpResp) {
-			rnr.ShowCommands()
-		},
 		func(r *SetTimeoutResp) {
 			rnr.WriteStrings("Timeout set to ", strconv.Itoa(r.Timeout))
 		},
-	))
-
-	return rnr
+		rnr.ExitRespHandler,
+		rnr.CloseRespHandler,
+		rnr.HelpRespHandler,
+	}
 }

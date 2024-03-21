@@ -1,14 +1,21 @@
 package logic
 
 import (
+	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/util/cli"
 	"github.com/adamcolton/luce/util/handler"
 )
 
 type HandlerObject struct {
-	People         []string
-	EmptyCounter   int
-	Closer, Exiter bool
-	Timeout        int
+	People       []string
+	EmptyCounter int
+	Timeout      int
+	*cli.ExitCloseHandler
+	cli.Helper
+}
+
+func (ho *HandlerObject) EC() *cli.ExitClose {
+	return ho.ExitClose
 }
 
 type PersonReq struct {
@@ -52,42 +59,6 @@ func (*HandlerObject) ListUsage() string {
 	return "List all the People"
 }
 
-type ExitReq struct{}
-
-type ExitResp struct{}
-
-func (ho *HandlerObject) ExitHandler(e *ExitReq) *ExitResp {
-	return &ExitResp{}
-}
-
-func (ho *HandlerObject) ExitUsage() (string, bool) {
-	return "Exit the client", ho.Exiter
-}
-
-type HelpReq struct{}
-
-type HelpResp struct{}
-
-func (ho *HandlerObject) HelpHandler(e *HelpReq) *HelpResp {
-	return &HelpResp{}
-}
-
-func (*HandlerObject) HelpUsage() string {
-	return "List all command"
-}
-
-type CloseReq struct{}
-
-type CloseResp struct{}
-
-func (ho *HandlerObject) CloseHandler(e *CloseReq) *CloseResp {
-	return &CloseResp{}
-}
-
-func (ho *HandlerObject) CloseUsage() (string, bool) {
-	return "Close the server", ho.Closer
-}
-
 type TimeoutReq struct{}
 
 func (ho *HandlerObject) TimeoutHandler(e *TimeoutReq) {
@@ -108,15 +79,14 @@ func (ho *HandlerObject) SetTimeoutHandler(e *SetTimeoutReq) *SetTimeoutResp {
 }
 
 func (ho *HandlerObject) Commands() *handler.Commands {
-	c := handler.DefaultRegistrar.Commands(ho)
-	c = append(c, handler.Command{
+	cmds := handler.DefaultRegistrar.Commands(ho)
+	cmds = append(cmds, handler.Command{
 		Name:  "",
 		Usage: "",
-		Action: func() *HelpResp {
-			return &HelpResp{}
+		Action: func() *cli.HelpResp {
+			return &cli.HelpResp{}
 		},
 	})
 
-	cmds, _ := handler.Cmds(c)
-	return cmds
+	return lerr.Must(handler.Cmds(cmds))
 }
