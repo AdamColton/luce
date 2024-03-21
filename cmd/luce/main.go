@@ -2,84 +2,54 @@ package main
 
 import (
 	"os"
+	"time"
 
-	"github.com/urfave/cli"
+	"github.com/adamcolton/luce/ds/bus/iobus"
+	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/tools/luce"
+	"github.com/adamcolton/luce/util/cli"
+	"github.com/adamcolton/luce/util/handler"
 )
 
 func main() {
-	c := cli.NewApp()
-	c.Name = "luce"
-	c.Usage = "A collection of tools for luce projects"
+	rdr := iobus.Config{
+		Sleep: time.Millisecond,
+	}.NewReader(os.Stdin)
+	ctx := cli.NewContext(os.Stdout, rdr.Out, nil)
 
-	c.Commands = []cli.Command{
-		{
-			Name: "gen",
-			Subcommands: []cli.Command{
-				{
-					Name:   "key",
-					Action: keyCmd,
-					Usage:  "Generate a random key",
-				},
-				{
-					Name:   "rand",
-					Action: randCmd,
-					Usage:  "Generate a random number",
-					Flags: []cli.Flag{
-						&cli.IntFlag{
-							Name:  "b",
-							Value: 0,
-							Usage: "Set size by bits",
-						},
-						&cli.Int64Flag{
-							Name:  "n",
-							Value: 100,
-							Usage: "Set max size",
-						},
-					},
-				},
-				{
-					Name:   "r32",
-					Action: rand32,
-					Usage:  "Generate a random uint32",
-				},
-				{
-					Name:   "randbase64",
-					Action: randBase64,
-					Usage:  "Generate a random base64 value",
-					Flags: []cli.Flag{
-						&cli.IntFlag{
-							Name:  "b",
-							Value: 64,
-							Usage: "Set the number of bytes",
-						},
-					},
-				},
-			},
-		},
-		{
-			Name:    "socketclient",
-			Aliases: []string{"sc"},
-			Action:  socketclient,
-			Usage:   "Connect to a unixsocket",
-		},
-		{
-			Name:    "filevars",
-			Aliases: []string{"fv"},
-			Action:  filevars,
-			Usage:   "generates a go file with input files set to variables",
-			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:  "o",
-					Usage: "Set the name of the output file",
-					Value: "filevars",
-				},
-				&cli.StringFlag{
-					Name:  "p",
-					Usage: "package name",
-				},
-			},
-		},
+	args := os.Args[1:]
+	//args = []string{"unixsocket", "File:"}
+	ec := cli.NewExitClose(nil, nil)
+	ec.CanExit = len(args) == 0
+	l := &Modes{
+		Luce:    luce.New(ec),
+		Context: ctx,
 	}
+	r := cli.NewRunner(l)
+	l.InitRunner(r)
+	r.Context = ctx
 
-	c.Run(os.Args)
+	if r.CanExit {
+		r.Run()
+	} else {
+		r.Static(args)
+	}
+}
+
+type Modes struct {
+	*luce.Luce
+	cli.Context
+}
+
+func (m *Modes) Commands() *handler.Commands {
+	cmds := handler.DefaultRegistrar.Commands(m)
+	return lerr.Must(handler.Cmds(cmds))
+}
+
+func (m *Modes) Handlers(rnr *cli.Runner) []any {
+	return append(m.Luce.Handlers(rnr),
+		func(u *UnixsocketResp) {
+			rnr.WriteString("Unixsocket closed")
+		},
+	)
 }
