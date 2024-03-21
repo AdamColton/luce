@@ -1,48 +1,49 @@
 package unixsocket
 
 import (
-	"fmt"
 	"net"
-	"os"
 	"path/filepath"
 	"strconv"
 
 	"github.com/adamcolton/luce/ds/bus/iobus"
-	"github.com/adamcolton/luce/ds/bus/procbus"
+	"github.com/adamcolton/luce/util/cli"
 )
 
-func Client() error {
-	stdinRdr := iobus.Config{
-		CloseOnEOF: true,
-	}.NewReader(os.Stdin)
-
-	inBus := procbus.Delim(stdinRdr.Out, '\n')
-	addr, err := getSock(inBus)
+func Client(ctx cli.Context) error {
+	addr, err := getSock(ctx)
 	if err != nil {
 		return err
 	}
 	if addr == "" {
 		return nil
 	}
-	fmt.Print("  Connecting to", addr, "\n\n")
+	ctx.WriteStrings("  Connecting to", addr, "\n\n")
 	conn, err := net.Dial("unix", addr)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
 
-	go iobus.Writer(conn, inBus, nil)
+	//TODO: this ends up consuming one input on close
+	//need a better way
+	done := false
+	go func() {
+		for !done {
+			conn.Write([]byte(ctx.ReadString()))
+		}
+	}()
 
 	connRdr := iobus.Config{
 		CloseOnEOF: true,
 	}.NewReader(conn)
 	for m := range connRdr.Out {
-		fmt.Print(string(m))
+		ctx.Write(m)
 	}
+	done = true
 	return nil
 }
 
-func getSock(in <-chan []byte) (string, error) {
+func getSock(ctx cli.Context) (string, error) {
 	local, err := filepath.Glob("*.sock")
 	if err != nil {
 		return "", err
@@ -55,17 +56,17 @@ func getSock(in <-chan []byte) (string, error) {
 
 	all := append(local, tmp...)
 	if len(all) == 0 {
-		fmt.Println("No sockets found")
+		ctx.WriteString("No sockets found")
 		return "", nil
 	}
 
-	fmt.Println("  Sockets:")
+	ctx.WriteString("  Sockets:\n")
 	for i, s := range all {
-		fmt.Printf("    %d\t%s\n", i, s)
+		is := strconv.Itoa(i)
+		ctx.WriteStrings("    ", is, "\t", s, "\n")
 	}
-	fmt.Print("(socket) ")
-	b := <-in
-	idx, err := strconv.Atoi(string(b))
+	var idx int
+	ctx.Input("(socket) ", &idx)
 	if err == nil && idx < len(all) {
 		return all[idx], nil
 	}
