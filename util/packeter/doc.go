@@ -1,3 +1,3 @@
 // Package packeter defines the interfaces for framing messages in a stream of
-// bytes.
+// bytes. Implementations are in its subpackages.
 package packeter
