@@ -132,14 +132,16 @@ type HandlerLister interface {
 	Handlers(*Runner) []any
 }
 
-func NewRunner(c Commander) *Runner {
+func NewRunner(c Commander, ctx Context) *Runner {
 	rnr := &Runner{
 		Commands:  c.Commands(),
 		ExitClose: c.EC(),
 		Timeout:   25,
+		Prompt:    "> ",
 		InputProc: func(s string) []string {
 			return strings.Split(strings.TrimSpace(s), " ")
 		},
+		Context: ctx,
 	}
 
 	if hl, ok := upgrade.To[HandlerLister](c); ok {
