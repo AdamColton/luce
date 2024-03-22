@@ -47,9 +47,5 @@ func (m *Modes) Commands() *handler.Commands {
 }
 
 func (m *Modes) Handlers(rnr *cli.Runner) []any {
-	return append(m.Luce.Handlers(rnr),
-		func(u *UnixsocketResp) {
-			rnr.WriteString("Unixsocket closed")
-		},
-	)
+	return m.Luce.Handlers(rnr)
 }
