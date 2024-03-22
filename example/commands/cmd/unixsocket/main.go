@@ -5,8 +5,11 @@ import (
 	"time"
 
 	"github.com/adamcolton/luce/ds/bus/iobus"
+	"github.com/adamcolton/luce/ds/channel"
 	"github.com/adamcolton/luce/example/commands/logic"
 	"github.com/adamcolton/luce/util/cli"
+	"github.com/adamcolton/luce/util/packeter"
+	"github.com/adamcolton/luce/util/packeter/prefix"
 	"github.com/adamcolton/luce/util/unixsocket"
 )
 
@@ -19,11 +22,16 @@ func main() {
 		)
 		ho := logic.New(ec)
 		r := ho.Runner()
-		rdr := iobus.Config{
+		rw := iobus.Config{
 			Sleep: time.Millisecond,
-		}.NewReader(conn)
+		}.NewReadWriter(conn)
 
-		r.Context = cli.NewContext(conn, rdr.Out, nil)
+		rwPipe, _, _ := channel.NewPipe(rw.In, rw.Out)
+		prefixPipe := packeter.Run(prefix.New[uint32](), rwPipe)
+
+		w := channel.Writer{prefixPipe.Out}
+
+		r.Context = cli.NewContext(w, prefixPipe.In, nil)
 		r.Run()
 	})
 
