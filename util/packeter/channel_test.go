@@ -72,3 +72,88 @@ func TestPipesDoNotClose(t *testing.T) {
 	default:
 	}
 }
+
+func TestRun(t *testing.T) {
+	pre := prefix.New[uint32]()
+	pipeTx, snd, rcv := channel.NewPipe[[]byte](nil, nil)
+	pipeOut := packeter.Run(pre, pipeTx)
+
+	data := []byte("this is a test")
+	go func() {
+		for r := range rcv {
+			snd <- r
+		}
+		close(snd)
+	}()
+
+	timeout.Must(1000, func() {
+		pipeOut.Snd <- data
+		got := <-pipeOut.Rcv
+		assert.Equal(t, data, got)
+
+		// This confirms that all pipes close correctly
+		close(pipeOut.Snd)
+		assert.Nil(t, <-rcv)
+		assert.Nil(t, <-pipeOut.Rcv)
+		assert.Nil(t, <-pipeTx.Rcv)
+	})
+}
+
+// unpackFunc is an Unpacker that is not also a Packer.
+type unpackFunc func([]byte) [][]byte
+
+func (fn unpackFunc) Unpack(data []byte) [][]byte {
+	return fn(data)
+}
+
+func TestRunPackOnly(t *testing.T) {
+	pipeTx, _, rcv := channel.NewPipe[[]byte](nil, nil)
+	// prefix.Packer is a Packer and not an Unpacker.
+	pipeOut := packeter.Run(&prefix.Packer[uint32]{}, pipeTx)
+	assert.Nil(t, pipeOut.Rcv)
+
+	data := []byte("this is a test")
+	timeout.Must(1000, func() {
+		pipeOut.Snd <- data
+		// the length prefix, then the data
+		assert.Len(t, <-rcv, 4)
+		assert.Equal(t, data, <-rcv)
+
+		close(pipeOut.Snd)
+		assert.Nil(t, <-rcv)
+	})
+}
+
+func TestRunUnpackOnly(t *testing.T) {
+	pipeTx, snd, _ := channel.NewPipe[[]byte](nil, nil)
+	// One chunk can complete more than one message.
+	twice := unpackFunc(func(data []byte) [][]byte {
+		return [][]byte{data, data}
+	})
+	pipeOut := packeter.Run(twice, pipeTx)
+	assert.Nil(t, pipeOut.Snd)
+
+	data := []byte("this is a test")
+	timeout.Must(1000, func() {
+		snd <- data
+		assert.Equal(t, data, <-pipeOut.Rcv)
+		assert.Equal(t, data, <-pipeOut.Rcv)
+
+		close(snd)
+		assert.Nil(t, <-pipeOut.Rcv)
+	})
+}
+
+func TestRunNothingToDo(t *testing.T) {
+	pipeTx, _, _ := channel.NewPipe[[]byte](nil, nil)
+
+	// Neither a Packer nor an Unpacker
+	pipeOut := packeter.Run(struct{}{}, pipeTx)
+	assert.Nil(t, pipeOut.Snd)
+	assert.Nil(t, pipeOut.Rcv)
+
+	// A Packer and an Unpacker, but no channels to connect them to
+	pipeOut = packeter.Run(prefix.New[uint32](), channel.Pipe[[]byte]{})
+	assert.Nil(t, pipeOut.Snd)
+	assert.Nil(t, pipeOut.Rcv)
+}
