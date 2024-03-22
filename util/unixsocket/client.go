@@ -26,10 +26,16 @@ func Client(ctx cli.Context) error {
 
 	//TODO: this ends up consuming one input on close
 	//need a better way
+	cancel := make(chan bool)
 	done := false
 	go func() {
-		for !done {
-			conn.Write([]byte(ctx.ReadString()))
+		for {
+			str := ctx.ReadString(cancel)
+			if done {
+				break
+			} else {
+				conn.Write([]byte(str))
+			}
 		}
 	}()
 
@@ -40,6 +46,7 @@ func Client(ctx cli.Context) error {
 		ctx.Write(m)
 	}
 	done = true
+	cancel <- true
 	return nil
 }
 
