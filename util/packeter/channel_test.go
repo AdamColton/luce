@@ -6,6 +6,7 @@ import (
 	"github.com/adamcolton/luce/ds/channel"
 	"github.com/adamcolton/luce/util/packeter"
 	"github.com/adamcolton/luce/util/packeter/prefix"
+	"github.com/adamcolton/luce/util/timeout"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,4 +32,31 @@ func TestUnpackPipe(t *testing.T) {
 	go packeter.UnpackPipe(pre, pip, true)
 	assert.Equal(t, data, <-rcv)
 	close(snd)
+}
+
+func TestRun(t *testing.T) {
+	pre := prefix.New[uint32]()
+	pipeTx, snd, rcv := channel.NewPipe[[]byte](nil, nil)
+	pipeOut := packeter.Run(pre, pipeTx)
+
+	data := []byte("this is a test")
+	go func() {
+		for r := range rcv {
+			snd <- r
+		}
+		close(snd)
+	}()
+
+	timeout.Must(10, func() {
+		pipeOut.Snd <- data
+		got := <-pipeOut.Rcv
+		assert.Equal(t, data, got)
+
+		// This confirms that all pipes close correctly
+		close(pipeOut.Snd)
+		assert.Nil(t, <-rcv)
+		assert.Nil(t, <-pipeOut.Rcv)
+		assert.Nil(t, <-pipeTx.Rcv)
+	})
+
 }
