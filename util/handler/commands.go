@@ -4,88 +4,179 @@ import (
 	"io"
 	"strings"
 
+	"github.com/adamcolton/luce/ds/idx/hierarchy"
 	"github.com/adamcolton/luce/ds/slice"
-	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/iter"
-	"github.com/adamcolton/luce/util/lstr"
 	"github.com/adamcolton/luce/util/luceio"
 )
 
-type Commands struct {
-	lookup   map[string]int
-	cmds     []Command
-	handlers []Handler
-	names    []string
-}
+type hid int
 
-func Must(commands []Command) *Commands {
-	cmds, err := Cmds(commands)
-	lerr.Panic(err)
-	return cmds
+type Commands struct {
+	cmds     map[hid]*Command
+	handlers map[hid]*Handler
+	h        *hierarchy.Hierarchy[hid, string]
+	byId     map[hid]int
+	alias    map[string]hid
 }
 
 func Cmds(commands []Command) (*Commands, error) {
-	ln := len(commands)
+	// todo: get len w/ subcommands
+	ln := cmdsLen(commands)
 	out := &Commands{
-		cmds:     commands,
-		lookup:   make(map[string]int, ln),
-		handlers: make([]Handler, ln),
-		names:    make([]string, ln),
+		cmds:     make(map[hid]*Command, ln),
+		handlers: make(map[hid]*Handler, ln),
+		h:        hierarchy.New[hid, string](ln),
+		byId:     make(map[hid]int, ln),
+		alias:    make(map[string]hid),
 	}
-	for i := range commands {
-		c := &(commands[i])
+	err := out.addCmds(0, commands)
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func cmdsLen(commands []Command) int {
+	out := len(commands)
+	for _, c := range commands {
+		if len(c.Subcmds) > 0 {
+			out += cmdsLen(c.Subcmds)
+		}
+	}
+	return out
+}
+
+func (cs *Commands) addCmds(id hid, commands []Command) error {
+	for _, c := range commands {
+		cid, _ := cs.h.Key(id, c.Name, true)
 		h, err := New(c.Action)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		out.lookup[c.Name] = i
-		out.handlers[i] = *h
-		out.names[i] = c.Name
+		if c.Alias != "" {
+			cs.alias[c.Alias] = cid
+		}
+		cp := c
+		cs.cmds[cid] = &cp
+		cs.handlers[cid] = h
+		err = cs.addCmds(cid, c.Subcmds)
+		if err != nil {
+			return err
+		}
 	}
-	return out, nil
+	return nil
 }
 
 func (cs *Commands) Switch() (*Switch, error) {
 	s := NewSwitch(len(cs.cmds))
-	for i := range cs.cmds {
-		s.RegisterHandler(&cs.handlers[i])
+	for _, h := range cs.handlers {
+		s.RegisterHandler(h)
 	}
 	return s, nil
 }
 
-func (cs *Commands) Names() []string {
-	return cs.names
-}
-
-func (cs *Commands) Get(name string) (*Command, *Handler) {
-	idx, found := cs.lookup[name]
+func (cs *Commands) Get(path []string) (*Command, *Handler) {
+	cid, found := cs.h.Get(path, false)
+	if !found && len(path) == 1 {
+		cid, found = cs.alias[path[0]]
+	}
 	if !found {
 		return nil, nil
 	}
-	return &cs.cmds[idx], &cs.handlers[idx]
+	return cs.cmds[cid], cs.handlers[cid]
 }
 
-var maxStr = iter.Max(lstr.Len)
+// Seek consumes 'path' until no command is found. The int indicates the
+// number of strings used. This allows a full line of input to be passed into
+// Seek and the remainder can be processed as arguments.
+func (cs *Commands) Seek(path []string) (*Command, *Handler, int) {
+	var cid, next hid
+	var found bool
+	i := 0
+	for ; i < len(path); i++ {
+		next, found = cs.h.Key(cid, path[i], false)
+		if found {
+			cid = next
+		} else {
+			break
+		}
+	}
 
-func (cs *Commands) WriteTo(w io.Writer) (int64, error) {
-	// TODO: add Len function to lstr
-	// then similar in slice as func[T any] Len(s []T) int {return len(s)}
-	// same in channel
-	ln := maxStr.Iter(0, slice.NewIter(cs.names)) + 3
+	if i == 0 {
+		cid, found = cs.alias[path[0]]
+		if found {
+			i = 1
+		}
+	}
 
+	return cs.cmds[cid], cs.handlers[cid], i
+}
+
+// make public add options (padding, newline, recursive)
+type CommandWriter struct {
+	Padding   string
+	Recursive bool
+	cid       hid
+	cmds      *Commands
+}
+
+func (cs *Commands) Writer(path []string) *CommandWriter {
+	cid, found := cs.h.Get(path, false)
+	if !found {
+		return nil
+	}
+	return &CommandWriter{
+		Padding: "   ",
+		cid:     cid,
+		cmds:    cs,
+	}
+}
+
+var maxNameLen = iter.Max(func(c *Command) int { return len(c.Name) })
+
+func (cw *CommandWriter) WriteTo(w io.Writer) (n int64, err error) {
 	sw := luceio.NewSumWriter(w)
-	sep := ""
-	for _, n := range cs.names {
-		if n == "" {
+	cw.writeTo(cw.Padding, "", sw)
+	return sw.Rets()
+}
+
+func (cw *CommandWriter) writeTo(basePadding, sep string, sw *luceio.SumWriter) {
+	cmdNames := cw.cmds.h.Children[cw.cid]
+	cmds := make(slice.Slice[*Command], 0, cmdNames.Len())
+	cmdNames.Each(func(name string) {
+		id, _ := cw.cmds.h.Key(cw.cid, name, false)
+		cmds = append(cmds, cw.cmds.cmds[id])
+	})
+	cmds.Sort(func(i, j *Command) bool {
+		return i.Name < j.Name
+	})
+
+	ln := maxNameLen.Iter(0, cmds.Iter()) + 3
+
+	for _, c := range cmds {
+		if c.Name == "" {
 			continue
 		}
 		sw.WriteString(sep)
 		sep = "\n"
-		sw.WriteStrings("   ", n)
-		if cmd, _ := cs.Get(n); cmd.Usage != "" {
-			sw.WriteStrings(strings.Repeat(" ", ln-len(n)), cmd.Usage)
+		sw.WriteStrings(cw.Padding, c.Name)
+		if c.Usage != "" || c.Alias != "" {
+			sw.WriteStrings(strings.Repeat(" ", ln-len(c.Name)))
+			if c.Alias != "" {
+				sw.WriteStrings("(", c.Alias, ")")
+			}
+			sw.WriteString(c.Usage)
+		}
+		if cw.Recursive {
+			id, _ := cw.cmds.h.Key(cw.cid, c.Name, false)
+			(&CommandWriter{
+				Padding:   cw.Padding + basePadding,
+				Recursive: true,
+				cid:       id,
+				cmds:      cw.cmds,
+			}).writeTo(basePadding, sep, sw)
 		}
 	}
-
-	return sw.Rets()
 }
