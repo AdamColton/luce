@@ -62,6 +62,36 @@ func LCM[T constraints.Integer](a, b T) T {
 	return (a / GCD(a, b)) * b
 }
 
+func LCMN[T constraints.Integer](ns ...T) T {
+	return Compound(LCM, ns)
+}
+
+func ProdFn[T constraints.Integer](a, b T) T {
+	return a * b
+}
+
+func SumFn[T constraints.Integer](a, b T) T {
+	return a + b
+}
+
+func Prod[T constraints.Integer](ns ...T) T {
+	if len(ns) == 0 {
+		return 1
+	}
+	return Compound(ProdFn, ns)
+}
+
+func Compound[T constraints.Integer](fn func(a, b T) T, ts []T) (t T) {
+	if len(ts) == 0 {
+		return
+	}
+	t = ts[0]
+	for _, ti := range ts[1:] {
+		t = fn(t, ti)
+	}
+	return
+}
+
 func Int[T constraints.Integer](i T) int     { return int(i) }
 func Int8[T constraints.Integer](i T) int8   { return int8(i) }
 func Int16[T constraints.Integer](i T) int16 { return int16(i) }
