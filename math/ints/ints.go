@@ -80,3 +80,39 @@ func GCDX[T constraints.Integer](a, b T) (gcd, x, y T) {
 func LCM[T constraints.Integer](a, b T) T {
 	return (a / GCD(a, b)) * b
 }
+
+// Int converts any integer type to an int
+func Int[T constraints.Integer](i T) int { return int(i) }
+
+// Int8 converts any integer type to an int8
+func Int8[T constraints.Integer](i T) int8 { return int8(i) }
+
+// Int16 converts any integer type to an int16
+func Int16[T constraints.Integer](i T) int16 { return int16(i) }
+
+// Int32 converts any integer type to an int32
+func Int32[T constraints.Integer](i T) int32 { return int32(i) }
+
+// Int64 converts any integer type to an int64
+func Int64[T constraints.Integer](i T) int64 { return int64(i) }
+
+// Uint converts any integer type to an uint
+func Uint[T constraints.Integer](i T) uint { return uint(i) }
+
+// Uint8 converts any integer type to an uint8
+func Uint8[T constraints.Integer](i T) uint8 { return uint8(i) }
+
+// Uint16 converts any integer type to an uint16
+func Uint16[T constraints.Integer](i T) uint16 { return uint16(i) }
+
+// Uint32 converts any integer type to an uint32
+func Uint32[T constraints.Integer](i T) uint32 { return uint32(i) }
+
+// Uint64 converts any integer type to an uint64
+func Uint64[T constraints.Integer](i T) uint64 { return uint64(i) }
+
+// Float32 converts any integer type to an float32
+func Float32[T constraints.Integer](i T) float32 { return float32(i) }
+
+// Float64 converts any integer type to an float64
+func Float64[T constraints.Integer](i T) float64 { return float64(i) }
