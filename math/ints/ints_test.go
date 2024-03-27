@@ -103,3 +103,25 @@ func testConversions[I constraints.Integer](t *testing.T, five I) {
 	assert.Equal(t, float32(5), ints.Float32(five))
 	assert.Equal(t, float64(5), ints.Float64(five))
 }
+
+func TestLCMN(t *testing.T) {
+	s := []int{
+		2 * 5 * 7,
+		2 * 3 * 7,
+		2 * 3 * 5,
+		3 * 5 * 7,
+	}
+	assert.Equal(t, 2*3*5*7, ints.LCMN(s...))
+}
+
+func TestProd(t *testing.T) {
+	assert.Equal(t, 1, ints.Prod[int]())
+	assert.Equal(t, 24, ints.Prod(1, 2, 3, 4))
+}
+
+func TestCompoundZero(t *testing.T) {
+	assert.Equal(t, 0, ints.Compound(ints.SumFn, []int{}))
+	assert.Equal(t, 1, ints.Compound(ints.SumFn, []int{1}))
+	assert.Equal(t, 3, ints.Compound(ints.SumFn, []int{1, 2}))
+	assert.Equal(t, 6, ints.Compound(ints.SumFn, []int{1, 2, 3}))
+}
