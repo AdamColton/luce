@@ -122,3 +122,25 @@ func TestReduce(t *testing.T) {
 	got = ints.Reduce(ints.GCD, []int{})
 	assert.Equal(t, 0, got)
 }
+
+func TestLCMN(t *testing.T) {
+	s := []int{
+		2 * 5 * 7,
+		2 * 3 * 7,
+		2 * 3 * 5,
+		3 * 5 * 7,
+	}
+	assert.Equal(t, 2*3*5*7, ints.LCMN(s...))
+}
+
+func TestProd(t *testing.T) {
+	assert.Equal(t, 1, ints.Prod[int]())
+	assert.Equal(t, 24, ints.Prod(1, 2, 3, 4))
+}
+
+func TestCompoundZero(t *testing.T) {
+	assert.Equal(t, 0, ints.Reduce(ints.SumFn, []int{}))
+	assert.Equal(t, 1, ints.Reduce(ints.SumFn, []int{1}))
+	assert.Equal(t, 3, ints.Reduce(ints.SumFn, []int{1, 2}))
+	assert.Equal(t, 6, ints.Reduce(ints.SumFn, []int{1, 2, 3}))
+}

@@ -81,6 +81,29 @@ func LCM[T constraints.Integer](a, b T) T {
 	return (a / GCD(a, b)) * b
 }
 
+// LCMN finds the least common multiple of all integers in ns
+func LCMN[T constraints.Integer](ns ...T) T {
+	return Reduce(LCM, ns)
+}
+
+// ProdFn wraps a*b as a function
+func ProdFn[T Number](a, b T) T {
+	return a * b
+}
+
+// SumFn wraps a+b as a function.
+func SumFn[T Number](a, b T) T {
+	return a + b
+}
+
+// Prod returns the product of all integers in ns
+func Prod[T Number](ns ...T) T {
+	if len(ns) == 0 {
+		return 1
+	}
+	return Reduce(ProdFn, ns)
+}
+
 // Int converts any integer type to an int
 func Int[T constraints.Integer](i T) int { return int(i) }
 
