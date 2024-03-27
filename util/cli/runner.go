@@ -51,21 +51,25 @@ func (r *Runner) Static(input []string) {
 	time.Sleep(time.Millisecond)
 }
 
-func (r *Runner) ShowCommands() {
-	r.Commands.WriteTo(r)
+func (r *Runner) ShowCommands(path []string) {
+	r.Commands.Writer(path).WriteTo(r)
+}
+
+type Initer interface {
+	Init(input []string)
 }
 
 func (r *Runner) handleInput(input []string) {
 	if len(input) == 0 {
 		return
 	}
-	cmdName, input := input[0], input[1:]
-
-	_, h := r.Commands.Get(cmdName)
+	_, h, idx := r.Commands.Seek(input)
+	cmds, input := input[:idx], input[idx:]
 	if h == nil {
-		_, h = r.Commands.Get("")
+		_, h = r.Commands.Get([]string{""})
 		if h == nil {
-			r.WriteStrings("unknown command: ", cmdName)
+			r.WriteString("unknown command: ")
+			r.WriteStrings(input...)
 			return
 		}
 	}
@@ -77,13 +81,15 @@ func (r *Runner) handleInput(input []string) {
 		s = reflector.Make(h.Type())
 		si = s.Interface()
 
-		if len(input) > 0 {
+		if initer, ok := si.(Initer); ok {
+			initer.Init(input)
+		} else if len(input) > 0 {
 			_, fields := parseCmd(input)
 			for k, v := range fields {
 				r.Parser().ParseValueFieldName(s, k, v)
 			}
 		} else {
-			ok := r.PopulateStruct(cmdName, si)
+			ok := r.PopulateStruct(cmds[idx-1], si)
 			if !ok {
 				return
 			}
