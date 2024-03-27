@@ -90,6 +90,31 @@ func LCM[T constraints.Integer](a, b T) T {
 	return (a / GCD(a, b)) * b
 }
 
+// LCMN finds the least common multiple of all integers in ns. It returns 0 if
+// ns is empty.
+func LCMN[T constraints.Integer](ns ...T) T {
+	return Reduce(LCM, ns)
+}
+
+// ProdFn wraps a*b as a function
+func ProdFn[T Number](a, b T) T {
+	return a * b
+}
+
+// SumFn wraps a+b as a function.
+func SumFn[T Number](a, b T) T {
+	return a + b
+}
+
+// Prod returns the product of all the numbers in ns. It returns 1 if ns is
+// empty.
+func Prod[T Number](ns ...T) T {
+	if len(ns) == 0 {
+		return 1
+	}
+	return Reduce(ProdFn, ns)
+}
+
 // Int converts any integer type to an int. This and the other conversion
 // functions truncate a value that does not fit in the result type, as a Go
 // conversion does.
