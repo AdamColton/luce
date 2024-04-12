@@ -18,6 +18,26 @@ func (t Tolerance) Zero(x float64) bool {
 	return z < t && z > -t
 }
 
+// Unique takes a sorted list and returns all the unique values where two
+// values within Tolerance of eachother are considered equal.
+func (t Tolerance) Unique(s []float64) []float64 {
+	if len(s) < 2 {
+		return s
+	}
+	cur := 0
+	next := 1
+	for next < len(s) {
+		if t.Equal(s[cur], s[next]) {
+			next++
+		} else {
+			cur++
+			s[cur] = s[next]
+			next++
+		}
+	}
+	return s[:cur+1]
+}
+
 // Equal returns true if a and b are within the DefaultTolerance of eachother.
 func Equal(a, b float64) bool {
 	return DefaultTolerance.Equal(a, b)
