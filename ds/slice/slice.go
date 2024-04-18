@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/adamcolton/luce/math/cmpr"
+	"github.com/adamcolton/luce/math/ints"
 	"github.com/adamcolton/luce/util/liter"
 )
 
@@ -40,8 +41,12 @@ func (s Slice[T]) Clone(cp int) Slice[T] {
 	return out
 }
 
-// Swap swaps two values in the slice.
+// Swap swaps two values in the slice. The indexes are relative (see Idx) so a value
+// of -1 refers to the last element. It will panic if either index is out of
+// range.
 func (s Slice[T]) Swap(i, j int) {
+	i, _ = s.Idx(i)
+	j, _ = s.Idx(j)
 	s[i], s[j] = s[j], s[i]
 }
 
@@ -200,6 +205,12 @@ func (s Slice[T]) Search(fn func(T) bool) int {
 // IdxCheck returns false if idx is out of the range of s.
 func (s Slice[T]) IdxCheck(idx int) bool {
 	return idx >= 0 && idx < len(s)
+}
+
+// Idx provides a relative index to the slice. So a value of -1 will return
+// the last index. The bool indicates if the index is in range.
+func (s Slice[T]) Idx(idx int) (int, bool) {
+	return ints.Idx(idx, len(s))
 }
 
 // Sort wraps Less.Sort. Sorts the Slice in place. The slice is also returned
