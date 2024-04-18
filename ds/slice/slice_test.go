@@ -351,3 +351,44 @@ func TestTransform(t *testing.T) {
 	got = slice.Transform(in.Iter(), fn)
 	assert.Nil(t, got)
 }
+
+func TestIdx(t *testing.T) {
+	s := slice.Slice[int]{3, 1, 4, 1, 5}
+	tt := map[int]struct {
+		expected int
+		ok       bool
+	}{
+		0: {
+			expected: 0,
+			ok:       true,
+		},
+		4: {
+			expected: 4,
+			ok:       true,
+		},
+		5: {
+			expected: 5,
+			ok:       false,
+		},
+		-1: {
+			expected: 4,
+			ok:       true,
+		},
+		-5: {
+			expected: 0,
+			ok:       true,
+		},
+		-6: {
+			expected: -1,
+			ok:       false,
+		},
+	}
+
+	for n, tc := range tt {
+		t.Run(strconv.Itoa(n), func(t *testing.T) {
+			idx, ok := s.Idx(n)
+			assert.Equal(t, tc.expected, idx)
+			assert.Equal(t, tc.ok, ok)
+		})
+	}
+}
