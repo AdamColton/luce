@@ -47,6 +47,27 @@ func CanNil(k reflect.Kind) bool {
 		k == reflect.Slice
 }
 
+// CanElem returns true if it is safe to call Elem on k.
+func CanElem(k reflect.Kind) bool {
+	return k == reflect.Array ||
+		k == reflect.Chan ||
+		k == reflect.Map ||
+		k == reflect.Pointer ||
+		k == reflect.Slice
+}
+
+// Elem calls t.Elem if it is safe to do so.
+func Elem(t reflect.Type) (out reflect.Type, ok bool) {
+	if t == nil {
+		return
+	}
+	ok = CanElem(t.Kind())
+	if ok {
+		out = t.Elem()
+	}
+	return
+}
+
 // IsNil reports whether its argument t is nil. Unlike the underlying t.IsNil,
 // it will not panic.
 func IsNil(t reflect.Value) bool {
