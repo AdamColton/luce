@@ -171,3 +171,46 @@ func TestMake(t *testing.T) {
 	p := reflector.Make(pt.Elem()).Interface().(Person)
 	p.Name = "Lauren"
 }
+
+func TestCanElem(t *testing.T) {
+	tt := make(map[reflect.Kind]bool, int(reflect.UnsafePointer))
+	for k := reflect.Kind(1); k <= reflect.UnsafePointer; k++ {
+		tt[k] = false
+	}
+	tt[reflect.Array] = true
+	tt[reflect.Chan] = true
+	tt[reflect.Map] = true
+	tt[reflect.Pointer] = true
+	tt[reflect.Slice] = true
+	for n, tc := range tt {
+		t.Run(n.String(), func(t *testing.T) {
+			assert.Equal(t, tc, reflector.CanElem(n))
+		})
+	}
+}
+
+func TestElem(t *testing.T) {
+	tt := map[reflect.Type]bool{
+		reflector.Type[string]():         false,
+		reflector.Type[[]int]():          true,
+		reflector.Type[int]():            false,
+		reflector.Type[map[int]string](): true,
+		nil:                              false,
+	}
+
+	name := func(t reflect.Type) string {
+		if t == nil {
+			return "nil"
+		}
+		return t.Name()
+	}
+
+	for n, tc := range tt {
+		t.Run(name(n), func(t *testing.T) {
+			e, ok := reflector.Elem(n)
+			if assert.Equal(t, tc, ok) && tc {
+				assert.Equal(t, n.Elem(), e)
+			}
+		})
+	}
+}
