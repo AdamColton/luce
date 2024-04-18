@@ -29,3 +29,14 @@ func TestErrHandlerCheck(t *testing.T) {
 	assert.True(t, none.Check(w, r, boom))
 	assert.False(t, none.Check(w, r, nil))
 }
+
+type statusError struct{ status int }
+
+func (e statusError) Error() string { return "status error" }
+func (e statusError) Status() int   { return e.status }
+
+func TestErrStatus(t *testing.T) {
+	assert.Equal(t, 0, lhttp.ErrStatus(nil))
+	assert.Equal(t, http.StatusInternalServerError, lhttp.ErrStatus(errors.New("plain")))
+	assert.Equal(t, http.StatusNotFound, lhttp.ErrStatus(statusError{http.StatusNotFound}))
+}
