@@ -47,4 +47,12 @@ func TestInGroup(t *testing.T) {
 	assert.True(t, u.In("bar"))
 	assert.True(t, u.In("glorp"))
 	assert.False(t, u.In("baz"))
+
+	assert.True(t, u.OneRequired([]string{"foo", "baz"}))
+	assert.False(t, u.OneRequired([]string{"foot", "baz"}))
+
+	u = nil
+	assert.True(t, u.OneRequired(nil))
+	assert.False(t, u.OneRequired([]string{"foo"}))
+	assert.False(t, u.In("foo"))
 }
