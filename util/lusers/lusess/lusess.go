@@ -72,6 +72,26 @@ func (s *Store) Session(w http.ResponseWriter, r *http.Request) (*Session, error
 	}, nil
 }
 
+// User reads the logged-in User out of r's session, without a
+// ResponseWriter (so it cannot Save). It returns nil, nil if no user is
+// logged in, including when r's session cookie names a session the Store
+// can no longer load.
+func (s *Store) User(r *http.Request) (*lusers.User, error) {
+	sess, err := s.Get(r, StoreName)
+	if sess == nil {
+		return nil, err
+	}
+	lerr.Log(err)
+
+	i := sess.Values[ValueName]
+	if i == nil {
+		return nil, nil
+	}
+	u, _ := i.(*lusers.User)
+	return u, nil
+
+}
+
 // Login decodes r's POST form into a Login, authenticates it against s's
 // UserStore, and, on success, sets the logged-in User on r's Session and
 // saves it. On failure the session is left unchanged and not saved.
