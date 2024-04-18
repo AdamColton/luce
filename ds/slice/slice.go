@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/adamcolton/luce/math/cmpr"
+	"github.com/adamcolton/luce/math/ints"
 	"github.com/adamcolton/luce/util/liter"
 )
 
@@ -187,6 +188,12 @@ func (s Slice[T]) Search(fn func(T) bool) int {
 // IdxCheck returns false if idx is out of the range of s.
 func (s Slice[T]) IdxCheck(idx int) bool {
 	return idx >= 0 && idx < len(s)
+}
+
+// Idx provides a relative index to the slice. So a value of -1 will return
+// the last index. The bool indicates if the index is in range.
+func (s Slice[T]) Idx(idx int) (int, bool) {
+	return ints.Idx(idx, len(s))
 }
 
 // Sort wraps slice.Sort. Sorts the Slice in place. The slice is also returned
