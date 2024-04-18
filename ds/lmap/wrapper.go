@@ -1,5 +1,7 @@
 package lmap
 
+import "fmt"
+
 type Wrapper[K comparable, V any] struct {
 	Mapper[K, V]
 }
@@ -19,4 +21,20 @@ func (w Wrapper[K, V]) Wrapped() any {
 func (w Wrapper[K, V]) GetVal(key K) V {
 	t, _ := w.Get(key)
 	return t
+}
+
+func (w Wrapper[K, V]) Pop(key K) (V, bool) {
+	v, found := w.Get(key)
+	if found {
+		w.Delete(key)
+	}
+	return v, found
+}
+
+func (w Wrapper[K, V]) MustPop(key K) V {
+	v, ok := w.Pop(key)
+	if !ok {
+		panic(fmt.Errorf("failed to pop key: %v", key))
+	}
+	return v
 }
