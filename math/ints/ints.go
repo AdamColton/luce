@@ -92,6 +92,15 @@ func Compound[T constraints.Integer](fn func(a, b T) T, ts []T) (t T) {
 	return
 }
 
+// Idx provides a relative index to the given length. So a value of -1 will
+// return the ln-1. The bool indicates if the index is in range.
+func Idx(idx, ln int) (int, bool) {
+	if idx < 0 {
+		idx = ln + idx
+	}
+	return idx, idx >= 0 && idx < ln
+}
+
 func Int[T constraints.Integer](i T) int     { return int(i) }
 func Int8[T constraints.Integer](i T) int8   { return int8(i) }
 func Int16[T constraints.Integer](i T) int16 { return int16(i) }
