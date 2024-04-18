@@ -16,6 +16,7 @@ type MapFilter[K comparable, V any] struct {
 // needs the Each method.
 type Mapper[K comparable, V any] interface {
 	Each(lmap.EachFunc[K, V])
+	Delete(K)
 }
 
 // NewMap creates a Map filter from the provided filters.
@@ -92,4 +93,14 @@ func (mf MapFilter[K, V]) Map(m Mapper[K, V], to lmap.Mapper[K, V]) lmap.Wrapper
 		}
 	})
 	return lmap.Wrap(to)
+}
+
+// Purge removes all the pairs from m for which the filter returns false. It
+// returns the keys that were removed, using buf if it has sufficient capacity.
+func (mf MapFilter[K, V]) Purge(m Mapper[K, V], buf []K) slice.Slice[K] {
+	rm, _ := mf.Slice(m, buf, nil, ReturnKeys|InverseKeys)
+	for _, k := range rm {
+		m.Delete(k)
+	}
+	return rm
 }
