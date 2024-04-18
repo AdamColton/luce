@@ -1,5 +1,7 @@
 package lmap
 
+import "fmt"
+
 // Wrapper provides helpers around a Mapper.
 type Wrapper[K comparable, V any] struct {
 	Mapper[K, V]
@@ -41,4 +43,27 @@ func (w Wrapper[K, V]) Len() int {
 		return 0
 	}
 	return w.Mapper.Len()
+}
+
+// Pop removes a key from the map and returns the value associated with it
+// along a with a bool indicating if the key was found.
+func (w Wrapper[K, V]) Pop(key K) (v V, found bool) {
+	if w.Mapper == nil {
+		return
+	}
+	v, found = w.Get(key)
+	if found {
+		w.Delete(key)
+	}
+	return
+}
+
+// MustPop removes a key from the map and returns the value associated with
+// it. It will panic nad the key is not found.
+func (w Wrapper[K, V]) MustPop(key K) V {
+	v, ok := w.Pop(key)
+	if !ok {
+		panic(fmt.Errorf("failed to pop key: %v", key))
+	}
+	return v
 }
