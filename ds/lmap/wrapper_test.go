@@ -18,3 +18,28 @@ func TestWrapped(t *testing.T) {
 
 	assert.Equal(t, w.Mapper, w.Wrapped())
 }
+
+func TestPop(t *testing.T) {
+	m := lmap.New(map[rune]string{
+		'a': "apple",
+		'b': "banana",
+		'c': "cantaloupe",
+	})
+	got, ok := m.Pop('b')
+	assert.True(t, ok)
+	assert.Equal(t, "banana", got)
+	_, ok = m.Get('b')
+	assert.False(t, ok)
+
+	got, ok = m.Pop('d')
+	assert.False(t, ok)
+	assert.Equal(t, "", got)
+
+	assert.Equal(t, "apple", m.MustPop('a'))
+
+	defer func() {
+		assert.Equal(t, "failed to pop key: 97", recover().(error).Error())
+	}()
+	m.MustPop('a')
+	t.Error("should not reach")
+}
