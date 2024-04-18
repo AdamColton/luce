@@ -55,3 +55,15 @@ func (mf Map[K, V]) Slice(m map[K]V, keyBuf []K, valBuf []V, flags MapSliceFlag)
 	}
 	return
 }
+
+func (mf Map[K, V]) Map(m, buf map[K]V) map[K]V {
+	if buf == nil {
+		buf = make(map[K]V)
+	}
+	for k, v := range m {
+		if mf.Filter(k, v) {
+			buf[k] = v
+		}
+	}
+	return buf
+}
