@@ -1,6 +1,7 @@
 package ints_test
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/adamcolton/luce/math/ints"
@@ -149,4 +150,44 @@ func TestRange(t *testing.T) {
 	assert.Equal(t, 5, ints.Range(0, 5, 10))
 	assert.Equal(t, 0, ints.Range(0, -1, 10))
 	assert.Equal(t, 10, ints.Range(0, 11, 10))
+}
+
+func TestIdx(t *testing.T) {
+	tt := map[int]struct {
+		expected int
+		ok       bool
+	}{
+		0: {
+			expected: 0,
+			ok:       true,
+		},
+		4: {
+			expected: 4,
+			ok:       true,
+		},
+		5: {
+			expected: 5,
+			ok:       false,
+		},
+		-1: {
+			expected: 4,
+			ok:       true,
+		},
+		-5: {
+			expected: 0,
+			ok:       true,
+		},
+		-6: {
+			expected: -1,
+			ok:       false,
+		},
+	}
+
+	for n, tc := range tt {
+		t.Run(strconv.Itoa(n), func(t *testing.T) {
+			idx, ok := ints.Idx(n, 5)
+			assert.Equal(t, tc.expected, idx)
+			assert.Equal(t, tc.ok, ok)
+		})
+	}
 }

@@ -104,6 +104,15 @@ func Prod[T Number](ns ...T) T {
 	return Reduce(ProdFn, ns)
 }
 
+// Idx provides a relative index to the given length. So a value of -1 will
+// return the ln-1. The bool indicates if the index is in range.
+func Idx(idx, ln int) (int, bool) {
+	if idx < 0 {
+		idx = ln + idx
+	}
+	return idx, idx >= 0 && idx < ln
+}
+
 // Range checks that x is within the defined range. If it is less than start,
 // start is returned. If it is greater than end, end is returned.
 func Range[T Number](start, x, end T) T {
