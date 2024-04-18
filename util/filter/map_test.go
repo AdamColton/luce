@@ -77,3 +77,24 @@ func TestMapSliceAndMap(t *testing.T) {
 	assert.Nil(t, ks)
 	assert.Nil(t, vs)
 }
+
+func TestPurge(t *testing.T) {
+	i := slice.New([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}).Iter()
+	intStrKV := func(i int) lmap.KeyVal[int, string] {
+		return lmap.NewKV(i, fmt.Sprintf("%02d", i))
+	}
+	mi := morph.NewValAll(intStrKV).Iter(i)
+
+	m := lmap.FromIter(mi)
+
+	f := filter.NewMap(func(i int) bool { return i%2 == 1 }, filter.Prefix("0"))
+	removed := f.Purge(m, nil)
+	sort.IntSlice(removed).Sort()
+
+	expectRm := slice.Slice[int]{2, 4, 6, 8, 10, 11, 12}
+	i = slice.Slice[int]{1, 3, 5, 7, 9}.Iter()
+	expected := lmap.FromIter(morph.NewValAll(intStrKV).Iter(i))
+
+	assert.Equal(t, expectRm, removed)
+	assert.Equal(t, expected, m)
+}
