@@ -79,3 +79,17 @@ func (mf MapFilter[K, V]) Slice(m Mapper[K, V], keyBuf []K, valBuf []V, flags Ma
 	})
 	return
 }
+
+// Map copies the pairs of m that pass the filter to a Mapper and returns it as
+// a Wrapper. If to is nil, a new map is used. Existing pairs in to are kept.
+func (mf MapFilter[K, V]) Map(m Mapper[K, V], to lmap.Mapper[K, V]) lmap.Wrapper[K, V] {
+	if to == nil {
+		to = lmap.New[K, V](nil)
+	}
+	m.Each(func(key K, val V, done *bool) {
+		if mf.Filter(key, val) {
+			to.Set(key, val)
+		}
+	})
+	return lmap.Wrap(to)
+}

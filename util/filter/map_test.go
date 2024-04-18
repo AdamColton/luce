@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMapSlice(t *testing.T) {
+func TestMapSliceAndMap(t *testing.T) {
 	i := slice.New([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}).Iter()
 	mi := morph.NewValAll(func(i int) lmap.KeyVal[int, string] {
 		return lmap.NewKV(i, fmt.Sprintf("%02d", i))
@@ -61,6 +61,14 @@ func TestMapSlice(t *testing.T) {
 			sort.StringSlice(vs).Sort()
 			assert.Equal(t, tc.keys, ks)
 			assert.Equal(t, expectedVals, vs)
+
+			m2 := tc.filter.Map(m, nil)
+			assert.Equal(t, m2.Len(), len(tc.keys))
+			for _, k := range tc.keys {
+				v, found := m2.Get(k)
+				assert.True(t, found)
+				assert.Equal(t, m.GetVal(k), v)
+			}
 		})
 	}
 
