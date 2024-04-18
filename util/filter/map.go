@@ -67,3 +67,11 @@ func (mf Map[K, V]) Map(m, buf map[K]V) map[K]V {
 	}
 	return buf
 }
+
+func (mf Map[K, V]) Purge(m map[K]V, buf []K) slice.Slice[K] {
+	rm, _ := mf.Slice(m, buf, nil, ReturnKeys|InverseKeys)
+	for _, k := range rm {
+		delete(m, k)
+	}
+	return rm
+}
