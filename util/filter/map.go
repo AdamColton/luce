@@ -74,3 +74,11 @@ func (mf Map[K, V]) Map(m Mapper[K, V], to lmap.Mapper[K, V]) lmap.Wrapper[K, V]
 	})
 	return lmap.Wrap(to)
 }
+
+func (mf Map[K, V]) Purge(m lmap.Mapper[K, V], buf []K) slice.Slice[K] {
+	rm, _ := mf.Slice(m, buf, nil, ReturnKeys|InverseKeys)
+	for _, k := range rm {
+		m.Delete(k)
+	}
+	return rm
+}
