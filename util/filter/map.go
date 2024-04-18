@@ -68,3 +68,15 @@ func (mf MapFilter[K, V]) Slice(m Mapper[K, V], keyBuf []K, valBuf []V, flags Ma
 	})
 	return
 }
+
+func (mf MapFilter[K, V]) Map(m Mapper[K, V], to lmap.Mapper[K, V]) lmap.Wrapper[K, V] {
+	if to == nil {
+		to = lmap.New[K, V](nil)
+	}
+	m.Each(func(key K, val V, done *bool) {
+		if mf.Filter(key, val) {
+			to.Set(key, val)
+		}
+	})
+	return lmap.Wrap(to)
+}
