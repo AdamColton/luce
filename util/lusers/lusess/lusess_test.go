@@ -65,6 +65,50 @@ func TestLogin(t *testing.T) {
 	assert.Equal(t, "User", c[0].Name)
 }
 
+func TestStoreUser(t *testing.T) {
+	str := newStore()
+
+	l := lusess.Login{
+		Username: "test-user",
+		Password: "test-password",
+	}
+	expected, err := str.Create(l.Username, l.Password)
+	assert.NoError(t, err)
+
+	// no session yet: no user, no error
+	fresh := httptest.NewRequest(http.MethodGet, "/", nil)
+	u, err := str.User(fresh)
+	assert.NoError(t, err)
+	assert.Nil(t, u)
+
+	r := loginRequest(l)
+	w := httptest.NewRecorder()
+	_, err = str.Login(w, r)
+	assert.NoError(t, err)
+
+	// replay the session cookie Login set
+	r2 := httptest.NewRequest(http.MethodGet, "/", nil)
+	for _, c := range w.Result().Cookies() {
+		r2.AddCookie(c)
+	}
+	u, err = str.User(r2)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, u)
+}
+
+func TestStoreSessionDecodeError(t *testing.T) {
+	str := newStore()
+
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
+	r.AddCookie(&http.Cookie{Name: lusess.StoreName, Value: "not a valid cookie"})
+
+	_, err := str.Session(nil, r)
+	assert.Error(t, err)
+
+	_, err = str.User(r)
+	assert.Error(t, err)
+}
+
 func TestLoginFailure(t *testing.T) {
 	str := newStore()
 
