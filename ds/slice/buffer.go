@@ -42,6 +42,15 @@ func (buf Buffer[T]) Slice(c int) Slice[T] {
 	return make([]T, c)
 }
 
+// Cap returns a buffer with at least capacity c and length 0. If the provided
+// buffer has capacity, it will be used otherwise a new one is created.
+func (buf Buffer[T]) Cap(c int) Slice[T] {
+	if cap(buf) >= c {
+		return Slice[T](buf[:0])
+	}
+	return make([]T, 0, c)
+}
+
 // BufferZeros returns a buffer with length c with all values set to 0. If the
 // provided buffer has capacity, it will be used otherwise a new one is created.
 func (buf Buffer[T]) Zeros(c int) Slice[T] {

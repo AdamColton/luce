@@ -76,3 +76,12 @@ func TestSplit(t *testing.T) {
 	assert.Equal(t, 12, cap(c))
 	assert.Equal(t, 10, cap(d))
 }
+
+func TestCap(t *testing.T) {
+	s := slice.NewBuffer[byte](nil).Cap(10)
+	assert.Equal(t, 10, cap(s))
+	s = slice.NewBuffer(s).Cap(5)
+	assert.Equal(t, 10, cap(s))
+	s = slice.NewBuffer(s).Cap(15)
+	assert.Equal(t, 15, cap(s))
+}
