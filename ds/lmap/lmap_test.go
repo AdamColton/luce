@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/ds/lmap"
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,4 +28,26 @@ func TestPop(t *testing.T) {
 	got, ok = m.Pop('d')
 	assert.False(t, ok)
 	assert.Equal(t, "", got)
+}
+
+func TestKeys(t *testing.T) {
+	m := lmap.Map[rune, string]{
+		'a': "apple",
+		'b': "banana",
+		'c': "cantaloupe",
+	}
+	ks := m.Keys(nil).Sort(slice.LT[rune]())
+	expected := slice.Slice[rune]{'a', 'b', 'c'}
+	assert.Equal(t, expected, ks)
+}
+
+func TestVals(t *testing.T) {
+	m := lmap.Map[rune, string]{
+		'a': "apple",
+		'b': "banana",
+		'c': "cantaloupe",
+	}
+	ks := m.Vals(nil).Sort(slice.LT[string]())
+	expected := slice.Slice[string]{"apple", "banana", "cantaloupe"}
+	assert.Equal(t, expected, ks)
 }
