@@ -1,6 +1,10 @@
 package lmap
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/adamcolton/luce/ds/slice"
+)
 
 // Wrapper provides helpers around a Mapper.
 type Wrapper[K comparable, V any] struct {
@@ -45,4 +49,24 @@ func (w Wrapper[K, V]) MustPop(key K) V {
 		panic(fmt.Errorf("failed to pop key: %v", key))
 	}
 	return v
+}
+
+// Vals returns the values of the map as a Slice. The provided buffer will be
+// used if it has sufficient capacity.
+func (w Wrapper[K, V]) Vals(buf slice.Slice[V]) slice.Slice[V] {
+	out := slice.NewBuffer(buf).Cap(w.Len())
+	w.Each(func(k K, v V, done *bool) {
+		out = append(out, v)
+	})
+	return out
+}
+
+// Keys returns the keys of the map as a Slice. The provided buffer will be
+// used if it has sufficient capacity.
+func (w Wrapper[K, V]) Keys(buf slice.Slice[K]) slice.Slice[K] {
+	out := slice.NewBuffer(buf).Cap(w.Len())
+	w.Each(func(k K, v V, done *bool) {
+		out = append(out, k)
+	})
+	return out
 }
