@@ -26,3 +26,34 @@ func (d Delimiter) Pack(data []byte) [][]byte {
 	}
 	return out
 }
+
+func (d Delimiter) Unpacker() *Unpacker {
+	return &Unpacker{
+		Delimiter: d,
+	}
+}
+
+type Unpacker struct {
+	Delimiter
+	buf []byte
+}
+
+func (u *Unpacker) Unpack(data []byte) [][]byte {
+	var out [][]byte
+	for {
+		idx := bytes.Index(data, u.Delimiter)
+		if idx == -1 {
+			u.buf = append(u.buf, data...)
+			return out
+		}
+		ln := len(u.Delimiter)
+		if len(u.buf) > 0 {
+			u.buf = append(u.buf, data[:idx]...)
+			out = append(out, u.buf)
+			u.buf = nil
+		} else {
+			out = append(out, data[:idx])
+		}
+		data = data[idx+ln:]
+	}
+}
