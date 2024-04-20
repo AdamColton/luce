@@ -63,3 +63,12 @@ func (ech *ExitCloseHandler) ExitUsage() *handler.CommandDetails {
 		Disabled: !ech.CanExit,
 	}
 }
+
+func (r *Runner) ExitRespHandler(e *ExitResp) {
+	r.Exit = true
+}
+
+func (r *Runner) CloseRespHandler(c *CloseResp) {
+	r.Close = true
+	r.Exit = true
+}
