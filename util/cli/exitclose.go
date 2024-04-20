@@ -99,3 +99,15 @@ func (ech *ExitCloseHandler) ExitUsage() *handler.CommandDetails {
 		Disabled: !ech.CanExit,
 	}
 }
+
+// ExitRespHandler is the handler for an ExitResp. It sets Exit, so Run ends.
+func (r *Runner) ExitRespHandler(e *ExitResp) {
+	r.Exit = true
+}
+
+// CloseRespHandler is the handler for a CloseResp. It sets Close and Exit, so
+// Run ends and calls OnClose.
+func (r *Runner) CloseRespHandler(c *CloseResp) {
+	r.Close = true
+	r.Exit = true
+}
