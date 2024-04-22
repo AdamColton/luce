@@ -51,4 +51,11 @@ func TestMap(fn func(map[int]string) lmap.Wrapper[int, string], t *testing.T) {
 	assert.Equal(t, 1, c)
 
 	assert.Equal(t, reflect.TypeOf(m.Mapper), reflect.TypeOf(m.New()))
+
+	m.Set(5, "5")
+	m.Set(6, "6")
+	m.Set(7, "7")
+	assert.Equal(t, 6, m.Len())
+	m.DeleteMany([]int{5, 6, 7})
+	assert.Equal(t, 3, m.Len())
 }
