@@ -83,3 +83,14 @@ func TestVals(t *testing.T) {
 	expected := slice.Slice[string]{"apple", "banana", "cantaloupe"}
 	assert.Equal(t, expected, ks)
 }
+
+func TestSortKeys(t *testing.T) {
+	m := map[rune]string{
+		'a': "apple",
+		'b': "banana",
+		'c': "cantaloupe",
+	}
+	ks := lmap.SortKeys(m)
+	expected := slice.Slice[rune]{'a', 'b', 'c'}
+	assert.Equal(t, expected, ks)
+}
