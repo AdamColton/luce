@@ -95,3 +95,13 @@ func (w Wrapper[K, V]) Keys(buf slice.Slice[K]) slice.Slice[K] {
 	})
 	return out
 }
+
+// DeleteMany deletes multiple keys.
+func (w Wrapper[K, V]) DeleteMany(keys []K) {
+	if w.Mapper == nil {
+		return
+	}
+	for _, k := range keys {
+		w.Mapper.Delete(k)
+	}
+}
