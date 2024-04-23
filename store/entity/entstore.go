@@ -8,6 +8,8 @@ import (
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/serial"
 	"github.com/adamcolton/luce/store"
+	"github.com/adamcolton/luce/util/filter"
+	"github.com/adamcolton/luce/util/liter"
 )
 
 const (
@@ -40,7 +42,15 @@ func (es *EntStore[T]) Load(ent T) error {
 	return es.Deserialize(ent, r.Value)
 }
 
-func (es *EntStore[T]) AddIndex(idx Indexer[T]) {
+func (es *EntStore[T]) AddIndex(name string, multi bool, fn func(T) []byte) {
+	es.AddIndexer(BaseIndexer[T]{
+		IndexName: name,
+		Fn:        fn,
+		M:         multi,
+	})
+}
+
+func (es *EntStore[T]) AddIndexer(idx Indexer[T]) {
 	if es.Indexes == nil {
 		es.Indexes = make(lmap.Map[string, Indexer[T]])
 	}
@@ -70,21 +80,19 @@ func (es *EntStore[T]) Get(key []byte) (found bool, ent T, err error) {
 // GetSlice returns all entities in the Store if fn is nil and if fn is defined
 // it returns all entities for which fn returns true given their key. If buf
 // is provided, it will be used as the return slice.
-func (es *EntStore[T]) GetSlice(fn KeyFilter, buf []T) ([]T, error) {
-	buf = buf[:0]
-	for key := es.Store.Next(nil); key != nil; key = es.Store.Next(key) {
-		if fn != nil && !fn(key) {
-			continue
-		}
-		found, e, err := es.Get(key)
-		if err != nil {
-			return nil, err
-		}
-		if found {
-			buf = append(buf, e)
-		}
-	}
-	return buf, nil
+func (es *EntStore[T]) GetSlice(fn filter.Filter[[]byte], buf []T) ([]T, error) {
+	i := store.NewIter(es.Store)
+	i.Filter = fn
+	return es.GetIter(i, buf)
+}
+
+func (es *EntStore[T]) GetIter(i liter.Iter[[]byte], buf []T) ([]T, error) {
+	var m lerr.Many
+	return slice.Transform(i, func(id []byte, _ int) (T, bool) {
+		found, e, err := es.Get(id)
+		m = m.Add(err)
+		return e, found
+	}), m.Cast()
 }
 
 // Put writes an entity to the store. If buf is provided, it will be used for
@@ -131,19 +139,15 @@ func (es *EntStore[T]) updateIndexes(ek []byte, ent T) {
 }
 
 func (es *EntStore[T]) Index(name string, key []byte) (ents slice.Slice[T], err error) {
+	defer func() {
+		err, _ = recover().(error)
+	}()
 	idx, ok := es.Indexes[name]
 	if !ok {
-		err = ErrIndexNotFound
-		return
+		panic(ErrIndexNotFound)
 	}
-	var ids slice.Slice[[]byte]
-	ids, err = es.idx(key, idx)
-	if err != nil {
-		return
-	}
-	ents = slice.TransformSlice(ids, func(id []byte, _ int) (T, bool) {
-		found, e, _ := es.Get(id)
-		return e, found
-	})
+	ids := es.idx(key, idx)
+	ents, err = es.GetIter(ids, nil)
+
 	return
 }

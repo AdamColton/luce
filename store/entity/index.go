@@ -4,6 +4,7 @@ import (
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/store"
+	"github.com/adamcolton/luce/util/liter"
 )
 
 type Indexer[E Entity] interface {
@@ -30,12 +31,13 @@ func (bi BaseIndexer[E]) Multi() bool {
 
 var oneByte = []byte{0}
 
-func (es EntStore[E]) updateIdx(ek, ik, pk []byte, idx Indexer[E]) error {
+func (es EntStore[E]) updateIdx(ek, ik, pk []byte, idx Indexer[E]) (err error) {
+	defer func() {
+		err, _ = recover().(error)
+	}()
 	bkt := lerr.Must(es.IdxStore.Store([]byte(idx.Name())))
 	if idx.Multi() {
-		if pk != nil {
-			lerr.Must(bkt.Store(pk)).Delete(ek)
-		}
+		es.deleteMultiKey(bkt, ek, pk)
 		lerr.Must(bkt.Store(ik)).Put(ek, oneByte)
 	} else {
 		if pk != nil {
@@ -43,24 +45,30 @@ func (es EntStore[E]) updateIdx(ek, ik, pk []byte, idx Indexer[E]) error {
 		}
 		bkt.Put(ik, ek)
 	}
-	return nil
+	return
 }
 
-func (es EntStore[E]) idx(k []byte, idx Indexer[E]) (ids slice.Slice[[]byte], err error) {
-	var bkt store.Store
-	bkt, err = es.IdxStore.Store([]byte(idx.Name()))
-	if err != nil {
+func (es EntStore[E]) deleteMultiKey(bkt store.Store, ek, pk []byte) {
+	if pk == nil {
 		return
 	}
+	pkBkt := lerr.Must(bkt.Store(pk))
+	lerr.Panic(pkBkt.Delete(ek))
+	if pkBkt.Next(nil) == nil {
+		lerr.Panic(bkt.Delete(pk))
+	}
+}
+
+func (es EntStore[E]) idx(k []byte, idx Indexer[E]) (ids liter.Iter[[]byte]) {
+	bkt := lerr.Must(es.IdxStore.Store([]byte(idx.Name())))
 	r := bkt.Get(k)
 	if !r.Found {
-		err = ErrKeyNotFound
-		return
+		panic(ErrKeyNotFound)
 	}
 	if idx.Multi() {
-		ids = store.Slice(r.Store)
+		ids = store.NewIter(r.Store)
 	} else {
-		ids = slice.New([][]byte{r.Value})
+		ids = slice.New([][]byte{r.Value}).Iter()
 	}
 
 	return

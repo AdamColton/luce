@@ -114,9 +114,8 @@ func TestGetSlice(t *testing.T) {
 	assert.Equal(t, expected, slc)
 
 	es.Store.Put(expected[0].EntKey(), []byte("this is not json"))
-	slc, err = es.GetSlice(kf, nil)
+	_, err = es.GetSlice(kf, nil)
 	assert.Error(t, err)
-	assert.Nil(t, slc)
 }
 
 func TestIndex(t *testing.T) {
@@ -135,18 +134,11 @@ func TestIndex(t *testing.T) {
 		},
 		IdxStore: i,
 	}
-	es.AddIndex(BaseIndexer[*foo]{
-		IndexName: "byS",
-		Fn: func(f *foo) []byte {
-			return []byte(f.S)
-		},
+	es.AddIndex("byS", false, func(f *foo) []byte {
+		return []byte(f.S)
 	})
-	es.AddIndex(BaseIndexer[*foo]{
-		IndexName: "mod2",
-		Fn: func(f *foo) []byte {
-			return []byte{byte(f.I % 2)}
-		},
-		M: true,
+	es.AddIndex("mod2", true, func(f *foo) []byte {
+		return []byte{byte(f.I % 2)}
 	})
 
 	for i := 1; i < 20; i++ {
@@ -179,9 +171,26 @@ func TestIndex(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, ents, 9)
 
+	var idxExists = func() bool {
+		return es.IdxStore.Get([]byte("mod2")).Store.Get([]byte{1}).Found
+	}
+	assert.True(t, idxExists())
+	ents.ForAll(func(idx int, f *foo) {
+		f.I = 0
+		es.Put(f, nil)
+	}).Wait()
+	assert.False(t, idxExists())
+
 	ents, err = es.Index("byS", []byte(e.S))
 	assert.NoError(t, err)
 	assert.Len(t, ents, 1)
 	assert.Equal(t, e, ents[0])
 
+	ents, err = es.Index("no-index", []byte(e.S))
+	assert.Equal(t, ErrIndexNotFound, err)
+	assert.Nil(t, ents)
+
+	ents, err = es.Index("byS", []byte("no-key"))
+	assert.Equal(t, ErrKeyNotFound, err)
+	assert.Nil(t, ents)
 }
