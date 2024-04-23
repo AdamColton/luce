@@ -1,5 +1,8 @@
 package rye
 
+import "github.com/adamcolton/luce/ds/slice"
+
+// TODO: why isn't this struct{}
 type S byte
 
 var Serialize S
@@ -28,4 +31,24 @@ func (S) Uint64(b []byte, x uint64) {
 	b[5] = byte(x >> 40)
 	b[6] = byte(x >> 48)
 	b[7] = byte(x >> 56)
+}
+
+func (s S) Any(i any, buf []byte) []byte {
+	switch t := i.(type) {
+	case uint:
+		buf = slice.NewBuffer(buf).Slice(8)
+		s.Uint64(buf, uint64(t))
+	case uint64:
+		buf = slice.NewBuffer(buf).Slice(8)
+		s.Uint64(buf, t)
+	case int:
+		buf = slice.NewBuffer(buf).Slice(8)
+		s.Uint64(buf, uint64(t))
+	case int64:
+		buf = slice.NewBuffer(buf).Slice(8)
+		s.Uint64(buf, uint64(t))
+	case string:
+		buf = []byte(t)
+	}
+	return buf
 }

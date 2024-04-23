@@ -59,8 +59,11 @@ func (es EntStore[E]) deleteMultiKey(bkt store.Store, ek, pk []byte) {
 	}
 }
 
+func (es EntStore[E]) getIdxBkt(idx Indexer[E]) store.Store {
+	return lerr.Must(es.IdxStore.Store([]byte(idx.Name())))
+}
 func (es EntStore[E]) idx(k []byte, idx Indexer[E]) (ids iter.Iter[[]byte]) {
-	bkt := lerr.Must(es.IdxStore.Store([]byte(idx.Name())))
+	bkt := es.getIdxBkt(idx)
 	r := bkt.Get(k)
 	if !r.Found {
 		panic(ErrKeyNotFound)

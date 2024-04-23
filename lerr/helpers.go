@@ -87,3 +87,12 @@ func HandlerFunc(handler any) (fn ErrHandler, err error) {
 	}
 	return
 }
+
+func OK[T any](t T, ok bool) func(err error) T {
+	return func(err error) T {
+		if !ok {
+			panic(err)
+		}
+		return t
+	}
+}
