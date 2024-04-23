@@ -67,3 +67,9 @@ func TestSeperatorSplit(t *testing.T) {
 
 	assert.Equal(t, 0, s.JoinLen(nil))
 }
+
+func TestJoiner(t *testing.T) {
+	s := lstr.Seperator(";")
+	j := s.Joiner("this", "is", "a", "test")
+	assert.Equal(t, "this;is;a;test", j.String())
+}
