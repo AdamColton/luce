@@ -96,3 +96,22 @@ const (
 func (s Seperator) Strings(str string) *Strings {
 	return NewStrings(strings.Split(str, string(s)))
 }
+
+// Joiner wraps strings.Join. This allows it to be invoked lazily.
+type Joiner struct {
+	Elems []string
+	Seperator
+}
+
+// Joiner creates an instance of Joiner with the given elements.
+func (s Seperator) Joiner(elems ...string) *Joiner {
+	return &Joiner{
+		Elems:     elems,
+		Seperator: s,
+	}
+}
+
+// Stirng fulfills fmt.Stringer and calls strings.Join.
+func (j *Joiner) String() string {
+	return strings.Join(j.Elems, string(j.Seperator))
+}
