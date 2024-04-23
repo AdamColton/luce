@@ -20,3 +20,7 @@ func GetStores(f Factory, names list.List[[]byte]) (list.Wrapper[Store], error) 
 		return s
 	}), errs.Cast()
 }
+
+func Slice(s Store) slice.Slice[[]byte] {
+	return slice.FromIter(NewIter(s), nil)
+}
