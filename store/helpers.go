@@ -2,6 +2,7 @@ package store
 
 import (
 	"github.com/adamcolton/luce/ds/list"
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
 )
 
@@ -19,4 +20,8 @@ func GetStores(f FlatFactory, names list.List[[]byte]) (list.Wrapper[FlatStore],
 		errs = errs.Add(err)
 		return s
 	}), errs.Cast()
+}
+
+func Slice(s FlatStore) slice.Slice[[]byte] {
+	return slice.FromIter(NewIter(s), nil)
 }
