@@ -1,13 +1,21 @@
 package entity
 
 import (
+	"bytes"
+
+	"github.com/adamcolton/luce/ds/lmap"
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/serial"
 	"github.com/adamcolton/luce/store"
 )
 
-// ErrKeyNotFound is returned by Load when the key is not found the Store.
-const ErrKeyNotFound = lerr.Str("key not found")
+const (
+	// ErrKeyNotFound is returned by Load when the key is not found the Store.
+	ErrKeyNotFound = lerr.Str("key not found")
+	// ErrIndexNotFound
+	ErrIndexNotFound = lerr.Str("index not found")
+)
 
 // EntStore provides methods for saving and retreiving and Entity from a Store.
 // The Serializer and Deserializer will be used for the Entity Value while
@@ -17,6 +25,8 @@ type EntStore[T Entity] struct {
 	store.Store
 	serial.Serializer
 	serial.Deserializer
+	IdxStore store.Store
+	Indexes  lmap.Map[string, Indexer[T]]
 }
 
 // Load an entity. This requires that EntKey returns the key of the value to be
@@ -28,6 +38,13 @@ func (es *EntStore[T]) Load(ent T) error {
 	}
 
 	return es.Deserialize(ent, r.Value)
+}
+
+func (es *EntStore[T]) AddIndex(idx Indexer[T]) {
+	if es.Indexes == nil {
+		es.Indexes = make(lmap.Map[string, Indexer[T]])
+	}
+	es.Indexes[idx.Name()] = idx
 }
 
 // Get an entity by key.
@@ -77,5 +94,56 @@ func (es *EntStore[T]) Put(ent T, buf []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return v, es.Store.Put(ent.EntKey(), v)
+	ek := ent.EntKey()
+	err = es.Store.Put(ek, v)
+	if err != nil {
+		return nil, err
+	}
+
+	if es.IdxStore != nil {
+		es.updateIndexes(ek, ent)
+	}
+
+	return v, nil
+}
+
+func (es *EntStore[T]) updateIndexes(ek []byte, ent T) {
+	keysBkt := lerr.Must(es.IdxStore.Store([]byte("_keys")))
+	prevKeys := make(map[string][]byte)
+	if r := keysBkt.Get(ek); r.Found {
+		es.Deserializer.Deserialize(&prevKeys, r.Value)
+	}
+
+	keys := make(map[string][]byte, len(es.Indexes))
+	for n, i := range es.Indexes {
+		k := i.IndexKey(ent)
+		pk, ok := prevKeys[n]
+		if !ok || !bytes.Equal(k, pk) {
+			keys[n] = k
+		}
+	}
+
+	for n, k := range keys {
+		es.updateIdx(ek, k, prevKeys[n], es.Indexes[n])
+	}
+	ks := lerr.Must(es.Serializer.Serialize(keys, nil))
+	keysBkt.Put(ek, ks)
+}
+
+func (es *EntStore[T]) Index(name string, key []byte) (ents slice.Slice[T], err error) {
+	idx, ok := es.Indexes[name]
+	if !ok {
+		err = ErrIndexNotFound
+		return
+	}
+	var ids slice.Slice[[]byte]
+	ids, err = es.idx(key, idx)
+	if err != nil {
+		return
+	}
+	ents = slice.TransformSlice(ids, func(id []byte, _ int) (T, bool) {
+		found, e, _ := es.Get(id)
+		return e, found
+	})
+	return
 }

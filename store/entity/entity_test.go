@@ -118,3 +118,70 @@ func TestGetSlice(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, slc)
 }
+
+func TestIndex(t *testing.T) {
+	f := ephemeral.Factory(bytebtree.New, 1)
+	s, err := f.Store([]byte("ents"))
+	assert.NoError(t, err)
+	i, err := f.Store([]byte("idxs"))
+	assert.NoError(t, err)
+
+	es := EntStore[*foo]{
+		Store:        s,
+		Serializer:   json.NewSerializer("", ""),
+		Deserializer: json.Deserializer{},
+		Init: func() *foo {
+			return &foo{}
+		},
+		IdxStore: i,
+	}
+	es.AddIndex(BaseIndexer[*foo]{
+		IndexName: "byS",
+		Fn: func(f *foo) []byte {
+			return []byte(f.S)
+		},
+	})
+	es.AddIndex(BaseIndexer[*foo]{
+		IndexName: "mod2",
+		Fn: func(f *foo) []byte {
+			return []byte{byte(f.I % 2)}
+		},
+		M: true,
+	})
+
+	for i := 1; i < 20; i++ {
+		f := &foo{
+			key: fmt.Sprintf("key-%02d", i),
+			S:   fmt.Sprintf("I am Foo #%d", i),
+			F:   float64(i) * 3.1415,
+			I:   i,
+		}
+		_, err = es.Put(f, nil)
+		assert.NoError(t, err)
+	}
+
+	ents, err := es.Index("mod2", []byte{1})
+	assert.NoError(t, err)
+	assert.Len(t, ents, 10)
+
+	expected := "I am Foo #3"
+	ents, err = es.Index("byS", []byte(expected))
+	assert.NoError(t, err)
+	assert.Len(t, ents, 1)
+	assert.Equal(t, expected, ents[0].S)
+
+	e := ents[0]
+	e.S = "FOOOOO"
+	e.I = 100
+	es.Put(e, nil)
+
+	ents, err = es.Index("mod2", []byte{1})
+	assert.NoError(t, err)
+	assert.Len(t, ents, 9)
+
+	ents, err = es.Index("byS", []byte(e.S))
+	assert.NoError(t, err)
+	assert.Len(t, ents, 1)
+	assert.Equal(t, e, ents[0])
+
+}
