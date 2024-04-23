@@ -1,8 +1,9 @@
 package lstr
 
 import (
-	"github.com/adamcolton/luce/ds/slice"
 	"strings"
+
+	"github.com/adamcolton/luce/ds/slice"
 )
 
 // Seperator is used for string operations with a seperator
@@ -81,4 +82,23 @@ func (s Seperator) Index(str string) int {
 // Split is a wrapper around strings.Split
 func (s Seperator) Split(str string) slice.Slice[string] {
 	return strings.Split(str, string(s))
+}
+
+// Joiner wraps strings.Join. This allows it to be invoked lazily.
+type Joiner struct {
+	Elems []string
+	Seperator
+}
+
+// Joiner creates an instance of Joiner with the given elements.
+func (s Seperator) Joiner(elems ...string) *Joiner {
+	return &Joiner{
+		Elems:     elems,
+		Seperator: s,
+	}
+}
+
+// Stirng fulfills fmt.Stringer and calls strings.Join.
+func (j *Joiner) String() string {
+	return strings.Join(j.Elems, string(j.Seperator))
 }
