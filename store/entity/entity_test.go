@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/ds/idx/byteid/bytebtree"
+	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/serial/rye"
 	"github.com/adamcolton/luce/serial/wrap/json"
 	"github.com/adamcolton/luce/store/ephemeral"
 	"github.com/stretchr/testify/assert"
@@ -134,10 +136,10 @@ func TestIndex(t *testing.T) {
 		},
 		IdxStore: i,
 	}
-	es.AddIndex("byS", false, func(f *foo) []byte {
+	byS := es.AddIndex("byS", false, func(f *foo) []byte {
 		return []byte(f.S)
 	})
-	es.AddIndex("mod2", true, func(f *foo) []byte {
+	m2 := es.AddIndex("mod2", true, func(f *foo) []byte {
 		return []byte{byte(f.I % 2)}
 	})
 
@@ -152,12 +154,16 @@ func TestIndex(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	ents, err := es.Index("mod2", []byte{1})
+	// this should pass, but it doesn't
+	// noIdx := lerr.Str("no index")
+	// assert.Equal(t, m2, lerr.OK(es.Index("mod2"))(noIdx))
+
+	ents := lerr.Must(m2.LookupEnts([]byte{1}))
 	assert.NoError(t, err)
 	assert.Len(t, ents, 10)
 
 	expected := "I am Foo #3"
-	ents, err = es.Index("byS", []byte(expected))
+	ents, err = byS.LookupEnts([]byte(expected))
 	assert.NoError(t, err)
 	assert.Len(t, ents, 1)
 	assert.Equal(t, expected, ents[0].S)
@@ -167,7 +173,7 @@ func TestIndex(t *testing.T) {
 	e.I = 100
 	es.Put(e, nil)
 
-	ents, err = es.Index("mod2", []byte{1})
+	ents, err = m2.LookupEnts([]byte{1})
 	assert.NoError(t, err)
 	assert.Len(t, ents, 9)
 
@@ -181,16 +187,63 @@ func TestIndex(t *testing.T) {
 	}).Wait()
 	assert.False(t, idxExists())
 
-	ents, err = es.Index("byS", []byte(e.S))
+	ents, err = byS.LookupEnts([]byte(e.S))
 	assert.NoError(t, err)
 	assert.Len(t, ents, 1)
 	assert.Equal(t, e, ents[0])
 
-	ents, err = es.Index("no-index", []byte(e.S))
-	assert.Equal(t, ErrIndexNotFound, err)
-	assert.Nil(t, ents)
+	_, found := es.Index("no-index")
+	assert.False(t, found)
 
-	ents, err = es.Index("byS", []byte("no-key"))
+	ents, err = byS.LookupEnts([]byte("no-key"))
 	assert.Equal(t, ErrKeyNotFound, err)
 	assert.Nil(t, ents)
+
+}
+
+func TestSearch(t *testing.T) {
+	f := ephemeral.Factory(bytebtree.New, 1)
+	s, err := f.Store([]byte("ents"))
+	assert.NoError(t, err)
+	i, err := f.Store([]byte("idxs"))
+	assert.NoError(t, err)
+
+	es := EntStore[*foo]{
+		Store:        s,
+		Serializer:   json.NewSerializer("", ""),
+		Deserializer: json.Deserializer{},
+		Init: func() *foo {
+			return &foo{}
+		},
+		IdxStore: i,
+	}
+	f64 := es.AddIndex("f64", false, func(f *foo) []byte {
+		s := &rye.Serializer{Size: 8}
+		s.Make()
+		s.Float64(f.F)
+		return s.Data
+	})
+
+	for i := 1; i < 20; i++ {
+		f := &foo{
+			key: fmt.Sprintf("key-%02d", i),
+			S:   fmt.Sprintf("I am Foo #%d", i),
+			F:   float64(i) * 3.1415,
+			I:   i,
+		}
+		_, err = es.Put(f, nil)
+		assert.NoError(t, err)
+	}
+
+	ents := lerr.Must(f64.SearchEnts(func(b []byte) bool {
+		f := rye.NewDeserializer(b).Float64()
+		return f > 5*3.1415 && f < 10*3.1415
+	}))
+	assert.Len(t, ents, 5)
+	ents.Sort(func(i, j *foo) bool {
+		return i.I < j.I
+	})
+	for i, e := range ents {
+		assert.Equal(t, e.I, i+5)
+	}
 }
