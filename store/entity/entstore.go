@@ -16,7 +16,9 @@ const (
 	// ErrKeyNotFound is returned by Load when the key is not found the Store.
 	ErrKeyNotFound = lerr.Str("key not found")
 	// ErrIndexNotFound
-	ErrIndexNotFound = lerr.Str("index not found")
+	ErrIndexNotFound       = lerr.Str("index not found")
+	ErrIndexNameBlank      = lerr.Str("index name was blank")
+	ErrIndexAlreadyDefined = lerr.Str("an index with the given name already exists")
 )
 
 // EntStore provides methods for saving and retreiving and Entity from a Store.
@@ -28,7 +30,7 @@ type EntStore[T Entity] struct {
 	serial.Serializer
 	serial.Deserializer
 	IdxStore store.Store
-	Indexes  lmap.Map[string, Indexer[T]]
+	indexes  lmap.Map[string, Indexer[T]]
 }
 
 // Load an entity. This requires that EntKey returns the key of the value to be
@@ -42,19 +44,30 @@ func (es *EntStore[T]) Load(ent T) error {
 	return es.Deserialize(ent, r.Value)
 }
 
-func (es *EntStore[T]) AddIndex(name string, multi bool, fn func(T) []byte) {
-	es.AddIndexer(BaseIndexer[T]{
+func (es *EntStore[T]) AddIndex(name string, multi bool, fn func(T) []byte) StoreIndex[T] {
+	return es.AddIndexer(BaseIndexer[T]{
 		IndexName: name,
 		Fn:        fn,
 		M:         multi,
 	})
 }
 
-func (es *EntStore[T]) AddIndexer(idx Indexer[T]) {
-	if es.Indexes == nil {
-		es.Indexes = make(lmap.Map[string, Indexer[T]])
+func (es *EntStore[T]) AddIndexer(idx Indexer[T]) StoreIndex[T] {
+	if es.indexes == nil {
+		es.indexes = make(lmap.Map[string, Indexer[T]])
 	}
-	es.Indexes[idx.Name()] = idx
+	name := idx.Name()
+	if name == "" {
+		lerr.Panic(ErrIndexNameBlank)
+	}
+	if _, found := es.indexes[name]; found {
+		lerr.Panic(ErrIndexAlreadyDefined)
+	}
+	es.indexes[name] = idx
+	return StoreIndex[T]{
+		idx: idx,
+		es:  es,
+	}
 }
 
 // Get an entity by key.
@@ -122,8 +135,8 @@ func (es *EntStore[T]) updateIndexes(ek []byte, ent T) {
 		es.Deserializer.Deserialize(&prevKeys, r.Value)
 	}
 
-	keys := make(map[string][]byte, len(es.Indexes))
-	for n, i := range es.Indexes {
+	keys := make(map[string][]byte, len(es.indexes))
+	for n, i := range es.indexes {
 		k := i.IndexKey(ent)
 		pk, ok := prevKeys[n]
 		if !ok || !bytes.Equal(k, pk) {
@@ -132,22 +145,115 @@ func (es *EntStore[T]) updateIndexes(ek []byte, ent T) {
 	}
 
 	for n, k := range keys {
-		es.updateIdx(ek, k, prevKeys[n], es.Indexes[n])
+		es.updateIdx(ek, k, prevKeys[n], es.indexes[n])
 	}
 	ks := lerr.Must(es.Serializer.Serialize(keys, nil))
 	keysBkt.Put(ek, ks)
 }
 
-func (es *EntStore[T]) Index(name string, key []byte) (ents slice.Slice[T], err error) {
+func (es *EntStore[T]) Index(name string) (StoreIndex[T], bool) {
+	idx, found := es.indexes[name]
+	si := StoreIndex[T]{
+		es:  es,
+		idx: idx,
+	}
+	return si, found
+}
+
+type StoreIndex[E Entity] struct {
+	idx Indexer[E]
+	es  *EntStore[E]
+}
+
+func (si StoreIndex[E]) Lookup(idxKey []byte) (entIds liter.Iter[[]byte], err error) {
 	defer func() {
 		err, _ = recover().(error)
 	}()
-	idx, ok := es.Indexes[name]
-	if !ok {
-		panic(ErrIndexNotFound)
-	}
-	ids := es.idx(key, idx)
-	ents, err = es.GetIter(ids, nil)
-
+	entIds = si.es.idx(idxKey, si.idx)
 	return
+}
+
+func (si StoreIndex[E]) LookupEnts(idxKey []byte) (ents slice.Slice[E], err error) {
+	entIds, err := si.Lookup(idxKey)
+	if err == nil {
+		ents, err = si.es.GetIter(entIds, nil)
+	}
+	return
+}
+
+func (si StoreIndex[E]) Search(f filter.Filter[[]byte]) (idxKeys liter.Iter[[]byte], err error) {
+	i := store.NewIter(si.es.getIdxBkt(si.idx))
+	i.Filter = f
+	return i, nil
+}
+
+func (si StoreIndex[E]) SearchEnts(f filter.Filter[[]byte]) (ents slice.Slice[E], err error) {
+	s, _ := si.Search(f)
+	return si.MultiEntLookup(s)
+}
+
+func (si StoreIndex[E]) MultiLookup(idxKeys liter.Iter[[]byte]) (entIds liter.Iter[[]byte], err error) {
+	return &multiKeyLookup[E]{
+		keys: idxKeys,
+		si:   si,
+	}, nil
+}
+
+func (si StoreIndex[E]) MultiEntLookup(idxKeys liter.Iter[[]byte]) (ents slice.Slice[E], err error) {
+	entIds, err := si.MultiLookup(idxKeys)
+	if err == nil {
+		ents, err = si.es.GetIter(entIds, nil)
+	}
+	return
+}
+
+type multiKeyLookup[E Entity] struct {
+	keys   liter.Iter[[]byte]
+	entIds liter.Iter[[]byte]
+	si     StoreIndex[E]
+	i      int
+}
+
+func (mkl *multiKeyLookup[E]) Next() (entID []byte, done bool) {
+	if mkl.entIds == nil || mkl.entIds.Done() {
+		k, keysDone := mkl.keys.Next()
+		if keysDone {
+			return nil, true
+		}
+		mkl.entIds, _ = mkl.si.Lookup(k)
+		entID, done = mkl.entIds.Cur()
+		if done {
+			return mkl.Next()
+		}
+		mkl.i++
+		return
+	}
+	mkl.i++
+	entID, _ = mkl.entIds.Next()
+	return entID, false
+}
+
+func (mkl *multiKeyLookup[E]) Cur() (entID []byte, done bool) {
+	if mkl.entIds == nil {
+		k, keysDone := mkl.keys.Cur()
+		for {
+			if keysDone {
+				return nil, true
+			}
+			mkl.entIds, _ = mkl.si.Lookup(k)
+			entID, done = mkl.entIds.Cur()
+			if !done {
+				return
+			}
+			k, keysDone = mkl.keys.Next()
+		}
+	}
+	entID, _ = mkl.entIds.Cur()
+	return entID, mkl.keys.Done()
+}
+func (mkl *multiKeyLookup[E]) Done() bool {
+	return mkl.keys.Done()
+}
+func (mkl *multiKeyLookup[E]) Idx() int {
+	return mkl.i
 }
