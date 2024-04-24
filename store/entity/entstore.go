@@ -193,10 +193,13 @@ func (si StoreIndex[E]) SearchEnts(f filter.Filter[[]byte]) (ents slice.Slice[E]
 }
 
 func (si StoreIndex[E]) MultiLookup(idxKeys liter.Iter[[]byte]) (entIds liter.Iter[[]byte], err error) {
-	return &multiKeyLookup[E]{
-		keys: idxKeys,
-		si:   si,
-	}, nil
+	i := &liter.Nested[[]byte, []byte]{
+		Keys: idxKeys,
+		Lookup: func(key []byte) liter.Iter[[]byte] {
+			return lerr.Must(si.Lookup(key))
+		},
+	}
+	return i, nil
 }
 
 func (si StoreIndex[E]) MultiEntLookup(idxKeys liter.Iter[[]byte]) (ents slice.Slice[E], err error) {
@@ -205,55 +208,4 @@ func (si StoreIndex[E]) MultiEntLookup(idxKeys liter.Iter[[]byte]) (ents slice.S
 		ents, err = si.es.GetIter(entIds, nil)
 	}
 	return
-}
-
-type multiKeyLookup[E Entity] struct {
-	keys   liter.Iter[[]byte]
-	entIds liter.Iter[[]byte]
-	si     StoreIndex[E]
-	i      int
-}
-
-func (mkl *multiKeyLookup[E]) Next() (entID []byte, done bool) {
-	if mkl.entIds == nil || mkl.entIds.Done() {
-		k, keysDone := mkl.keys.Next()
-		if keysDone {
-			return nil, true
-		}
-		mkl.entIds, _ = mkl.si.Lookup(k)
-		entID, done = mkl.entIds.Cur()
-		if done {
-			return mkl.Next()
-		}
-		mkl.i++
-		return
-	}
-	mkl.i++
-	entID, _ = mkl.entIds.Next()
-	return entID, false
-}
-
-func (mkl *multiKeyLookup[E]) Cur() (entID []byte, done bool) {
-	if mkl.entIds == nil {
-		k, keysDone := mkl.keys.Cur()
-		for {
-			if keysDone {
-				return nil, true
-			}
-			mkl.entIds, _ = mkl.si.Lookup(k)
-			entID, done = mkl.entIds.Cur()
-			if !done {
-				return
-			}
-			k, keysDone = mkl.keys.Next()
-		}
-	}
-	entID, _ = mkl.entIds.Cur()
-	return entID, mkl.keys.Done()
-}
-func (mkl *multiKeyLookup[E]) Done() bool {
-	return mkl.keys.Done()
-}
-func (mkl *multiKeyLookup[E]) Idx() int {
-	return mkl.i
 }
