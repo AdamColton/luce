@@ -89,3 +89,17 @@ func HandlerFunc(handler any) (fn ErrHandler, err error) {
 	}
 	return
 }
+
+// OK checks that the bool is true. If it is not, it panics with the given
+// error. Invoking OK is a little awkward because it is intended to wrap a
+// single call. It would be more natural to invoked lerr.OK(fn(), err), but the
+// Go type system doesn't allow that so the equivalent call is
+// lerr.OK(fn())(err).
+func OK[T any](t T, ok bool) func(err error) T {
+	return func(err error) T {
+		if !ok {
+			panic(err)
+		}
+		return t
+	}
+}
