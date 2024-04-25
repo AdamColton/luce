@@ -224,3 +224,21 @@ func TestBadWhence(t *testing.T) {
 	err = lerr.Whence(3)
 	assert.Equal(t, "lerr: Seek whence value should be io.SeekStart (0), io.SeekCurrent (1) or io.SeekEnd (2), got:3", err.Error())
 }
+
+func TestOK(t *testing.T) {
+	expected := "I'm OK"
+	ok := func() (string, bool) {
+		return expected, true
+	}
+
+	got := lerr.OK(ok())(testErr)
+	assert.Equal(t, expected, got)
+
+	notOk := func() (string, bool) {
+		return "", false
+	}
+	defer func() {
+		assert.Equal(t, testErr, recover())
+	}()
+	lerr.OK(notOk())(testErr)
+}
