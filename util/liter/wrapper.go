@@ -62,3 +62,21 @@ func (w Wrapper[T]) Channel(buf int) <-chan T {
 func (w Wrapper[T]) Pop() T {
 	return Pop(w)
 }
+
+// Seq fulfills iter.Seq and can be invoked with for..range.
+func (w Wrapper[T]) Seq(yield func(T) bool) {
+	for t, done := w.Cur(); !done; t, done = w.Next() {
+		if !yield(t) {
+			break
+		}
+	}
+}
+
+// Seq2 fulfills iter.Seq2 and can be invoked with for..range.
+func (w Wrapper[T]) Seq2(yield func(int, T) bool) {
+	for t, done := w.Cur(); !done; t, done = w.Next() {
+		if !yield(w.Idx(), t) {
+			break
+		}
+	}
+}
