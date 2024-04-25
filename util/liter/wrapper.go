@@ -61,3 +61,23 @@ func (w Wrapper[T]) Channel(buf int) <-chan T {
 func (w Wrapper[T]) Pop() T {
 	return Pop(w)
 }
+
+func (w Wrapper[T]) Seq() func(yield func(T) bool) {
+	return func(yield func(T) bool) {
+		for t, done := w.Cur(); !done; t, done = w.Next() {
+			if !yield(t) {
+				break
+			}
+		}
+	}
+}
+
+func (w Wrapper[T]) Seq2() func(yield func(int, T) bool) {
+	return func(yield func(int, T) bool) {
+		for t, done := w.Cur(); !done; t, done = w.Next() {
+			if !yield(w.Idx(), t) {
+				break
+			}
+		}
+	}
+}
