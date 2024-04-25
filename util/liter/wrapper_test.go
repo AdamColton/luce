@@ -121,3 +121,35 @@ func TestWrapperChannel(t *testing.T) {
 	}
 	assert.Len(t, si.Slice, idx)
 }
+
+func TestSeq(t *testing.T) {
+	expected := []int{3, 1, 4, 1, 5, 9}
+	i := (&sliceIter[int]{
+		Slice: expected,
+	}).Wrap()
+
+	var got []int
+	for i := range i.Seq {
+		got = append(got, i)
+		if i == 5 {
+			break
+		}
+	}
+	assert.Equal(t, expected[:5], got)
+}
+
+func TestSeq2(t *testing.T) {
+	expected := []int{3, 1, 4, 1, 5, 9}
+	i := (&sliceIter[int]{
+		Slice: expected,
+	}).Wrap()
+
+	var got []int
+	for idx, i := range i.Seq2 {
+		got = append(got, i)
+		if idx == 4 {
+			break
+		}
+	}
+	assert.Equal(t, expected[:5], got)
+}
