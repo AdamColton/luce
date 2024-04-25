@@ -1,10 +1,15 @@
 package rye_test
 
 import (
+	"bytes"
+	"crypto/rand"
+	"math"
 	"reflect"
+	"sort"
 	"strconv"
 	"testing"
 
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/serial/rye"
 	"github.com/stretchr/testify/assert"
 )
@@ -160,4 +165,115 @@ func TestSerializeAny(t *testing.T) {
 			assert.Equal(t, tc.expected, rye.Serialize.Any(tc.v, nil))
 		})
 	}
+}
+
+func TestFloat64OrderedFuzz(t *testing.T) {
+	ln := 1000
+	fs := make([]float64, ln)
+	b := make([]byte, 8)
+	for i := 0; i < ln; i++ {
+		rand.Read(b)
+		fs[i] = rye.Deserialize.Float64(b)
+		if math.IsNaN(fs[i]) {
+			i--
+		}
+	}
+	sort.Float64Slice(fs).Sort()
+
+	enc := make([][]byte, ln)
+	for i, f := range fs {
+		enc[i] = make([]byte, 8)
+		rye.Serialize.Float64Ordered(enc[i], f)
+	}
+	sort.Slice(enc, func(i, j int) bool {
+		return bytes.Compare(enc[i], enc[j]) == -1
+	})
+
+	got := make([]float64, len(fs))
+	for i, e := range enc {
+		got[i] = rye.Deserialize.Float64Ordered(e)
+	}
+
+	assert.Equal(t, fs, got)
+}
+
+func TestInt16OrderedFuzz(t *testing.T) {
+	ln := 1000
+	is := make(slice.Slice[int16], ln)
+	b := make([]byte, 2)
+	for i := range is {
+		rand.Read(b)
+		is[i] = rye.Deserialize.Int16(b)
+	}
+	is.Sort(slice.LT[int16]())
+
+	enc := make([][]byte, ln)
+	for i, i16 := range is {
+		enc[i] = make([]byte, 2)
+		rye.Serialize.Int16Ordered(enc[i], i16)
+	}
+	sort.Slice(enc, func(i, j int) bool {
+		return bytes.Compare(enc[i], enc[j]) == -1
+	})
+
+	got := make(slice.Slice[int16], ln)
+	for i, e := range enc {
+		got[i] = rye.Deserialize.Int16Ordered(e)
+	}
+
+	assert.Equal(t, is, got)
+}
+
+func TestInt32OrderedFuzz(t *testing.T) {
+	ln := 1000
+	is := make(slice.Slice[int32], ln)
+	b := make([]byte, 4)
+	for i := range is {
+		rand.Read(b)
+		is[i] = rye.Deserialize.Int32(b)
+	}
+	is.Sort(slice.LT[int32]())
+
+	enc := make([][]byte, ln)
+	for i, i32 := range is {
+		enc[i] = make([]byte, 4)
+		rye.Serialize.Int32Ordered(enc[i], i32)
+	}
+	sort.Slice(enc, func(i, j int) bool {
+		return bytes.Compare(enc[i], enc[j]) == -1
+	})
+
+	got := make(slice.Slice[int32], ln)
+	for i, e := range enc {
+		got[i] = rye.Deserialize.Int32Ordered(e)
+	}
+
+	assert.Equal(t, is, got)
+}
+
+func TestInt64OrderedFuzz(t *testing.T) {
+	ln := 1000
+	is := make(slice.Slice[int64], ln)
+	b := make([]byte, 8)
+	for i := range is {
+		rand.Read(b)
+		is[i] = rye.Deserialize.Int64(b)
+	}
+	is.Sort(slice.LT[int64]())
+
+	enc := make([][]byte, ln)
+	for i, i64 := range is {
+		enc[i] = make([]byte, 8)
+		rye.Serialize.Int64Ordered(enc[i], i64)
+	}
+	sort.Slice(enc, func(i, j int) bool {
+		return bytes.Compare(enc[i], enc[j]) == -1
+	})
+
+	got := make(slice.Slice[int64], ln)
+	for i, e := range enc {
+		got[i] = rye.Deserialize.Int64Ordered(e)
+	}
+
+	assert.Equal(t, is, got)
 }
