@@ -83,3 +83,15 @@ func (bi *Bimap[A, B]) B(b B) (a A, found bool) {
 	a, found = bi.b2a[b]
 	return
 }
+
+// Each invokes the provided function for each keypair, in no particular order.
+// Setting done to true stops the iteration.
+func (bi *Bimap[A, B]) Each(fn func(a A, b B, done *bool)) {
+	done := false
+	for a, b := range bi.a2b {
+		fn(a, b, &done)
+		if done {
+			break
+		}
+	}
+}
