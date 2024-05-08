@@ -39,6 +39,14 @@ func OutType(n int, t reflect.Type) Type {
 	return IsType(t).Out(n)
 }
 
+// Implements returns true if the provided type implements interface I.
+func Implements[I any]() Type {
+	i := reflector.Type[I]()
+	return Type{func(t reflect.Type) bool {
+		return t.Implements(i)
+	}}
+}
+
 // OnInterface applies the filter to the TypeOf i.
 func (t Type) OnInterface(i any) bool {
 	return t.Filter(reflect.TypeOf(i))
