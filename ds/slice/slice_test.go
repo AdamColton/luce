@@ -399,3 +399,15 @@ func TestSliceList(t *testing.T) {
 	assert.Equal(t, 4, l.Len())
 	assert.Equal(t, "banana", l.AtIdx(1))
 }
+
+func TestReverse(t *testing.T) {
+	s := slice.Slice[int]{2, 3, 5, 7, 11, 13, 17, 19, 23}
+	ln := len(s)
+	expected := make(slice.Slice[int], ln)
+	for i := 0; i < ln; i++ {
+		expected[i] = s[ln-1-i]
+	}
+
+	s.Reverse()
+	assert.Equal(t, expected, s)
+}
