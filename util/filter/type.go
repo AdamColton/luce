@@ -19,6 +19,54 @@ type Type struct {
 	Filter[reflect.Type]
 }
 
+// Func builds a filter for a function. Both args and rets can be either
+// a filter.Type, filter.Filter[reflect.Type] or reflect.Type.
+func Func(args, rets []any) Type {
+	// TODO: panic on bad type.
+	af := make([]Filter[reflect.Type], len(args))
+	rf := make([]Filter[reflect.Type], len(rets))
+	for i, a := range args {
+		switch t := a.(type) {
+		case reflect.Type:
+			af[i] = IsType(t).Filter
+		case Type:
+			af[i] = t.Filter
+		case Filter[reflect.Type]:
+			af[i] = t
+		}
+	}
+	for i, r := range rets {
+		switch t := r.(type) {
+		case reflect.Type:
+			rf[i] = IsType(t).Filter
+		case Type:
+			rf[i] = t.Filter
+		case Filter[reflect.Type]:
+			rf[i] = t
+		}
+	}
+	return Type{funcFilter(af, rf)}
+}
+
+func funcFilter(args, rets []Filter[reflect.Type]) Filter[reflect.Type] {
+	return func(t reflect.Type) bool {
+		if t.Kind() != reflect.Func || t.NumIn() != len(args) || t.NumOut() != len(rets) {
+			return false
+		}
+		for i, arg := range args {
+			if !arg(t.In(i)) {
+				return false
+			}
+		}
+		for i, ret := range rets {
+			if !ret(t.Out(i)) {
+				return false
+			}
+		}
+		return true
+	}
+}
+
 // NumInEq is a helper equivalent to filter.NumIn(filter.EQ(n)).
 func NumInEq(n int) Type {
 	return NumIn(EQ(n))
