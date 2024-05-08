@@ -2,6 +2,7 @@ package entity
 
 import (
 	"github.com/adamcolton/luce/serial"
+	"github.com/adamcolton/luce/serial/wrap/gob"
 	"github.com/adamcolton/luce/serial/wrap/json"
 	"github.com/adamcolton/luce/store"
 	"github.com/adamcolton/luce/util/reflector"
@@ -55,5 +56,13 @@ func NewJsonBuilder(f store.Factory) Builder {
 		Factory:      f,
 		Serializer:   json.NewSerializer("", ""),
 		Deserializer: json.Deserializer{},
+	}
+}
+
+func NewGobBuilder(f store.Factory) Builder {
+	return Builder{
+		Factory:      f,
+		Serializer:   gob.Serializer{},
+		Deserializer: gob.Deserializer{},
 	}
 }

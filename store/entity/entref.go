@@ -59,12 +59,12 @@ func (ref *Reference[E]) Get() (E, bool) {
 	return ref.Ent, ref.set
 }
 
-func (ref Reference[E]) GobDecode(id []byte) error {
+func (ref *Reference[E]) GobDecode(id []byte) error {
 	ref.ID = id
 	return nil
 }
 
-func (ref Reference[E]) GobEncode() ([]byte, error) {
+func (ref *Reference[E]) GobEncode() ([]byte, error) {
 	return ref.ID, nil
 }
 
