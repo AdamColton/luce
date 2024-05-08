@@ -41,3 +41,18 @@ func LT[T Comparable](a T) Filter[T] {
 func GTE[T Comparable](a T) Filter[T] {
 	return func(b T) bool { return a <= b }
 }
+
+// Compare should return 0 if a==0, -1 if a<b and 1 if a>b.
+type Compare[T any] func(a, b T) int
+
+func Comparer[C Comparable]() Compare[C] {
+	return func(a, b C) int {
+		if a < b {
+			return -1
+		}
+		if a > b {
+			return 1
+		}
+		return 0
+	}
+}
