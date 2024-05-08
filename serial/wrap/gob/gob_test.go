@@ -11,3 +11,7 @@ func TestAll(t *testing.T) {
 	gob.Register((*testutil.Person)(nil))
 	testutil.SerialFuncsRoundTrip(t, gob.Serialize, gob.Deserialize)
 }
+
+func TestInterfaces(t *testing.T) {
+	testutil.SerialInterfacesRoundTrip(t, gob.Serializer{}, gob.Deserializer{})
+}
