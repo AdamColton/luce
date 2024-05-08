@@ -22,3 +22,28 @@ func TestErrors(t *testing.T) {
 	var i int
 	assert.Error(t, gob.Deserialize(&i, bytes.NewBufferString("not gob")))
 }
+
+func TestInterfaces(t *testing.T) {
+	testutil.SerialInterfacesRoundTrip(t, gob.Serializer{}, gob.Deserializer{})
+}
+
+func TestSerializerAppends(t *testing.T) {
+	type Name struct {
+		Name string
+	}
+	b, err := gob.Serializer{}.Serialize(Name{Name: "Adam"}, []byte("prefix"))
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("prefix"), b[:6])
+
+	var got Name
+	assert.NoError(t, gob.Deserializer{}.Deserialize(&got, b[6:]))
+	assert.Equal(t, "Adam", got.Name)
+}
+
+func TestSerializerErrors(t *testing.T) {
+	_, err := gob.Serializer{}.Serialize(func() {}, nil)
+	assert.Error(t, err)
+
+	var i int
+	assert.Error(t, gob.Deserializer{}.Deserialize(&i, []byte("not gob")))
+}
