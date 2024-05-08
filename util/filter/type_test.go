@@ -11,6 +11,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type fooer interface {
+	foo()
+}
+
+type foo struct{}
+
+func (foo) foo() {}
+
 func TestType(t *testing.T) {
 	tt := map[string]struct {
 		expected bool
@@ -113,6 +121,11 @@ func TestType(t *testing.T) {
 			expected: true,
 			f:        filter.InType(0, ltype.String).Not(),
 			v:        func(a, b, c int) (d, e, f int) { return 1, 2, 3 },
+		},
+		"implements": {
+			expected: true,
+			f:        filter.Implements[fooer](),
+			v:        foo{},
 		},
 	}
 
