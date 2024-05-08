@@ -127,6 +127,14 @@ func TestType(t *testing.T) {
 			f:        filter.Implements[fooer](),
 			v:        foo{},
 		},
+		"func": {
+			expected: true,
+			f: filter.Func(
+				[]any{ltype.Int, filter.Implements[fooer](), filter.IsType(ltype.String).Filter},
+				[]any{ltype.Int, filter.IsType(ltype.Int), filter.IsType(ltype.Int).Filter},
+			),
+			v: func(a int, b foo, c string) (d, e, f int) { return 1, 2, 3 },
+		},
 	}
 
 	for n, tc := range tt {
