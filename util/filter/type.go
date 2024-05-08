@@ -18,6 +18,35 @@ type Type struct {
 	Filter[reflect.Type]
 }
 
+// Func builds a filter for a function. Both args and rets can be either
+// a filter.Type, filter.Filter[reflect.Type] or reflect.Type.
+func Func(args, rets []any) Type {
+	// TODO: panic on bad type.
+	f := NumInEq(len(args)).
+		And(NumOutEq(len(rets)))
+	for i, a := range args {
+		switch t := a.(type) {
+		case reflect.Type:
+			f = f.And(IsType(t).In(i))
+		case Type:
+			f = f.And(t.In(i))
+		case Filter[reflect.Type]:
+			f = f.And(Type{t}.In(i))
+		}
+	}
+	for i, r := range rets {
+		switch t := r.(type) {
+		case reflect.Type:
+			f = f.And(IsType(t).In(i))
+		case Type:
+			f = f.And(t.Out(i))
+		case Filter[reflect.Type]:
+			f = f.And(Type{t}.Out(i))
+		}
+	}
+	return f
+}
+
 // TODO
 func NumInEq(n int) Type {
 	return NumIn(EQ(n))
