@@ -1,6 +1,8 @@
 package rbtree_test
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"strconv"
 	"testing"
@@ -84,6 +86,20 @@ func TestTree(t *testing.T) {
 		vals.Remove(skv)
 		assert.True(t, rb.Validate())
 	}
+}
+
+func TestGob(t *testing.T) {
+	ptr := rbtree.MakePtrType[int, string]()
+	gob.Register(ptr)
+	rb := rbtree.New(ptr, filter.Comparer[int]())
+	add := []int{737, 244, 263, 302, 559, 581, 508, 246, 780, 403}
+	for _, a := range add {
+		rb.Add(a, strconv.Itoa(a))
+	}
+
+	buf := bytes.NewBuffer(nil)
+	err := gob.NewEncoder(buf).Encode(rb)
+	assert.NoError(t, err)
 }
 
 // func TestFoo(t *testing.T) {

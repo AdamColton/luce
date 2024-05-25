@@ -1,6 +1,8 @@
 package graph
 
-import "github.com/adamcolton/luce/ds/list"
+import (
+	"github.com/adamcolton/luce/ds/list"
+)
 
 type Node[Key, Val any] interface {
 	list.List[Node[Key, Val]]
@@ -33,7 +35,7 @@ func (kv KV[Key, Val]) KeyVal() KV[Key, Val] {
 }
 
 type Ptr[Val any] interface {
-	Get() Val
+	Get() (Val, bool)
 	Set(Val) Ptr[Val]
 	New() Ptr[Val]
 }
@@ -45,8 +47,8 @@ type RawPointer[Node any] struct {
 	v *Node
 }
 
-func (p RawPointer[Node]) Get() *Node {
-	return p.v
+func (p RawPointer[Node]) Get() (*Node, bool) {
+	return p.v, true
 }
 
 func (p RawPointer[Node]) Set(v *Node) Ptr[*Node] {

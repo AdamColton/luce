@@ -8,14 +8,14 @@ import (
 )
 
 func TestNodeColor(t *testing.T) {
-	n := &node[string, int]{
+	n := &Node[string, int]{
 		color: red,
 		size:  1,
-		chld: [2]graph.Ptr[*node[string, int]]{
-			graph.RawPointer[node[string, int]]{},
-			graph.RawPointer[node[string, int]]{},
+		chld: [2]graph.Ptr[*Node[string, int]]{
+			graph.RawPointer[Node[string, int]]{},
+			graph.RawPointer[Node[string, int]]{},
 		},
-		prt: graph.RawPointer[node[string, int]]{},
+		prt: graph.RawPointer[Node[string, int]]{},
 	}
 
 	assert.Equal(t, red, n.clr())
