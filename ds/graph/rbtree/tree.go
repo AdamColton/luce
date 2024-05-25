@@ -7,16 +7,17 @@ import (
 )
 
 type Tree[Key, Val any] struct {
-	root graph.Ptr[*node[Key, Val]]
-	cmpr filter.Compare[Key]
-	size int
+	root      graph.Ptr[*Node[Key, Val]]
+	cmpr      filter.Compare[Key]
+	size      int
+	idCounter uint32
 }
 
-func MakePtrType[Key, Val any]() graph.Ptr[*node[Key, Val]] {
-	return graph.RawPointer[node[Key, Val]]{}
+func MakePtrType[Key, Val any]() graph.Ptr[*Node[Key, Val]] {
+	return graph.RawPointer[Node[Key, Val]]{}
 }
 
-func New[Key, Val any](ptr graph.Ptr[*node[Key, Val]], cmpr filter.Compare[Key]) *Tree[Key, Val] {
+func New[Key, Val any](ptr graph.Ptr[*Node[Key, Val]], cmpr filter.Compare[Key]) *Tree[Key, Val] {
 	return &Tree[Key, Val]{
 		cmpr: cmpr,
 		root: ptr,
@@ -28,21 +29,24 @@ func rcmpr(x int) int {
 }
 
 func (t *Tree[Key, Val]) Root() graph.Node[Key, Val] {
-	return t.root.Get()
+	return stripBool(t.root.Get())
 }
 
 func (t *Tree[Key, Val]) Add(k Key, v Val) {
-	add := &node[Key, Val]{
+	t.idCounter++
+	add := &Node[Key, Val]{
 		KV:    graph.NewKV(k, v),
 		color: red,
 		size:  1,
-		chld: [2]graph.Ptr[*node[Key, Val]]{
+		chld: [2]graph.Ptr[*Node[Key, Val]]{
 			t.root.New(),
 			t.root.New(),
 		},
 		prt: t.root.New(),
+		id:  t.idCounter,
 	}
-	r := t.root.Get()
+
+	r, _ := t.root.Get()
 	if r == nil {
 		add.set(black)
 		t.root = t.root.Set(add)
@@ -89,7 +93,7 @@ func (t *Tree[Key, Val]) Remove(k Key) {
 			c = c1
 		}
 
-		prt := n.prt.Get()
+		prt := stripBool(n.prt.Get())
 		fixup := prt
 		if fixup == nil {
 			fixup = c
@@ -103,7 +107,7 @@ func (t *Tree[Key, Val]) Remove(k Key) {
 			dec := prt
 			for {
 				dec.size--
-				nxt := dec.prt.Get()
+				nxt := stripBool(dec.prt.Get())
 				if nxt == nil {
 					break
 				}
@@ -120,10 +124,10 @@ func (t *Tree[Key, Val]) Remove(k Key) {
 	t.size--
 }
 
-func (t *Tree[Key, Val]) fixRoot(n *node[Key, Val]) {
+func (t *Tree[Key, Val]) fixRoot(n *Node[Key, Val]) {
 	check := lset.New(n)
 	for {
-		next := n.prt.Get()
+		next := stripBool(n.prt.Get())
 		if next == nil {
 			break
 		}
@@ -138,13 +142,13 @@ func (t *Tree[Key, Val]) fixRoot(n *node[Key, Val]) {
 
 }
 
-func (t *Tree[Key, Val]) Seek(k Key) (n Node[Key, Val], found bool) {
+func (t *Tree[Key, Val]) Seek(k Key) (n *Node[Key, Val], found bool) {
 	n, found = t.seek(k)
 	return
 }
 
-func (t *Tree[Key, Val]) seek(k Key) (n *node[Key, Val], found bool) {
-	n = t.root.Get()
+func (t *Tree[Key, Val]) seek(k Key) (n *Node[Key, Val], found bool) {
+	n, _ = t.root.Get()
 	if n == nil {
 		return
 	}

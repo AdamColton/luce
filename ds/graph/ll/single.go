@@ -2,8 +2,11 @@ package ll
 
 import (
 	"github.com/adamcolton/luce/ds/graph"
+	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/liter"
 )
+
+const ErrPtrMiss = lerr.Str("bad graph.Ptr")
 
 type Single[Key, Val any] struct {
 	graph.KV[Key, Val]
@@ -33,7 +36,7 @@ func (s *Single[Key, Val]) InsertAfter(k Key, v Val) *Single[Key, Val] {
 }
 
 func (s *Single[Key, Val]) DeleteNext() {
-	nxt := s.Next.Get()
+	nxt := lerr.OK(s.Next.Get())(ErrPtrMiss)
 	if nxt == nil {
 		return
 	}
@@ -42,7 +45,7 @@ func (s *Single[Key, Val]) DeleteNext() {
 
 func (s Single[Key, Val]) AtIdx(idx int) graph.Node[Key, Val] {
 	if idx == 0 {
-		return s.Next.Get()
+		return lerr.OK(s.Next.Get())(ErrPtrMiss)
 	}
 	return nil
 }
@@ -79,7 +82,7 @@ func (si *singleIter[Key, Val]) Next() (kv graph.KV[Key, Val], done bool) {
 		return
 	}
 	si.i++
-	si.n = si.n.Next.Get()
+	si.n = lerr.OK(si.n.Next.Get())(ErrPtrMiss)
 	done = si.Done()
 	if !done {
 		kv = si.n.KV

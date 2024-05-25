@@ -15,7 +15,7 @@ func (c color) String() string {
 	return "???"
 }
 
-func (n *node[Key, Val]) print() {
+func (n *Node[Key, Val]) print() {
 	if n == nil {
 		return
 	}
@@ -26,7 +26,7 @@ func (n *node[Key, Val]) print() {
 	fmt.Print(")")
 }
 
-func (n *node[Key, Val]) Validate() (blackSum int, ok bool) {
+func (n *Node[Key, Val]) Validate() (blackSum int, ok bool) {
 	if n == nil {
 		return 1, true
 	}
@@ -46,7 +46,7 @@ func (n *node[Key, Val]) Validate() (blackSum int, ok bool) {
 }
 
 func (t *Tree[Key, Val]) Print() {
-	r := t.root.Get()
+	r := stripBool(t.root.Get())
 	if r != nil {
 		r.print()
 	} else {
@@ -56,7 +56,7 @@ func (t *Tree[Key, Val]) Print() {
 }
 
 func (t *Tree[Key, Val]) Validate() bool {
-	r := t.root.Get()
+	r := stripBool(t.root.Get())
 	if r == nil {
 		return true
 	}
