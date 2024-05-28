@@ -91,19 +91,17 @@ func (g *grapher) dec(data []byte) {
 		c := getCodec(t)
 		size := d.CompactUint64()
 		sub := compact.NewDeserializer(d.Slice(int(size)))
-		ch := c.dec(sub)
 		wg.Add(1)
-		go func() {
-			var v reflect.Value
+		c.dec(sub, func(a any) {
+			v := reflect.ValueOf(a)
 			defer func() {
 				if r := recover(); r != nil {
 					fmt.Println(r)
 				}
 				wg.Done()
 			}()
-			v = reflect.ValueOf(<-ch)
 			ro.v.Elem().Set(v)
-		}()
+		})
 	}
 	wg.Wait()
 }

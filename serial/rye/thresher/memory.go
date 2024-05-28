@@ -15,10 +15,10 @@ var byPtr = lmap.Map[uintptr, *rootObj]{}
 var byID = lmap.Map[string, *rootObj]{}
 
 type rootObj struct {
-	addr    uintptr
-	v       reflect.Value
-	id      []byte
-	awaited []chan<- any
+	addr     uintptr
+	v        reflect.Value
+	id       []byte
+	callback func(any)
 }
 
 func (ro *rootObj) init() {
@@ -77,24 +77,29 @@ func rootObjByID(id []byte) *rootObj {
 	return byID[string(id)]
 }
 
-func awaitRootObjByID(id []byte) <-chan any {
-	ch := make(chan any, 1)
+func awaitRootObjByID(id []byte, callback func(any)) {
 	if bytes.Equal(id, zeroByte) {
-		ch <- nil
-		return ch
+		callback(nil)
+		return
 	}
 	ro, found := byID[string(id)]
 	if !found {
 		ro = &rootObj{
-			id:      id,
-			awaited: []chan<- any{ch},
+			id: id,
 		}
 		byID[string(id)] = ro
 	}
 	if ro.v.Kind() != reflect.Invalid {
-		ch <- ro.v.Interface()
+		callback(ro.v.Interface())
+	} else if ro.callback == nil {
+		ro.callback = callback
+	} else {
+		prev := ro.callback
+		ro.callback = func(a any) {
+			prev(a)
+			callback(a)
+		}
 	}
-	return ch
 }
 
 func makeRootObj(t reflect.Type, id []byte) *rootObj {
@@ -109,12 +114,9 @@ func makeRootObj(t reflect.Type, id []byte) *rootObj {
 		ro.addr = uintptr(ro.v.UnsafePointer())
 		ro.init()
 	}
-	if ro.awaited != nil {
-		i := ro.v.Interface()
-		for _, ch := range ro.awaited {
-			ch <- i
-		}
-		ro.awaited = nil
+	if ro.callback != nil {
+		ro.callback(ro.v.Interface())
+		ro.callback = nil
 	}
 
 	return ro
