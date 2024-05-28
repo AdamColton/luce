@@ -9,7 +9,7 @@ import (
 
 type codec struct {
 	enc   func(i any, s compact.Serializer)
-	dec   func(d compact.Deserializer, callback func(any))
+	dec   func(d compact.Deserializer) any
 	size  func(i any) uint64
 	roots func(i reflect.Value) []*rootObj
 }
@@ -19,9 +19,8 @@ var codecs = map[reflect.Type]*codec{
 		enc: func(v any, s compact.Serializer) {
 			s.CompactString(v.(string))
 		},
-		dec: func(d compact.Deserializer, callback func(any)) {
-			str := d.CompactString()
-			callback(str)
+		dec: func(d compact.Deserializer) any {
+			return d.CompactString()
 		},
 		size: func(v any) uint64 {
 			return compact.SizeString(v.(string))
@@ -36,8 +35,8 @@ var codecs = map[reflect.Type]*codec{
 			}
 			s.Byte(bit)
 		},
-		dec: func(d compact.Deserializer, callback func(any)) {
-			callback(d.Byte() == 1)
+		dec: func(d compact.Deserializer) any {
+			return d.Byte() == 1
 		},
 		size: func(v any) uint64 {
 			return 1
@@ -47,8 +46,8 @@ var codecs = map[reflect.Type]*codec{
 		enc: func(v any, s compact.Serializer) {
 			s.CompactInt64(int64(v.(int)))
 		},
-		dec: func(d compact.Deserializer, callback func(any)) {
-			callback(int(d.CompactInt64()))
+		dec: func(d compact.Deserializer) any {
+			return int(d.CompactInt64())
 		},
 		size: func(v any) uint64 {
 			return compact.SizeInt64(int64(v.(int)))
@@ -92,22 +91,17 @@ func (sc *structCodec) enc(i any, s compact.Serializer) {
 	}
 }
 
-func (sc *structCodec) dec(d compact.Deserializer, callback func(any)) {
+func (sc *structCodec) dec(d compact.Deserializer) any {
 	srct := reflect.New(sc.Type).Elem()
-	waiting := len(sc.fields)
 	for _, fc := range sc.fields {
 		idx := fc.idx
-		fc.dec(d, func(i any) {
-			if i != nil {
-				fv := reflect.ValueOf(i)
-				srct.Field(idx).Set(fv)
-			}
-			waiting--
-			if waiting == 0 {
-				callback(srct.Interface())
-			}
-		})
+		i := fc.dec(d)
+		if i != nil {
+			fv := reflect.ValueOf(i)
+			srct.Field(idx).Set(fv)
+		}
 	}
+	return srct.Interface()
 }
 
 func (sc *structCodec) size(i any) (sum uint64) {
@@ -151,13 +145,12 @@ func init() {
 			ro := rootObjByV(reflect.ValueOf(i))
 			s.CompactSlice(ro.getID())
 		},
-		dec: func(d compact.Deserializer, callback func(any)) {
+		dec: func(d compact.Deserializer) any {
 			ro := getStoreByID(d.CompactSlice())
 			if ro == nil {
-				callback(nil)
-			} else {
-				callback(ro.v.Interface())
+				return nil
 			}
+			return ro.v.Interface()
 		},
 		size: func(i any) uint64 {
 			ro := rootObjByV(reflect.ValueOf(i))

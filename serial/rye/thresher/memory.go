@@ -23,10 +23,9 @@ type storeRecord struct {
 var store = lmap.Map[string, storeRecord]{}
 
 type rootObj struct {
-	addr     uintptr
-	v        reflect.Value
-	id       []byte
-	callback func(any)
+	addr uintptr
+	v    reflect.Value
+	id   []byte
 }
 
 func (ro *rootObj) init() {
@@ -107,9 +106,7 @@ func getStoreByID(id []byte) *rootObj {
 
 	c := getCodec(rec.t)
 	d := compact.NewDeserializer(rec.data)
-	c.dec(d, func(a any) {
-		v := reflect.ValueOf(a)
-		ro.v.Elem().Set(v)
-	})
+	v := reflect.ValueOf(c.dec(d))
+	ro.v.Elem().Set(v)
 	return ro
 }

@@ -52,11 +52,7 @@ func TestGraph(t *testing.T) {
 	s := compact.MakeSerializer(int(size))
 	c.enc(first, s)
 	d := compact.NewDeserializer(s.Data)
-	ch := make(chan *Node)
-	go c.dec(d, func(a any) {
-		ch <- a.(*Node)
-	})
-	n2 := <-ch
+	n2 := c.dec(d).(*Node)
 	assert.Equal(t, first, n2)
 
 	g := Graph(first)
@@ -97,11 +93,7 @@ func TestStructCodec(t *testing.T) {
 	s := compact.MakeSerializer(int(size))
 	c.enc(n, s)
 	d := compact.NewDeserializer(s.Data)
-	ch := make(chan Node)
-	go c.dec(d, func(a any) {
-		ch <- a.(Node)
-	})
-	n2 := <-ch
+	n2 := c.dec(d).(Node)
 	assert.Equal(t, n, n2)
 }
 
