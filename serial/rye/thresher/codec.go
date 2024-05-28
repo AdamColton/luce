@@ -143,25 +143,34 @@ func makeStructCodec(t reflect.Type) *codec {
 	return c
 }
 
-var pointerCodec = &codec{
-	enc: func(i any, s compact.Serializer) {
-		ro := rootObjByV(reflect.ValueOf(i))
-		s.CompactSlice(ro.getID())
-	},
-	dec: func(d compact.Deserializer, callback func(any)) {
-		awaitRootObjByID(d.CompactSlice(), callback)
-	},
-	size: func(i any) uint64 {
-		ro := rootObjByV(reflect.ValueOf(i))
-		return compact.Size(ro.getID())
-	},
-	roots: func(v reflect.Value) []*rootObj {
-		ro := rootObjByV(v)
-		if ro != nil {
-			return []*rootObj{ro}
-		}
-		return nil
-	},
+var pointerCodec *codec
+
+func init() {
+	pointerCodec = &codec{
+		enc: func(i any, s compact.Serializer) {
+			ro := rootObjByV(reflect.ValueOf(i))
+			s.CompactSlice(ro.getID())
+		},
+		dec: func(d compact.Deserializer, callback func(any)) {
+			ro := getStoreByID(d.CompactSlice())
+			if ro == nil {
+				callback(nil)
+			} else {
+				callback(ro.v.Interface())
+			}
+		},
+		size: func(i any) uint64 {
+			ro := rootObjByV(reflect.ValueOf(i))
+			return compact.Size(ro.getID())
+		},
+		roots: func(v reflect.Value) []*rootObj {
+			ro := rootObjByV(v)
+			if ro != nil {
+				return []*rootObj{ro}
+			}
+			return nil
+		},
+	}
 }
 
 func fieldsRecur(i int, ln int, t reflect.Type, fields int) []fieldCodec {

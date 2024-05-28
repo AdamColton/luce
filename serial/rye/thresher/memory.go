@@ -8,11 +8,19 @@ import (
 
 	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/serial/rye/compact"
 	"github.com/adamcolton/luce/util/reflector"
 )
 
 var byPtr = lmap.Map[uintptr, *rootObj]{}
 var byID = lmap.Map[string, *rootObj]{}
+
+type storeRecord struct {
+	data []byte
+	t    reflect.Type
+}
+
+var store = lmap.Map[string, storeRecord]{}
 
 type rootObj struct {
 	addr     uintptr
@@ -73,51 +81,35 @@ func rootObjByV(v reflect.Value) *rootObj {
 	return newRootObj(ptr, v)
 }
 
-func rootObjByID(id []byte) *rootObj {
-	return byID[string(id)]
-}
-
-func awaitRootObjByID(id []byte, callback func(any)) {
+func getStoreByID(id []byte) *rootObj {
 	if bytes.Equal(id, zeroByte) {
-		callback(nil)
-		return
+		return nil
 	}
-	ro, found := byID[string(id)]
+
+	idStr := string(id)
+	ro, found := byID[idStr]
 	if !found {
 		ro = &rootObj{
 			id: id,
 		}
-		byID[string(id)] = ro
+	} else if ro.v.Kind() != reflect.Invalid {
+		return ro
 	}
-	if ro.v.Kind() != reflect.Invalid {
-		callback(ro.v.Interface())
-	} else if ro.callback == nil {
-		ro.callback = callback
-	} else {
-		prev := ro.callback
-		ro.callback = func(a any) {
-			prev(a)
-			callback(a)
-		}
-	}
-}
 
-func makeRootObj(t reflect.Type, id []byte) *rootObj {
-	ro, found := byID[string(id)]
+	rec, found := store[idStr]
 	if !found {
-		ro = &rootObj{
-			id: id,
-		}
-	}
-	if ro.v.Kind() == reflect.Invalid {
-		ro.v = reflect.New(t)
-		ro.addr = uintptr(ro.v.UnsafePointer())
-		ro.init()
-	}
-	if ro.callback != nil {
-		ro.callback(ro.v.Interface())
-		ro.callback = nil
+		return ro
 	}
 
+	ro.v = reflect.New(rec.t)
+	ro.addr = uintptr(ro.v.UnsafePointer())
+	ro.init()
+
+	c := getCodec(rec.t)
+	d := compact.NewDeserializer(rec.data)
+	c.dec(d, func(a any) {
+		v := reflect.ValueOf(a)
+		ro.v.Elem().Set(v)
+	})
 	return ro
 }

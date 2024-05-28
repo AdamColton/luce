@@ -63,16 +63,11 @@ func TestGraph(t *testing.T) {
 	assert.Equal(t, 1, g.types.Len())
 	assert.Equal(t, len(words), g.ptrs.Len())
 
-	data := g.enc()
-	assert.NotNil(t, data)
+	g.enc()
 
 	clearMemory()
 
-	g2 := &grapher{}
-	g2.dec(data)
-	assert.Equal(t, len(words), g.ptrs.Len())
-
-	cur = rootObjByID(firstID).v.Interface().(*Node)
+	cur = getStoreByID(firstID).v.Interface().(*Node)
 
 	for _, w := range words {
 		assert.Equal(t, w, cur.Value)
@@ -117,19 +112,12 @@ func TestStructPtrGraph(t *testing.T) {
 	}
 
 	g := Graph(n)
-	data := g.enc()
+	g.enc()
+	nID := rootObjByV(reflect.ValueOf(n)).id
 	n = nil
 	clearMemory()
-	if len(data) > 100 {
-		panic("wtf")
-	}
 
-	g = newGrapher()
-	g.dec(data)
-	for _, ro := range g.ptrs {
-		n = ro.v.Interface().(*Node)
-	}
-
+	n = getStoreByID(nID).v.Interface().(*Node)
 	assert.Equal(t, expected, n.Value)
 }
 
@@ -144,16 +132,15 @@ func TestRing(t *testing.T) {
 	n2.Next = n1
 
 	g := Graph(n1)
-	data := g.enc()
+	g.enc()
 	n1id := rootObjByV(reflect.ValueOf(n1)).id
 	n1 = nil
 	n2 = nil
 	clearMemory()
 
-	g = newGrapher()
-	g.dec(data)
-	n1 = rootObjByID(n1id).v.Interface().(*Node)
+	n1 = getStoreByID(n1id).v.Interface().(*Node)
 	assert.Equal(t, "node 1", n1.Value)
+	assert.Equal(t, "node 2", n1.Next.Value)
 }
 
 func TestRootObject(t *testing.T) {
