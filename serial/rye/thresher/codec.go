@@ -2,6 +2,7 @@ package thresher
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/adamcolton/luce/serial/rye/compact"
 	"github.com/adamcolton/luce/util/reflector"
@@ -9,7 +10,7 @@ import (
 
 type codec struct {
 	enc   func(i any, s compact.Serializer)
-	dec   func(d compact.Deserializer) any
+	dec   func(d compact.Deserializer) <-chan any
 	size  func(i any) uint64
 	roots func(i reflect.Value) []*rootObj
 }
@@ -19,8 +20,10 @@ var codecs = map[reflect.Type]*codec{
 		enc: func(v any, s compact.Serializer) {
 			s.CompactString(v.(string))
 		},
-		dec: func(d compact.Deserializer) any {
-			return d.CompactString()
+		dec: func(d compact.Deserializer) <-chan any {
+			ch := make(chan any, 1)
+			ch <- d.CompactString()
+			return ch
 		},
 		size: func(v any) uint64 {
 			return compact.SizeString(v.(string))
@@ -35,8 +38,10 @@ var codecs = map[reflect.Type]*codec{
 			}
 			s.Byte(bit)
 		},
-		dec: func(d compact.Deserializer) any {
-			return d.Byte() == 1
+		dec: func(d compact.Deserializer) <-chan any {
+			ch := make(chan any, 1)
+			ch <- d.Byte() == 1
+			return ch
 		},
 		size: func(v any) uint64 {
 			return 1
@@ -46,8 +51,10 @@ var codecs = map[reflect.Type]*codec{
 		enc: func(v any, s compact.Serializer) {
 			s.CompactInt64(int64(v.(int)))
 		},
-		dec: func(d compact.Deserializer) any {
-			return int(d.CompactInt64())
+		dec: func(d compact.Deserializer) <-chan any {
+			ch := make(chan any, 1)
+			ch <- int(d.CompactInt64())
+			return ch
 		},
 		size: func(v any) uint64 {
 			return compact.SizeInt64(int64(v.(int)))
@@ -91,22 +98,31 @@ func (sc *structCodec) enc(i any, s compact.Serializer) {
 	}
 }
 
-func (sc *structCodec) dec(d compact.Deserializer) any {
+func (sc *structCodec) dec(d compact.Deserializer) <-chan any {
 	srct := reflect.New(sc.Type).Elem()
+	wg := sync.WaitGroup{}
 	for _, fc := range sc.fields {
-		i := fc.dec(d)
-		if i != nil {
-			fv := reflect.ValueOf(i)
-			srct.Field(fc.idx).Set(fv)
-		}
+		wg.Add(1)
+		ch := fc.dec(d)
+		go func(fc fieldCodec) {
+			i := <-ch
+			if i != nil {
+				fv := reflect.ValueOf(i)
+				srct.Field(fc.idx).Set(fv)
+			}
+			wg.Done()
+		}(fc)
 	}
-	return srct.Interface()
+	ch := make(chan any, 1)
+	go func() {
+		wg.Wait()
+		ch <- srct.Interface()
+	}()
+	return ch
 }
 
 func (sc *structCodec) size(i any) (sum uint64) {
 	v := reflect.ValueOf(i)
-	ts := v.Type().String()
-	_ = ts
 	for _, fc := range sc.fields {
 		f := v.Field(fc.idx).Interface()
 		sum += fc.size(f)
@@ -143,12 +159,8 @@ var pointerCodec = &codec{
 		ro := rootObjByV(reflect.ValueOf(i))
 		s.CompactSlice(ro.getID())
 	},
-	dec: func(d compact.Deserializer) any {
-		ro := rootObjByID(d.CompactSlice())
-		if ro == nil {
-			return nil
-		}
-		return ro.v.Interface()
+	dec: func(d compact.Deserializer) <-chan any {
+		return awaitRootObjByID(d.CompactSlice())
 	},
 	size: func(i any) uint64 {
 		ro := rootObjByV(reflect.ValueOf(i))

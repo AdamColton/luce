@@ -5,10 +5,16 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/serial/rye/compact"
 	"github.com/adamcolton/luce/util/reflector"
 	"github.com/stretchr/testify/assert"
 )
+
+func clearMemory() {
+	byPtr = lmap.Map[uintptr, *rootObj]{}
+	byID = lmap.Map[string, *rootObj]{}
+}
 
 type Node struct {
 	Next  *Node
@@ -39,12 +45,14 @@ func TestGraph(t *testing.T) {
 	}
 	cur.Next = first
 
+	firstID := rootObjByV(reflect.ValueOf(first)).id
+
 	c := getCodec(reflect.TypeOf(first))
 	size := c.size(first)
 	s := compact.MakeSerializer(int(size))
 	c.enc(first, s)
 	d := compact.NewDeserializer(s.Data)
-	n2 := c.dec(d).(*Node)
+	n2 := (<-c.dec(d)).(*Node)
 	assert.Equal(t, first, n2)
 
 	g := Graph(first)
@@ -53,6 +61,19 @@ func TestGraph(t *testing.T) {
 
 	data := g.enc()
 	assert.NotNil(t, data)
+
+	clearMemory()
+
+	g2 := &grapher{}
+	g2.dec(data)
+	assert.Equal(t, len(words), g.ptrs.Len())
+
+	cur = rootObjByID(firstID).v.Interface().(*Node)
+
+	for _, w := range words {
+		assert.Equal(t, w, cur.Value)
+		cur = cur.Next
+	}
 }
 
 func TestProofGetPointer(t *testing.T) {
@@ -77,8 +98,54 @@ func TestStructCodec(t *testing.T) {
 	s := compact.MakeSerializer(int(size))
 	c.enc(n, s)
 	d := compact.NewDeserializer(s.Data)
-	n2 := c.dec(d).(Node)
+	n2 := (<-c.dec(d)).(Node)
 	assert.Equal(t, n, n2)
+}
+
+func TestStructPtrGraph(t *testing.T) {
+	expected := "this is a test"
+	n := &Node{
+		Value: expected,
+	}
+
+	g := Graph(n)
+	data := g.enc()
+	n = nil
+	clearMemory()
+	if len(data) > 100 {
+		panic("wtf")
+	}
+
+	g = newGrapher()
+	g.dec(data)
+	for _, ro := range g.ptrs {
+		n = ro.v.Interface().(*Node)
+	}
+
+	assert.Equal(t, expected, n.Value)
+}
+
+func TestRing(t *testing.T) {
+	n1 := &Node{
+		Value: "node 1",
+	}
+	n2 := &Node{
+		Value: "node 2",
+	}
+	n1.Next = n2
+	n2.Next = n1
+
+	g := Graph(n1)
+	data := g.enc()
+	n1id := rootObjByV(reflect.ValueOf(n1)).id
+	n1 = nil
+	n2 = nil
+	clearMemory()
+
+	g = newGrapher()
+	g.dec(data)
+	n1 = rootObjByID(n1id).v.Interface().(*Node)
+	assert.Equal(t, "node 1", n1.Value)
 }
 
 func TestRootObject(t *testing.T) {

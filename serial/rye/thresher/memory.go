@@ -1,6 +1,7 @@
 package thresher
 
 import (
+	"bytes"
 	"crypto/rand"
 	"reflect"
 	"runtime"
@@ -14,9 +15,21 @@ var byPtr = lmap.Map[uintptr, *rootObj]{}
 var byID = lmap.Map[string, *rootObj]{}
 
 type rootObj struct {
-	addr uintptr
-	v    reflect.Value
-	id   []byte
+	addr    uintptr
+	v       reflect.Value
+	id      []byte
+	awaited []chan<- any
+}
+
+func (ro *rootObj) init() {
+	ptr := ro.addr
+	byPtr[ptr] = ro
+	idStr := string(ro.id)
+	byID[idStr] = ro
+	runtime.SetFinalizer(ro.v.Interface(), func(any) {
+		delete(byPtr, ptr)
+		delete(byID, idStr)
+	})
 }
 
 var zeroByte = []byte{0}
@@ -41,13 +54,7 @@ func newRootObj(ptr uintptr, v reflect.Value) *rootObj {
 		id:   id,
 	}
 
-	byPtr[ptr] = ro
-	idStr := string(id)
-	byID[idStr] = ro
-	runtime.SetFinalizer(v.Interface(), func(any) {
-		delete(byPtr, ptr)
-		delete(byID, idStr)
-	})
+	ro.init()
 	return ro
 }
 
@@ -68,4 +75,47 @@ func rootObjByV(v reflect.Value) *rootObj {
 
 func rootObjByID(id []byte) *rootObj {
 	return byID[string(id)]
+}
+
+func awaitRootObjByID(id []byte) <-chan any {
+	ch := make(chan any, 1)
+	if bytes.Equal(id, zeroByte) {
+		ch <- nil
+		return ch
+	}
+	ro, found := byID[string(id)]
+	if !found {
+		ro = &rootObj{
+			id:      id,
+			awaited: []chan<- any{ch},
+		}
+		byID[string(id)] = ro
+	}
+	if ro.v.Kind() != reflect.Invalid {
+		ch <- ro.v.Interface()
+	}
+	return ch
+}
+
+func makeRootObj(t reflect.Type, id []byte) *rootObj {
+	ro, found := byID[string(id)]
+	if !found {
+		ro = &rootObj{
+			id: id,
+		}
+	}
+	if ro.v.Kind() == reflect.Invalid {
+		ro.v = reflect.New(t)
+		ro.addr = uintptr(ro.v.UnsafePointer())
+		ro.init()
+	}
+	if ro.awaited != nil {
+		i := ro.v.Interface()
+		for _, ch := range ro.awaited {
+			ch <- i
+		}
+		ro.awaited = nil
+	}
+
+	return ro
 }
