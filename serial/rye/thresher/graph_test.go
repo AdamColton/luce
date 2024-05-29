@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/ds/lmap"
+	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/serial/rye/compact"
 	"github.com/adamcolton/luce/util/reflector"
 	"github.com/stretchr/testify/assert"
@@ -45,25 +46,10 @@ func TestGraph(t *testing.T) {
 	}
 	cur.Next = first
 
-	firstID := rootObjByV(reflect.ValueOf(first)).id
-
-	c := getCodec(reflect.TypeOf(first))
-	size := c.size(first)
-	s := compact.MakeSerializer(int(size))
-	c.enc(first, s)
-	d := compact.NewDeserializer(s.Data)
-	n2 := c.dec(d).(*Node)
-	assert.Equal(t, first, n2)
-
-	g := Graph(first)
-	assert.Equal(t, 1, g.types.Len())
-	assert.Equal(t, len(words), g.ptrs.Len())
-
-	g.enc()
-
+	firstID := Save(first)
 	clearMemory()
 
-	cur = getStoreByID(firstID).v.Interface().(*Node)
+	cur = lerr.OK(Get[*Node](firstID))(errBadDecode)
 
 	for _, w := range words {
 		assert.Equal(t, w, cur.Value)
@@ -97,19 +83,19 @@ func TestStructCodec(t *testing.T) {
 	assert.Equal(t, n, n2)
 }
 
+var errBadDecode = lerr.Str("bad decode")
+
 func TestStructPtrGraph(t *testing.T) {
 	expected := "this is a test"
 	n := &Node{
 		Value: expected,
 	}
 
-	g := Graph(n)
-	g.enc()
-	nID := rootObjByV(reflect.ValueOf(n)).id
+	nID := Save(n)
 	n = nil
 	clearMemory()
 
-	n = getStoreByID(nID).v.Interface().(*Node)
+	n = lerr.OK(Get[*Node](nID))(errBadDecode)
 	assert.Equal(t, expected, n.Value)
 }
 
@@ -123,14 +109,13 @@ func TestRing(t *testing.T) {
 	n1.Next = n2
 	n2.Next = n1
 
-	g := Graph(n1)
-	g.enc()
-	n1id := rootObjByV(reflect.ValueOf(n1)).id
+	n1id := Save(n1)
 	n1 = nil
 	n2 = nil
 	clearMemory()
 
-	n1 = getStoreByID(n1id).v.Interface().(*Node)
+	n1 = lerr.OK(Get[*Node](n1id))(errBadDecode)
+
 	assert.Equal(t, "node 1", n1.Value)
 	assert.Equal(t, "node 2", n1.Next.Value)
 }
@@ -144,13 +129,11 @@ func TestRootObject(t *testing.T) {
 
 func TestIntSlice(t *testing.T) {
 	s := []int{3, 1, 4, 1, 5}
-	g := Graph(s)
-	g.enc()
 
-	sid := rootObjByV(reflect.ValueOf(s)).id
+	sid := Save(s)
 	clearMemory()
 
-	got := getStoreByID(sid).v.Interface().([]int)
+	got := lerr.OK(Get[[]int](sid))(errBadDecode)
 	assert.Equal(t, s, got)
 }
 
@@ -174,13 +157,11 @@ func TestStructSlice(t *testing.T) {
 			Age:  5,
 		},
 	}
-	g := Graph(s)
-	g.enc()
+	sid := Save(s)
 
-	sid := rootObjByV(reflect.ValueOf(s)).id
 	clearMemory()
 
-	got := getStoreByID(sid).v.Interface().([]Person)
+	got := lerr.OK(Get[[]Person](sid))(errBadDecode)
 	assert.Equal(t, s, got)
 }
 
@@ -199,13 +180,9 @@ func TestPointerSlice(t *testing.T) {
 			Age:  5,
 		},
 	}
-	g := Graph(s)
-	assert.Len(t, g.ptrs, 4)
-	g.enc()
-
-	sid := rootObjByV(reflect.ValueOf(s)).id
+	sid := Save(s)
 	clearMemory()
 
-	got := getStoreByID(sid).v.Interface().([]*Person)
+	got := lerr.OK(Get[[]*Person](sid))(errBadDecode)
 	assert.Equal(t, s, got)
 }

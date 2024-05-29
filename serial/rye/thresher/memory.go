@@ -8,7 +8,6 @@ import (
 	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/serial/rye/compact"
-	"github.com/adamcolton/luce/util/reflector"
 )
 
 var byPtr = lmap.Map[uintptr, *rootObj]{}
@@ -38,6 +37,14 @@ func (ro *rootObj) init() {
 	// })
 }
 
+func (ro *rootObj) baseValue() reflect.Value {
+	switch ro.v.Kind() {
+	case reflect.Slice:
+		return ro.v
+	}
+	return ro.v.Elem()
+}
+
 var zeroByte = []byte{0}
 
 func (ro *rootObj) getID() []byte {
@@ -48,9 +55,6 @@ func (ro *rootObj) getID() []byte {
 }
 
 func newRootObj(ptr uintptr, v reflect.Value) *rootObj {
-	if !reflector.CanElem(v.Kind()) {
-		panic("root obj must have elem")
-	}
 	id := make([]byte, 32)
 	lerr.Must(rand.Read(id))
 
@@ -79,6 +83,15 @@ func rootObjByV(v reflect.Value) *rootObj {
 	return newRootObj(ptr, v)
 }
 
+func Get[T any](id []byte) (t T, ok bool) {
+	ro := getStoreByID(id)
+	if ro == nil || ro.v.Kind() == reflect.Invalid {
+		return
+	}
+	t, ok = ro.v.Interface().(T)
+	return
+}
+
 func getStoreByID(id []byte) *rootObj {
 	if bytes.Equal(id, zeroByte) {
 		return nil
@@ -102,26 +115,20 @@ func getStoreByID(id []byte) *rootObj {
 	ro.v = reflect.New(rec.t)
 	str := rec.t.String()
 	_ = str
+	c := getBaseCodec(rec.t)
+	set := ro.v.Elem()
 
 	switch rec.t.Kind() {
-	default:
-		ro.addr = uintptr(ro.v.UnsafePointer())
-		c := getCodec(rec.t)
-		ro.init()
-
-		d := compact.NewDeserializer(rec.data)
-		v := reflect.ValueOf(c.dec(d))
-		ro.v.Elem().Set(v)
 	case reflect.Slice:
-		c := makeSliceCodec(rec.t)
 		ro.v = ro.v.Elem()
-		ro.addr = uintptr(ro.v.UnsafePointer())
-		ro.init()
-
-		d := compact.NewDeserializer(rec.data)
-		v := reflect.ValueOf(c.dec(d))
-		ro.v.Set(v)
 	}
+	ro.addr = uintptr(ro.v.UnsafePointer())
+	ro.init()
+
+	d := compact.NewDeserializer(rec.data)
+	v := reflect.ValueOf(c.dec(d))
+
+	set.Set(v)
 
 	return ro
 }

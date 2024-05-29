@@ -76,165 +76,19 @@ func getCodec(t reflect.Type) *codec {
 	return c
 }
 
-type fieldCodec struct {
-	idx int
-	*codec
-}
-
-type structCodec struct {
-	fields []fieldCodec
-	reflect.Type
-}
-
-func (sc *structCodec) enc(i any, s compact.Serializer) {
-	v := reflect.ValueOf(i)
-	for _, fc := range sc.fields {
-		f := v.Field(fc.idx).Interface()
-		fc.enc(f, s)
-	}
-}
-
-func (sc *structCodec) dec(d compact.Deserializer) any {
-	srct := reflect.New(sc.Type).Elem()
-	for _, fc := range sc.fields {
-		idx := fc.idx
-		i := fc.dec(d)
-		if i != nil {
-			fv := reflect.ValueOf(i)
-			srct.Field(idx).Set(fv)
-		}
-	}
-	return srct.Interface()
-}
-
-func (sc *structCodec) size(i any) (sum uint64) {
-	v := reflect.ValueOf(i)
-	for _, fc := range sc.fields {
-		f := v.Field(fc.idx).Interface()
-		sum += fc.size(f)
+func getBaseCodec(t reflect.Type) (c *codec) {
+	switch t.Kind() {
+	case reflect.Struct:
+		return getCodec(t)
+	case reflect.Pointer:
+		panic("cannnot get base codec of pointer")
+	case reflect.Slice:
+		c = getSliceCodec(t)
 	}
 	return
 }
-
-func (sc *structCodec) roots(v reflect.Value) (out []*rootObj) {
-	for _, fc := range sc.fields {
-		if fc.roots != nil {
-			f := v.Field(fc.idx)
-			out = append(out, fc.roots(f)...)
-		}
-	}
-	return
-}
-
-func makeStructCodec(t reflect.Type) *codec {
-	c := &codec{}
-	codecs[t] = c
-	sc := &structCodec{
-		Type:   t,
-		fields: fieldsRecur(0, t.NumField(), t, 0),
-	}
-	c.enc = sc.enc
-	c.dec = sc.dec
-	c.size = sc.size
-	c.roots = sc.roots
-	return c
-}
-
-var (
-	pointerCodec   *codec
-	baseSliceCodec *codec
-)
 
 func init() {
-	pointerCodec = &codec{
-		enc: func(i any, s compact.Serializer) {
-			ro := rootObjByV(reflect.ValueOf(i))
-			s.CompactSlice(ro.getID())
-		},
-		dec: func(d compact.Deserializer) any {
-			ro := getStoreByID(d.CompactSlice())
-			if ro == nil {
-				return nil
-			}
-			return ro.v.Interface()
-		},
-		size: func(i any) uint64 {
-			ro := rootObjByV(reflect.ValueOf(i))
-			return compact.Size(ro.getID())
-		},
-		roots: func(v reflect.Value) []*rootObj {
-			ro := rootObjByV(v)
-			if ro != nil {
-				return []*rootObj{ro}
-			}
-			return nil
-		},
-	}
-	baseSliceCodec = &codec{
-		enc: func(i any, s compact.Serializer) {
-			v := reflect.ValueOf(i)
-			ln := v.Len()
-			s.Uint64(uint64(v.Len()))
-			c := getCodec(v.Type().Elem())
-			for i := 0; i < ln; i++ {
-				c.enc(v.Index(i).Interface(), s)
-			}
-		},
-		size: func(i any) uint64 {
-			v := reflect.ValueOf(i)
-			c := getCodec(v.Type().Elem())
-			ln := v.Len()
-			var out uint64 = 8 // for size
-			for i := 0; i < ln; i++ {
-				out += c.size(v.Index(i).Interface())
-			}
-			return out
-		},
-		roots: func(v reflect.Value) []*rootObj {
-			c := getCodec(v.Type().Elem())
-			if c.roots == nil {
-				return nil
-			}
-			ln := v.Len()
-			var out []*rootObj
-			for i := 0; i < ln; i++ {
-				e := v.Index(i)
-				rts := c.roots(e)
-				out = append(out, rts...)
-			}
-			return out
-		},
-	}
-}
-
-func fieldsRecur(i int, ln int, t reflect.Type, fields int) []fieldCodec {
-	for ; i < ln; i++ {
-		f := t.Field(i)
-		if f.IsExported() {
-			if c := getCodec(f.Type); c != nil {
-				fcs := fieldsRecur(i+1, ln, t, fields+1)
-				fcs[fields].idx = i
-				fcs[fields].codec = c
-				return fcs
-			}
-		}
-	}
-	return make([]fieldCodec, fields)
-}
-
-func makeSliceCodec(t reflect.Type) *codec {
-	return &codec{
-		enc:   baseSliceCodec.enc,
-		size:  baseSliceCodec.size,
-		roots: baseSliceCodec.roots,
-		dec: func(d compact.Deserializer) any {
-			ln := int(d.Uint64())
-			s := reflect.MakeSlice(t, ln, ln)
-			c := getCodec(t.Elem())
-			for i := 0; i < ln; i++ {
-				s.Index(i).Set(reflect.ValueOf(c.dec(d)))
-			}
-			return s.Interface()
-		},
-	}
+	initPointerCoded()
+	initBaseSliceCodec()
 }
