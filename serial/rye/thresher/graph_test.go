@@ -141,3 +141,71 @@ func TestRootObject(t *testing.T) {
 	}
 	rootObjByV(reflect.ValueOf(n))
 }
+
+func TestIntSlice(t *testing.T) {
+	s := []int{3, 1, 4, 1, 5}
+	g := Graph(s)
+	g.enc()
+
+	sid := rootObjByV(reflect.ValueOf(s)).id
+	clearMemory()
+
+	got := getStoreByID(sid).v.Interface().([]int)
+	assert.Equal(t, s, got)
+}
+
+type Person struct {
+	Name string
+	Age  int
+}
+
+func TestStructSlice(t *testing.T) {
+	s := []Person{
+		{
+			Name: "Adam",
+			Age:  39,
+		},
+		{
+			Name: "Lauren",
+			Age:  38,
+		},
+		{
+			Name: "Fletcher",
+			Age:  5,
+		},
+	}
+	g := Graph(s)
+	g.enc()
+
+	sid := rootObjByV(reflect.ValueOf(s)).id
+	clearMemory()
+
+	got := getStoreByID(sid).v.Interface().([]Person)
+	assert.Equal(t, s, got)
+}
+
+func TestPointerSlice(t *testing.T) {
+	s := []*Person{
+		{
+			Name: "Adam",
+			Age:  39,
+		},
+		{
+			Name: "Lauren",
+			Age:  38,
+		},
+		{
+			Name: "Fletcher",
+			Age:  5,
+		},
+	}
+	g := Graph(s)
+	assert.Len(t, g.ptrs, 4)
+	g.enc()
+
+	sid := rootObjByV(reflect.ValueOf(s)).id
+	clearMemory()
+
+	got := getStoreByID(sid).v.Interface().([]*Person)
+	assert.Equal(t, s, got)
+}

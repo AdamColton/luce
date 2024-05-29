@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/rand"
 	"reflect"
-	"runtime"
 
 	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/lerr"
@@ -33,10 +32,10 @@ func (ro *rootObj) init() {
 	byPtr[ptr] = ro
 	idStr := string(ro.id)
 	byID[idStr] = ro
-	runtime.SetFinalizer(ro.v.Interface(), func(any) {
-		delete(byPtr, ptr)
-		delete(byID, idStr)
-	})
+	// runtime.SetFinalizer(ro.v.Interface(), func(any) {
+	// 	delete(byPtr, ptr)
+	// 	delete(byID, idStr)
+	// })
 }
 
 var zeroByte = []byte{0}
@@ -101,12 +100,28 @@ func getStoreByID(id []byte) *rootObj {
 	}
 
 	ro.v = reflect.New(rec.t)
-	ro.addr = uintptr(ro.v.UnsafePointer())
-	ro.init()
+	str := rec.t.String()
+	_ = str
 
-	c := getCodec(rec.t)
-	d := compact.NewDeserializer(rec.data)
-	v := reflect.ValueOf(c.dec(d))
-	ro.v.Elem().Set(v)
+	switch rec.t.Kind() {
+	default:
+		ro.addr = uintptr(ro.v.UnsafePointer())
+		c := getCodec(rec.t)
+		ro.init()
+
+		d := compact.NewDeserializer(rec.data)
+		v := reflect.ValueOf(c.dec(d))
+		ro.v.Elem().Set(v)
+	case reflect.Slice:
+		c := makeSliceCodec(rec.t)
+		ro.v = ro.v.Elem()
+		ro.addr = uintptr(ro.v.UnsafePointer())
+		ro.init()
+
+		d := compact.NewDeserializer(rec.data)
+		v := reflect.ValueOf(c.dec(d))
+		ro.v.Set(v)
+	}
+
 	return ro
 }
