@@ -186,3 +186,25 @@ func TestPointerSlice(t *testing.T) {
 	got := lerr.OK(Get[[]*Person](sid))(errBadDecode)
 	assert.Equal(t, s, got)
 }
+
+func TestProofReflectCast(t *testing.T) {
+	var i64 int64 = 31415
+	var i32 int32
+	reflect.ValueOf(&i32).Elem().SetInt(i64)
+	assert.Equal(t, int32(i64), i32)
+}
+
+func TestStructEncoding(t *testing.T) {
+	c := getCodec(reflector.Type[Person]())
+
+	e := compact.NewDeserializer(encodings[string(c.encodingID)])
+
+	age := compact.NewDeserializer(encodings[string(e.CompactSlice())])
+	assert.Equal(t, "Age", age.CompactString())
+	assert.Equal(t, intEncID, age.CompactSlice())
+
+	name := compact.NewDeserializer(encodings[string(e.CompactSlice())])
+	assert.Equal(t, "Name", name.CompactString())
+	assert.Equal(t, compactSliceEncID, name.CompactSlice())
+
+}

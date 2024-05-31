@@ -7,11 +7,19 @@ import (
 	"github.com/adamcolton/luce/util/reflector"
 )
 
+var (
+	intEncID          = []byte{0, 1}
+	uintEncID         = []byte{0, 2}
+	byteEncID         = []byte{0, 3}
+	compactSliceEncID = []byte{0, 4}
+)
+
 type codec struct {
-	enc   func(i any, s compact.Serializer)
-	dec   func(d compact.Deserializer) any
-	size  func(i any) uint64
-	roots func(i reflect.Value) []*rootObj
+	enc        func(i any, s compact.Serializer)
+	dec        func(d compact.Deserializer) any
+	size       func(i any) uint64
+	roots      func(i reflect.Value) []*rootObj
+	encodingID []byte
 }
 
 var codecs = map[reflect.Type]*codec{
@@ -25,6 +33,7 @@ var codecs = map[reflect.Type]*codec{
 		size: func(v any) uint64 {
 			return compact.SizeString(v.(string))
 		},
+		encodingID: compactSliceEncID,
 	},
 	reflector.Type[bool](): {
 		enc: func(v any, s compact.Serializer) {
@@ -41,17 +50,7 @@ var codecs = map[reflect.Type]*codec{
 		size: func(v any) uint64 {
 			return 1
 		},
-	},
-	reflector.Type[int](): {
-		enc: func(v any, s compact.Serializer) {
-			s.CompactInt64(int64(v.(int)))
-		},
-		dec: func(d compact.Deserializer) any {
-			return int(d.CompactInt64())
-		},
-		size: func(v any) uint64 {
-			return compact.SizeInt64(int64(v.(int)))
-		},
+		encodingID: byteEncID,
 	},
 }
 
@@ -86,9 +85,4 @@ func getBaseCodec(t reflect.Type) (c *codec) {
 		c = getSliceCodec(t)
 	}
 	return
-}
-
-func init() {
-	initPointerCoded()
-	initBaseSliceCodec()
 }

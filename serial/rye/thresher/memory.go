@@ -13,13 +13,6 @@ import (
 var byPtr = lmap.Map[uintptr, *rootObj]{}
 var byID = lmap.Map[string, *rootObj]{}
 
-type storeRecord struct {
-	data []byte
-	t    reflect.Type
-}
-
-var store = lmap.Map[string, storeRecord]{}
-
 type rootObj struct {
 	addr uintptr
 	v    reflect.Value

@@ -32,5 +32,6 @@ func initPointerCoded() {
 			}
 			return nil
 		},
+		encodingID: compactSliceEncID,
 	}
 }
