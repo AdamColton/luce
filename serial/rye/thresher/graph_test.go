@@ -69,7 +69,8 @@ func TestProofGetPointer(t *testing.T) {
 }
 
 func TestStructCodec(t *testing.T) {
-	c := makeStructCodec(reflector.Type[Node]())
+	nt := reflector.Type[Node]()
+	c := makeStructCodec(nt)
 
 	n := Node{
 		Value: "this is a test",
@@ -79,7 +80,11 @@ func TestStructCodec(t *testing.T) {
 	s := compact.MakeSerializer(int(size))
 	c.enc(n, s)
 	d := compact.NewDeserializer(s.Data)
-	n2 := c.dec(d).(Node)
+	dec := decoders[typeEncoding{
+		encID: string(c.encodingID),
+		t:     nt,
+	}]
+	n2 := dec(d).(Node)
 	assert.Equal(t, n, n2)
 }
 

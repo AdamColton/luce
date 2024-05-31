@@ -16,7 +16,6 @@ var (
 
 type codec struct {
 	enc        func(i any, s compact.Serializer)
-	dec        func(d compact.Deserializer) any
 	size       func(i any) uint64
 	roots      func(i reflect.Value) []*rootObj
 	encodingID []byte
@@ -26,9 +25,6 @@ var codecs = map[reflect.Type]*codec{
 	reflector.Type[string](): {
 		enc: func(v any, s compact.Serializer) {
 			s.CompactString(v.(string))
-		},
-		dec: func(d compact.Deserializer) any {
-			return d.CompactString()
 		},
 		size: func(v any) uint64 {
 			return compact.SizeString(v.(string))
@@ -43,9 +39,6 @@ var codecs = map[reflect.Type]*codec{
 				bit = 1
 			}
 			s.Byte(bit)
-		},
-		dec: func(d compact.Deserializer) any {
-			return d.Byte() == 1
 		},
 		size: func(v any) uint64 {
 			return 1
@@ -67,6 +60,10 @@ func getCodec(t reflect.Type) *codec {
 	case reflect.Pointer:
 		c = pointerCodec
 		codecs[t] = c
+		decoders[typeEncoding{
+			encID: string(c.encodingID),
+			t:     t,
+		}] = pointerDecoder
 	case reflect.Slice:
 		c = pointerCodec
 		codecs[t] = c

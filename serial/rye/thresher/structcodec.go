@@ -58,7 +58,13 @@ func (sc *structCodec) dec(d compact.Deserializer) any {
 	}
 	for _, fc := range sc.fieldCodecs {
 		idx := fc.idx
-		i := fc.dec(d)
+		str := sc.Type.Field(idx).Type.String()
+		_ = str
+		dec := decoders[typeEncoding{
+			encID: string(fc.encodingID),
+			t:     sc.Type.Field(idx).Type,
+		}]
+		i := dec(d)
 		if i != nil {
 			fv := reflect.ValueOf(i)
 			srct.Field(idx).Set(fv)
@@ -99,7 +105,6 @@ func makeStructCodec(t reflect.Type) *codec {
 	})
 
 	c.enc = sc.enc
-	c.dec = sc.dec
 	c.size = sc.size
 	c.roots = sc.roots
 
@@ -110,6 +115,11 @@ func makeStructCodec(t reflect.Type) *codec {
 	sc.encodingID = baseHash.Sum(nil)
 	c.encodingID = sc.encodingID
 	encodings[string(sc.encodingID)] = s.Data
+
+	decoders[typeEncoding{
+		encID: string(sc.encodingID),
+		t:     t,
+	}] = sc.dec
 
 	return c
 }

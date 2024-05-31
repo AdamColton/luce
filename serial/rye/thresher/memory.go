@@ -119,7 +119,11 @@ func getStoreByID(id []byte) *rootObj {
 	ro.init()
 
 	d := compact.NewDeserializer(rec.data)
-	v := reflect.ValueOf(c.dec(d))
+	dec := decoders[typeEncoding{
+		encID: string(c.encodingID),
+		t:     rec.t,
+	}]
+	v := reflect.ValueOf(dec(d))
 
 	set.Set(v)
 

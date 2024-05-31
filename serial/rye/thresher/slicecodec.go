@@ -36,8 +36,14 @@ var sliceHashPrefix = []byte{1, 1}
 
 func getSliceCodec(t reflect.Type) *codec {
 	sc, found := sliceCodecs[t]
-	ec := getCodec(t.Elem())
 	if !found {
+		et := t.Elem()
+		ec := getCodec(et)
+		edec := decoders[typeEncoding{
+			t:     et,
+			encID: string(ec.encodingID),
+		}]
+
 		h := sha256.New()
 		h.Write(sliceHashPrefix)
 		h.Write(ec.encodingID)
@@ -64,23 +70,26 @@ func getSliceCodec(t reflect.Type) *codec {
 				}
 				return out
 			},
-			roots: baseSliceCodec.roots,
-			dec: func(d compact.Deserializer) any {
-				id := d.CompactSlice()
-				if !bytes.Equal(eid, id) {
-					panic("encodingID does not match")
-				}
-				ln := int(d.Uint64())
-				s := reflect.MakeSlice(t, ln, ln)
-				for i := 0; i < ln; i++ {
-					s.Index(i).Set(reflect.ValueOf(ec.dec(d)))
-				}
-				return s.Interface()
-			},
+			roots:      baseSliceCodec.roots,
 			encodingID: eid,
 		}
 		sliceCodecs[t] = sc
 		encodings[string(eid)] = ec.encodingID
+		decoders[typeEncoding{
+			encID: string(eid),
+			t:     t,
+		}] = func(d compact.Deserializer) any {
+			id := d.CompactSlice()
+			if !bytes.Equal(eid, id) {
+				panic("encodingID does not match")
+			}
+			ln := int(d.Uint64())
+			s := reflect.MakeSlice(t, ln, ln)
+			for i := 0; i < ln; i++ {
+				s.Index(i).Set(reflect.ValueOf(edec(d)))
+			}
+			return s.Interface()
+		}
 	}
 	return sc
 }

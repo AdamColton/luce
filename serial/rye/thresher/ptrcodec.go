@@ -6,20 +6,16 @@ import (
 	"github.com/adamcolton/luce/serial/rye/compact"
 )
 
-var pointerCodec *codec
+var (
+	pointerCodec   *codec
+	pointerDecoder decoder
+)
 
 func initPointerCoded() {
 	pointerCodec = &codec{
 		enc: func(i any, s compact.Serializer) {
 			ro := rootObjByV(reflect.ValueOf(i))
 			s.CompactSlice(ro.getID())
-		},
-		dec: func(d compact.Deserializer) any {
-			ro := getStoreByID(d.CompactSlice())
-			if ro == nil {
-				return nil
-			}
-			return ro.v.Interface()
 		},
 		size: func(i any) uint64 {
 			ro := rootObjByV(reflect.ValueOf(i))
@@ -33,5 +29,12 @@ func initPointerCoded() {
 			return nil
 		},
 		encodingID: compactSliceEncID,
+	}
+	pointerDecoder = func(d compact.Deserializer) any {
+		ro := getStoreByID(d.CompactSlice())
+		if ro == nil {
+			return nil
+		}
+		return ro.v.Interface()
 	}
 }
