@@ -7,8 +7,7 @@ import (
 )
 
 var (
-	pointerCodec   *codec
-	pointerDecoder decoder
+	pointerCodec *codec
 )
 
 func initPointerCoded() {
@@ -30,8 +29,11 @@ func initPointerCoded() {
 		},
 		encodingID: compactSliceEncID,
 	}
-	pointerDecoder = func(d compact.Deserializer) any {
-		ro := getStoreByID(d.CompactSlice())
+}
+
+func pointerDecoder(t reflect.Type) decoder {
+	return func(d compact.Deserializer) any {
+		ro := getStoreByID(t, d.CompactSlice())
 		if ro == nil {
 			return nil
 		}

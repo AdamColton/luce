@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TODO: test double pointer
+
 func clearMemory() {
 	byPtr = lmap.Map[uintptr, *rootObj]{}
 	byID = lmap.Map[string, *rootObj]{}
@@ -202,13 +204,13 @@ func TestProofReflectCast(t *testing.T) {
 func TestStructEncoding(t *testing.T) {
 	c := getCodec(reflector.Type[Person]())
 
-	e := compact.NewDeserializer(encodings[string(c.encodingID)])
+	e := compact.NewDeserializer(store[string(c.encodingID)])
 
-	age := compact.NewDeserializer(encodings[string(e.CompactSlice())])
+	age := compact.NewDeserializer(store[string(e.CompactSlice())])
 	assert.Equal(t, "Age", age.CompactString())
 	assert.Equal(t, intEncID, age.CompactSlice())
 
-	name := compact.NewDeserializer(encodings[string(e.CompactSlice())])
+	name := compact.NewDeserializer(store[string(e.CompactSlice())])
 	assert.Equal(t, "Name", name.CompactString())
 	assert.Equal(t, compactSliceEncID, name.CompactSlice())
 

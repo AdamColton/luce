@@ -8,6 +8,7 @@ import (
 	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/serial/rye/compact"
+	"github.com/adamcolton/luce/util/reflector"
 )
 
 var byPtr = lmap.Map[uintptr, *rootObj]{}
@@ -77,7 +78,9 @@ func rootObjByV(v reflect.Value) *rootObj {
 }
 
 func Get[T any](id []byte) (t T, ok bool) {
-	ro := getStoreByID(id)
+	rt := reflector.Type[T]()
+
+	ro := getStoreByID(rt, id)
 	if ro == nil || ro.v.Kind() == reflect.Invalid {
 		return
 	}
@@ -85,7 +88,7 @@ func Get[T any](id []byte) (t T, ok bool) {
 	return
 }
 
-func getStoreByID(id []byte) *rootObj {
+func getStoreByID(t reflect.Type, id []byte) *rootObj {
 	if bytes.Equal(id, zeroByte) {
 		return nil
 	}
@@ -100,28 +103,34 @@ func getStoreByID(id []byte) *rootObj {
 		return ro
 	}
 
-	rec, found := store[idStr]
+	data, found := store[idStr]
 	if !found {
 		return ro
 	}
 
-	ro.v = reflect.New(rec.t)
-	str := rec.t.String()
+	str := t.String()
 	_ = str
-	c := getBaseCodec(rec.t)
+	isPtr := t.Kind() == reflect.Pointer
+	if isPtr {
+		t = t.Elem()
+	}
+
+	ro.v = reflect.New(t)
+
+	c := getBaseCodec(t)
 	set := ro.v.Elem()
 
-	switch rec.t.Kind() {
+	switch t.Kind() {
 	case reflect.Slice:
 		ro.v = ro.v.Elem()
 	}
 	ro.addr = uintptr(ro.v.UnsafePointer())
 	ro.init()
 
-	d := compact.NewDeserializer(rec.data)
+	d := compact.NewDeserializer(data)
 	dec := decoders[typeEncoding{
 		encID: string(c.encodingID),
-		t:     rec.t,
+		t:     t,
 	}]
 	v := reflect.ValueOf(dec(d))
 

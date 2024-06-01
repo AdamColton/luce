@@ -63,7 +63,7 @@ func getCodec(t reflect.Type) *codec {
 		decoders[typeEncoding{
 			encID: string(c.encodingID),
 			t:     t,
-		}] = pointerDecoder
+		}] = pointerDecoder(t)
 	case reflect.Slice:
 		c = pointerCodec
 		codecs[t] = c

@@ -30,7 +30,7 @@ func (fc *fieldCodec) hash(t reflect.Type, h hash.Hash) []byte {
 	h.Write(d.encodingID)
 	id := h.Sum(nil)
 
-	encodings[string(id)] = s.Data
+	store[string(id)] = s.Data
 
 	return id
 }
@@ -114,7 +114,7 @@ func makeStructCodec(t reflect.Type) *codec {
 	s := fieldsHashRecur(0, 0, sc.Type, sc.fieldCodecs, baseHash, fieldHash, make([][]byte, len(sc.fieldCodecs)))
 	sc.encodingID = baseHash.Sum(nil)
 	c.encodingID = sc.encodingID
-	encodings[string(sc.encodingID)] = s.Data
+	store[string(sc.encodingID)] = s.Data
 
 	decoders[typeEncoding{
 		encID: string(sc.encodingID),

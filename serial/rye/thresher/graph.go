@@ -59,9 +59,6 @@ func (g *grapher) enc() {
 		size := c.size(i)
 		s := compact.MakeSerializer(int(size))
 		c.enc(i, s)
-		store[string(ro.id)] = storeRecord{
-			t:    t,
-			data: s.Data,
-		}
+		store[string(ro.id)] = s.Data
 	}
 }

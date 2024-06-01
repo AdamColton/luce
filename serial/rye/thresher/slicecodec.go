@@ -74,7 +74,7 @@ func getSliceCodec(t reflect.Type) *codec {
 			encodingID: eid,
 		}
 		sliceCodecs[t] = sc
-		encodings[string(eid)] = ec.encodingID
+		store[string(eid)] = ec.encodingID
 		decoders[typeEncoding{
 			encID: string(eid),
 			t:     t,
