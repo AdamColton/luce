@@ -72,7 +72,7 @@ func TestProofGetPointer(t *testing.T) {
 
 func TestStructCodec(t *testing.T) {
 	nt := reflector.Type[Node]()
-	c := makeStructCodec(nt)
+	c := getStructEncoder(nt)
 
 	n := Node{
 		Value: "this is a test",
@@ -80,12 +80,9 @@ func TestStructCodec(t *testing.T) {
 
 	size := c.size(n)
 	s := compact.MakeSerializer(int(size))
-	c.enc(n, s)
+	c.encode(n, s, true)
 	d := compact.NewDeserializer(s.Data)
-	dec := decoders[typeEncoding{
-		encID: string(c.encodingID),
-		t:     nt,
-	}]
+	dec := getDecoder(nt, d.CompactSlice())
 	n2 := dec(d).(Node)
 	assert.Equal(t, n, n2)
 }
@@ -202,9 +199,10 @@ func TestProofReflectCast(t *testing.T) {
 }
 
 func TestStructEncoding(t *testing.T) {
-	c := getCodec(reflector.Type[Person]())
+	c := getEncoder(reflector.Type[Person]())
 
 	e := compact.NewDeserializer(store[string(c.encodingID)])
+	assert.Equal(t, uint64(2), e.CompactUint64())
 
 	age := compact.NewDeserializer(store[string(e.CompactSlice())])
 	assert.Equal(t, "Age", age.CompactString())
@@ -214,4 +212,76 @@ func TestStructEncoding(t *testing.T) {
 	assert.Equal(t, "Name", name.CompactString())
 	assert.Equal(t, compactSliceEncID, name.CompactSlice())
 
+}
+
+type PersonV2 struct {
+	Name string
+	Age  int16
+	Role string
+}
+
+func TestMigration(t *testing.T) {
+	p := &Person{
+		Name: "Adam",
+		Age:  39,
+	}
+
+	id := Save(p)
+	clearMemory()
+
+	p2 := lerr.OK(Get[*PersonV2](id))(errBadDecode)
+	assert.Equal(t, p.Name, p2.Name)
+	assert.Equal(t, p.Age, int(p2.Age))
+}
+
+func TestSliceStructMigration(t *testing.T) {
+	s := []Person{
+		{
+			Name: "Adam",
+			Age:  39,
+		},
+		{
+			Name: "Lauren",
+			Age:  38,
+		},
+		{
+			Name: "Fletcher",
+			Age:  5,
+		},
+	}
+	sid := Save(s)
+
+	clearMemory()
+
+	got := lerr.OK(Get[[]PersonV2](sid))(errBadDecode)
+	for i, p := range s {
+		assert.Equal(t, p.Name, got[i].Name)
+		assert.Equal(t, p.Age, int(got[i].Age))
+	}
+}
+
+func TestSliceStructPtrMigration(t *testing.T) {
+	s := []*Person{
+		{
+			Name: "Adam",
+			Age:  39,
+		},
+		{
+			Name: "Lauren",
+			Age:  38,
+		},
+		{
+			Name: "Fletcher",
+			Age:  5,
+		},
+	}
+	sid := Save(s)
+
+	clearMemory()
+
+	got := lerr.OK(Get[[]*PersonV2](sid))(errBadDecode)
+	for i, p := range s {
+		assert.Equal(t, p.Name, got[i].Name)
+		assert.Equal(t, p.Age, int(got[i].Age))
+	}
 }

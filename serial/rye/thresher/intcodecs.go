@@ -8,8 +8,11 @@ import (
 
 func intCodec[I constraints.Signed]() {
 	t := reflector.Type[I]()
-	codecs[t] = &codec{
-		enc: func(v any, s compact.Serializer) {
+	encoders[t] = &encoder{
+		encode: func(v any, s compact.Serializer, base bool) {
+			if base {
+				s.CompactSlice(intEncID)
+			}
 			s.CompactInt64(int64(v.(I)))
 		},
 		size: func(v any) uint64 {
@@ -17,18 +20,19 @@ func intCodec[I constraints.Signed]() {
 		},
 		encodingID: intEncID,
 	}
-	decoders[typeEncoding{
-		encID: string(intEncID),
-		t:     t,
-	}] = func(d compact.Deserializer) any {
+	dec := func(d compact.Deserializer) any {
 		return I(d.CompactInt64())
 	}
+	addDecoder(t, intEncID, dec)
 }
 
 func uintCodec[U constraints.Unsigned]() {
 	t := reflector.Type[U]()
-	codecs[t] = &codec{
-		enc: func(v any, s compact.Serializer) {
+	encoders[t] = &encoder{
+		encode: func(v any, s compact.Serializer, base bool) {
+			if base {
+				s.CompactSlice(intEncID)
+			}
 			s.CompactUint64(uint64(v.(U)))
 		},
 		size: func(v any) uint64 {
@@ -36,12 +40,10 @@ func uintCodec[U constraints.Unsigned]() {
 		},
 		encodingID: uintEncID,
 	}
-	decoders[typeEncoding{
-		encID: string(uintEncID),
-		t:     t,
-	}] = func(d compact.Deserializer) any {
+	dec := func(d compact.Deserializer) any {
 		return U(d.CompactUint64())
 	}
+	addDecoder(t, uintEncID, dec)
 }
 
 func initIntCodecs() {

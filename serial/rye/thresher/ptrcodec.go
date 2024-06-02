@@ -7,12 +7,15 @@ import (
 )
 
 var (
-	pointerCodec *codec
+	pointerEncoder *encoder
 )
 
 func initPointerCoded() {
-	pointerCodec = &codec{
-		enc: func(i any, s compact.Serializer) {
+	pointerEncoder = &encoder{
+		encode: func(i any, s compact.Serializer, base bool) {
+			if base {
+				s.CompactSlice(compactSliceEncID)
+			}
 			ro := rootObjByV(reflect.ValueOf(i))
 			s.CompactSlice(ro.getID())
 		},

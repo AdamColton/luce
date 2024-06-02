@@ -49,7 +49,7 @@ func (ro *rootObj) getID() []byte {
 }
 
 func newRootObj(ptr uintptr, v reflect.Value) *rootObj {
-	id := make([]byte, 32)
+	id := make([]byte, 12)
 	lerr.Must(rand.Read(id))
 
 	ro := &rootObj{
@@ -117,7 +117,8 @@ func getStoreByID(t reflect.Type, id []byte) *rootObj {
 
 	ro.v = reflect.New(t)
 
-	c := getBaseCodec(t)
+	d := compact.NewDeserializer(data)
+	encID := d.CompactSlice()
 	set := ro.v.Elem()
 
 	switch t.Kind() {
@@ -127,11 +128,9 @@ func getStoreByID(t reflect.Type, id []byte) *rootObj {
 	ro.addr = uintptr(ro.v.UnsafePointer())
 	ro.init()
 
-	d := compact.NewDeserializer(data)
-	dec := decoders[typeEncoding{
-		encID: string(c.encodingID),
-		t:     t,
-	}]
+	str = t.String()
+	_ = str
+	dec := getDecoder(t, encID)
 	v := reflect.ValueOf(dec(d))
 
 	set.Set(v)

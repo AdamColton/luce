@@ -14,16 +14,19 @@ var (
 	compactSliceEncID = []byte{0, 4}
 )
 
-type codec struct {
-	enc        func(i any, s compact.Serializer)
+type encoder struct {
+	encode     func(i any, s compact.Serializer, base bool)
 	size       func(i any) uint64
 	roots      func(i reflect.Value) []*rootObj
 	encodingID []byte
 }
 
-var codecs = map[reflect.Type]*codec{
+var encoders = map[reflect.Type]*encoder{
 	reflector.Type[string](): {
-		enc: func(v any, s compact.Serializer) {
+		encode: func(v any, s compact.Serializer, base bool) {
+			if base {
+				s.CompactSlice(compactSliceEncID)
+			}
 			s.CompactString(v.(string))
 		},
 		size: func(v any) uint64 {
@@ -32,7 +35,10 @@ var codecs = map[reflect.Type]*codec{
 		encodingID: compactSliceEncID,
 	},
 	reflector.Type[bool](): {
-		enc: func(v any, s compact.Serializer) {
+		encode: func(v any, s compact.Serializer, base bool) {
+			if base {
+				s.CompactSlice(byteEncID)
+			}
 			bit := byte(0)
 			bol := v.(bool)
 			if bol {
@@ -47,39 +53,36 @@ var codecs = map[reflect.Type]*codec{
 	},
 }
 
-func getCodec(t reflect.Type) *codec {
-	c, found := codecs[t]
+func getEncoder(t reflect.Type) *encoder {
+	enc, found := encoders[t]
 	if found {
-		return c
+		return enc
 	}
 
 	switch t.Kind() {
 	case reflect.Struct:
-		c = makeStructCodec(t)
-		codecs[t] = c
+		enc = getStructEncoder(t)
+		encoders[t] = enc
 	case reflect.Pointer:
-		c = pointerCodec
-		codecs[t] = c
-		decoders[typeEncoding{
-			encID: string(c.encodingID),
-			t:     t,
-		}] = pointerDecoder(t)
+		enc = pointerEncoder
+		encoders[t] = enc
+		addDecoder(t, enc.encodingID, pointerDecoder(t))
 	case reflect.Slice:
-		c = pointerCodec
-		codecs[t] = c
+		enc = pointerEncoder
+		encoders[t] = enc
 	}
 
-	return c
+	return enc
 }
 
-func getBaseCodec(t reflect.Type) (c *codec) {
+func getBaseEncoder(t reflect.Type) (enc *encoder) {
 	switch t.Kind() {
 	case reflect.Struct:
-		return getCodec(t)
-	case reflect.Pointer:
-		panic("cannnot get base codec of pointer")
+		return getEncoder(t)
 	case reflect.Slice:
-		c = getSliceCodec(t)
+		enc = getSliceEncoder(t)
+	default:
+		panic("cannnot get base encoder of " + t.String())
 	}
 	return
 }

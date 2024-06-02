@@ -38,7 +38,7 @@ type grapher struct {
 func (g *grapher) walk(ro *rootObj) {
 	g.ptrs[ro.addr] = ro
 	v := ro.baseValue()
-	c := getBaseCodec(v.Type())
+	c := getBaseEncoder(v.Type())
 
 	for _, r := range c.roots(v) {
 		_, found := g.ptrs[r.addr]
@@ -54,11 +54,11 @@ func (g *grapher) enc() {
 
 		i := v.Interface()
 		t := v.Type()
-		c := getBaseCodec(t)
+		c := getBaseEncoder(t)
 
 		size := c.size(i)
 		s := compact.MakeSerializer(int(size))
-		c.enc(i, s)
+		c.encode(i, s, true)
 		store[string(ro.id)] = s.Data
 	}
 }

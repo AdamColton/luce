@@ -29,3 +29,35 @@ var decoders = lmap.Map[typeEncoding, decoder]{
 		return d.Byte() == 1
 	},
 }
+
+func getDecoder(t reflect.Type, id []byte) decoder {
+	te := typeEncoding{
+		encID: string(id),
+		t:     t,
+	}
+	d, found := decoders[te]
+	if found {
+		return d
+	}
+	str := t.String()
+	_ = str
+	switch t.Kind() {
+	case reflect.Struct:
+		d = makeStructDecoder(t, id)
+	case reflect.Slice:
+		d = makeSliceDecoder(t, id)
+	case reflect.Pointer:
+		d = pointerDecoder(t)
+	default:
+		panic("deocder not found")
+	}
+	decoders[te] = d
+	return d
+}
+
+func addDecoder(t reflect.Type, id []byte, d decoder) {
+	decoders[typeEncoding{
+		encID: string(id),
+		t:     t,
+	}] = d
+}
