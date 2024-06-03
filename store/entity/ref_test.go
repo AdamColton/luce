@@ -3,8 +3,10 @@ package entity_test
 import (
 	"testing"
 
+	"github.com/adamcolton/luce/ds/graph"
 	"github.com/adamcolton/luce/ds/idx/byteid/bytebtree"
 	"github.com/adamcolton/luce/lerr"
+	lgob "github.com/adamcolton/luce/serial/wrap/gob"
 	"github.com/adamcolton/luce/store"
 	"github.com/adamcolton/luce/store/entity"
 	"github.com/adamcolton/luce/store/ephemeral"
@@ -28,10 +30,6 @@ type Core struct {
 
 func (c *Core) EntKey() []byte {
 	return c.id
-}
-
-func TestReference(t *testing.T) {
-
 }
 
 func TestReferenceAndBuilder(t *testing.T) {
@@ -82,4 +80,35 @@ func TestReferenceAndBuilder(t *testing.T) {
 			assert.Equal(t, "Adam", c.Primary.Ent.Name)
 		})
 	}
+}
+
+func TestRefGob(t *testing.T) {
+	s := &Sub{
+		id:   123,
+		Name: "gob-test",
+	}
+	r := entity.NewRef(s)
+
+	buf := lgob.Enc(&r)
+
+	r2 := entity.Reference[*Sub]{}
+	lgob.Dec(buf, &r2)
+
+	assert.Equal(t, r.ID, r2.ID)
+}
+
+func TestRefPtrGob(t *testing.T) {
+	s := &Sub{
+		id:   123,
+		Name: "gob-test",
+	}
+	r := entity.NewRef(s)
+	var ptr graph.Ptr[*Sub] = &r
+
+	buf := lgob.Enc(ptr)
+	assert.NotNil(t, buf)
+
+	ptr2 := graph.Ptr[*Sub](nil)
+	lgob.Dec(buf, ptr2)
+	assert.NotNil(t, ptr2)
 }

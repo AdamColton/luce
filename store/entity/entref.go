@@ -1,9 +1,11 @@
 package entity
 
 import (
+	"bytes"
 	"encoding/base64"
 	"reflect"
 
+	"github.com/adamcolton/luce/ds/graph"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/reflector"
 )
@@ -89,4 +91,22 @@ func (ref *Reference[E]) UnmarshalJSON(str []byte) (err error) {
 	ref.ID = make([]byte, ln)
 	_, err = b64enc.Decode(ref.ID, str)
 	return err
+}
+
+func (ref *Reference[E]) Set(e E) graph.Ptr[E] {
+	id := e.EntKey()
+	if bytes.Equal(ref.ID, id) {
+		ref.Ent = e
+		ref.set = true
+		return ref
+	}
+	return &Reference[E]{
+		ID:  id,
+		Ent: e,
+		set: true,
+	}
+}
+
+func (ref *Reference[E]) New() graph.Ptr[E] {
+	return &Reference[E]{}
 }
