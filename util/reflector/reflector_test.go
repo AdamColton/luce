@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/util/reflector"
+	"github.com/adamcolton/luce/util/reflector/ltype"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -244,4 +245,15 @@ func TestSet(t *testing.T) {
 	got = reflector.Set(strv, setv)
 	assert.True(t, got)
 	assert.Equal(t, set, *strptr)
+
+}
+
+func TestEnsurePointer(t *testing.T) {
+	v := reflect.ValueOf("this is a string")
+	v = reflector.EnsurePointer(v)
+	strPtr := reflect.PointerTo(ltype.String)
+	assert.Equal(t, strPtr, v.Type())
+
+	v = reflector.EnsurePointer(v)
+	assert.Equal(t, strPtr, v.Type())
 }
