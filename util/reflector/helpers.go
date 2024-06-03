@@ -101,3 +101,14 @@ func Set(target, to reflect.Value) (out bool) {
 	out = true
 	return
 }
+
+// EnsurePointer check the Kind of v and if it is not a pointer, returns a
+// pointer to v.
+func EnsurePointer(v reflect.Value) reflect.Value {
+	if v.Kind() != reflect.Pointer {
+		v2 := reflect.New(v.Type())
+		v2.Elem().Set(v)
+		v = v2
+	}
+	return v
+}
