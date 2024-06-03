@@ -49,3 +49,16 @@ func SerialInterfacesRoundTrip(t *testing.T, s serial.Serializer, d serial.Deser
 	assert.NoError(t, err)
 	assert.Equal(t, p, got)
 }
+
+type Enc func(any) []byte
+type Dec func([]byte, any)
+
+func EncDec(t *testing.T, enc Enc, dec Dec) {
+	p := &person{
+		Name: "Adam",
+		Age:  35,
+	}
+	got := &person{}
+	dec(enc(p), got)
+	assert.Equal(t, p, got)
+}
