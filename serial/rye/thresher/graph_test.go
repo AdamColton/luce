@@ -202,6 +202,7 @@ func TestStructEncoding(t *testing.T) {
 	c := getEncoder(reflector.Type[Person]())
 
 	e := compact.NewDeserializer(store[string(c.encodingID)])
+	assert.Equal(t, structEncID, e.CompactSlice())
 	assert.Equal(t, uint64(2), e.CompactUint64())
 
 	age := compact.NewDeserializer(store[string(e.CompactSlice())])
@@ -284,4 +285,22 @@ func TestSliceStructPtrMigration(t *testing.T) {
 		assert.Equal(t, p.Name, got[i].Name)
 		assert.Equal(t, p.Age, int(got[i].Age))
 	}
+}
+
+type PersonV3 struct {
+	Name string
+}
+
+func TestRmFieldMigration(t *testing.T) {
+	t.Skip()
+	p := &Person{
+		Name: "Adam",
+		Age:  39,
+	}
+
+	id := Save(p)
+	clearMemory()
+
+	p2 := lerr.OK(Get[*PersonV3](id))(errBadDecode)
+	assert.Equal(t, p.Name, p2.Name)
 }

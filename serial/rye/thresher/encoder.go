@@ -12,6 +12,14 @@ var (
 	uintEncID         = []byte{0, 2}
 	byteEncID         = []byte{0, 3}
 	compactSliceEncID = []byte{0, 4}
+	structEncID       = []byte{0, 5}
+
+	// The fact these are being used is a code smell
+	intEncIDSize          = compact.Size(intEncID)
+	uintEncIDSize         = compact.Size(uintEncID)
+	byteEncIDSize         = compact.Size(byteEncID)
+	compactSliceEncIDSize = compact.Size(compactSliceEncID)
+	structEncIDSize       = compact.Size(structEncID)
 )
 
 type encoder struct {

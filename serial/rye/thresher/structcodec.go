@@ -1,6 +1,7 @@
 package thresher
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"hash"
 	"reflect"
@@ -114,9 +115,13 @@ func getStructEncoder(t reflect.Type) *encoder {
 	baseHash := sha256.New()
 	fieldHash := sha256.New()
 
-	s := fieldsHashRecur(0, 0, sc.Type, sc.fieldCodecs, baseHash, fieldHash, make([][]byte, len(sc.fieldCodecs)))
+	hashes := make([][]byte, len(sc.fieldCodecs))
+	metaEncoder := metaEncodingRecur(0, 0, sc.Type, sc.fieldCodecs, baseHash, fieldHash, hashes)
+	for _, h := range hashes {
+		metaEncoder.CompactSlice(h)
+	}
 	sc.encodingID = baseHash.Sum(nil)
-	store[string(sc.encodingID)] = s.Data
+	store[string(sc.encodingID)] = metaEncoder.Data
 
 	addDecoder(t, sc.encodingID, sc.dec)
 	structCodecs[t] = sc
@@ -128,28 +133,23 @@ func getStructEncoder(t reflect.Type) *encoder {
 	return c
 }
 
-func fieldsHashRecur(i int, size uint64, t reflect.Type, fcs slice.Slice[fieldCodec], baseHash, fieldHash hash.Hash, hashes [][]byte) compact.Serializer {
+func metaEncodingRecur(i int, size uint64, t reflect.Type, fcs slice.Slice[fieldCodec], baseHash, fieldHash hash.Hash, hashes [][]byte) compact.Serializer {
 	if i == len(fcs) {
 		i64 := uint64(i)
-		size += compact.SizeUint64(i64)
-		s := compact.MakeSerializer(int(size))
-		s.CompactUint64(i64)
-		return s
+		size += compact.SizeUint64(i64) + structEncIDSize
+		metaEncoder := compact.MakeSerializer(int(size))
+		metaEncoder.CompactSlice(structEncID)
+		metaEncoder.CompactUint64(i64)
+		return metaEncoder
 	}
+
 	fc := fcs[i]
 	fieldHash.Reset()
 	hashes[i] = fc.hash(t, fieldHash)
 	baseHash.Write(hashes[i])
 	size += compact.Size(hashes[i])
 
-	s := fieldsHashRecur(i+1, size, t, fcs, baseHash, fieldHash, hashes)
-	if i == 0 {
-		for _, h := range hashes {
-			s.CompactSlice(h)
-		}
-	}
-
-	return s
+	return metaEncodingRecur(i+1, size, t, fcs, baseHash, fieldHash, hashes)
 }
 
 func fieldsRecur(i int, ln int, t reflect.Type, fields int) slice.Slice[fieldCodec] {
@@ -170,6 +170,9 @@ func fieldsRecur(i int, ln int, t reflect.Type, fields int) slice.Slice[fieldCod
 
 func makeStructDecoder(t reflect.Type, id []byte) decoder {
 	d := compact.NewDeserializer(store[string(id)])
+	if !bytes.Equal(d.CompactSlice(), structEncID) {
+		panic("not structEncID")
+	}
 	fcs := make([]fieldCodec, 0, d.CompactInt64())
 	for !d.Done() {
 		// TODO: compact.(Serializer/Deserializer) should NOT be pointers
