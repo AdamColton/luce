@@ -8,11 +8,9 @@ import (
 )
 
 func (n *Node[Key, Val]) GobDecode(data []byte) (err error) {
-	defer func() {
-		lerr.Recover(func(e error) {
-			err = e
-		})
-	}()
+	defer lerr.Recover(func(e error) {
+		err = e
+	})
 
 	d := compact.NewDeserializer(data)
 	n.color = color(d.Byte())
@@ -27,11 +25,9 @@ func (n *Node[Key, Val]) GobDecode(data []byte) (err error) {
 }
 
 func (n *Node[Key, Val]) GobEncode() (b []byte, err error) {
-	defer func() {
-		lerr.Recover(func(e error) {
-			err = e
-		})
-	}()
+	defer lerr.Recover(func(e error) {
+		err = e
+	})
 
 	var ln uint64 = 1 + 4 + 4 // color,size,id
 
@@ -62,11 +58,9 @@ func (n *Node[Key, Val]) GobEncode() (b []byte, err error) {
 */
 
 func (t *Tree[Key, Val]) GobDecode(data []byte) (err error) {
-	defer func() {
-		lerr.Recover(func(e error) {
-			err = e
-		})
-	}()
+	defer lerr.Recover(func(e error) {
+		err = e
+	})
 
 	d := compact.NewDeserializer(data)
 	var ptr graph.Ptr[*Node[Key, Val]]
@@ -79,11 +73,9 @@ func (t *Tree[Key, Val]) GobDecode(data []byte) (err error) {
 }
 
 func (t *Tree[Key, Val]) GobEncode() (b []byte, err error) {
-	defer func() {
-		lerr.Recover(func(e error) {
-			err = e
-		})
-	}()
+	defer lerr.Recover(func(e error) {
+		err = e
+	})
 
 	root := lgob.Enc(t.root)
 	ln := compact.Size(root) + 4 + 4 // size, idCounter
