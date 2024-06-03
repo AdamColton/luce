@@ -13,6 +13,7 @@ var (
 	byteEncID         = []byte{0, 3}
 	compactSliceEncID = []byte{0, 4}
 	structEncID       = []byte{0, 5}
+	sliceEncID        = []byte{0, 6}
 
 	// The fact these are being used is a code smell
 	intEncIDSize          = compact.Size(intEncID)
@@ -20,11 +21,12 @@ var (
 	byteEncIDSize         = compact.Size(byteEncID)
 	compactSliceEncIDSize = compact.Size(compactSliceEncID)
 	structEncIDSize       = compact.Size(structEncID)
+	sliceEncIDSize        = compact.Size(sliceEncID)
 )
 
 type encoder struct {
 	encode     func(i any, s compact.Serializer, base bool)
-	size       func(i any) uint64
+	size       func(i any, base bool) uint64
 	roots      func(i reflect.Value) []*rootObj
 	encodingID []byte
 }
@@ -37,8 +39,12 @@ var encoders = map[reflect.Type]*encoder{
 			}
 			s.CompactString(v.(string))
 		},
-		size: func(v any) uint64 {
-			return compact.SizeString(v.(string))
+		size: func(v any, base bool) uint64 {
+			size := compact.SizeString(v.(string))
+			if base {
+				size += compactSliceEncIDSize
+			}
+			return size
 		},
 		encodingID: compactSliceEncID,
 	},
@@ -54,7 +60,10 @@ var encoders = map[reflect.Type]*encoder{
 			}
 			s.Byte(bit)
 		},
-		size: func(v any) uint64 {
+		size: func(v any, base bool) uint64 {
+			if base {
+				return 1 + byteEncIDSize
+			}
 			return 1
 		},
 		encodingID: byteEncID,

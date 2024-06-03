@@ -1,7 +1,6 @@
 package thresher
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"hash"
 	"reflect"
@@ -17,7 +16,7 @@ type fieldCodec struct {
 	*encoder //TODO replace this w/ encodingID
 }
 
-func newFieldDecoder(d *compact.Deserializer) fieldCodec {
+func newFieldDecoder(d compact.Deserializer) fieldCodec {
 	return fieldCodec{
 		name: d.CompactString(),
 		idx:  -1,
@@ -65,10 +64,15 @@ func (sc *structCodec) enc(i any, s compact.Serializer, base bool) {
 }
 
 func (sc *structCodec) dec(d compact.Deserializer) any {
+	nilType := sc.Kind() == reflect.Invalid
 	srct := reflect.New(sc.Type).Elem()
 	for _, fc := range sc.fieldCodecs {
 		idx := fc.idx
-		dec := getDecoder(sc.Type.Field(idx).Type, fc.encodingID)
+		var t reflect.Type
+		if !nilType && idx >= 0 {
+			t = sc.Type.Field(idx).Type
+		}
+		dec := getDecoder(t, fc.encodingID)
 		i := dec(d)
 		if i != nil && idx >= 0 {
 			fv := reflect.ValueOf(i)
@@ -78,14 +82,16 @@ func (sc *structCodec) dec(d compact.Deserializer) any {
 	return srct.Interface()
 }
 
-func (sc *structCodec) size(i any) uint64 {
+func (sc *structCodec) size(i any, base bool) (sum uint64) {
 	v := reflect.ValueOf(i)
-	sum := compact.Size(sc.encodingID)
+	if base {
+		sum += compact.Size(sc.encodingID)
+	}
 	for _, fc := range sc.fieldCodecs {
 		f := v.Field(fc.idx).Interface()
-		sum += fc.size(f)
+		sum += fc.size(f, false)
 	}
-	return sum
+	return
 }
 
 func (sc *structCodec) roots(v reflect.Value) (out []*rootObj) {
@@ -168,20 +174,23 @@ func fieldsRecur(i int, ln int, t reflect.Type, fields int) slice.Slice[fieldCod
 	return make(slice.Slice[fieldCodec], fields)
 }
 
-func makeStructDecoder(t reflect.Type, id []byte) decoder {
-	d := compact.NewDeserializer(store[string(id)])
-	if !bytes.Equal(d.CompactSlice(), structEncID) {
-		panic("not structEncID")
-	}
-	fcs := make([]fieldCodec, 0, d.CompactInt64())
+func makeStructDecoder(t reflect.Type, d compact.Deserializer) decoder {
+	nilType := t.Kind() == reflect.Invalid
+	ln := d.CompactUint64()
+	fcs := make([]fieldCodec, 0, ln)
 	for !d.Done() {
-		// TODO: compact.(Serializer/Deserializer) should NOT be pointers
-		// because they are wrappers
 		sub := compact.NewDeserializer(store[string(d.CompactSlice())])
-		fc := newFieldDecoder(&sub)
-		f, _ := t.FieldByName(fc.name)
-		fc.idx = f.Index[0]
+		fc := newFieldDecoder(sub)
+		if !nilType {
+			f, found := t.FieldByName(fc.name)
+			if found {
+				fc.idx = f.Index[0]
+			}
+		}
 		fcs = append(fcs, fc)
+	}
+	if int(ln) != len(fcs) {
+		panic("bad length")
 	}
 
 	sc := &structCodec{

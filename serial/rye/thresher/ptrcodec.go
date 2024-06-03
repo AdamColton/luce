@@ -19,9 +19,13 @@ func initPointerCoded() {
 			ro := rootObjByV(reflect.ValueOf(i))
 			s.CompactSlice(ro.getID())
 		},
-		size: func(i any) uint64 {
+		size: func(i any, base bool) uint64 {
 			ro := rootObjByV(reflect.ValueOf(i))
-			return compact.Size(ro.getID())
+			size := compact.Size(ro.getID())
+			if base {
+				size += compactSliceEncIDSize
+			}
+			return size
 		},
 		roots: func(v reflect.Value) []*rootObj {
 			ro := rootObjByV(v)
@@ -35,6 +39,12 @@ func initPointerCoded() {
 }
 
 func pointerDecoder(t reflect.Type) decoder {
+	if t.Kind() == reflect.Invalid {
+		return func(d compact.Deserializer) any {
+			d.CompactSlice()
+			return nil
+		}
+	}
 	return func(d compact.Deserializer) any {
 		ro := getStoreByID(t, d.CompactSlice())
 		if ro == nil {

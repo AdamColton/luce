@@ -1,6 +1,7 @@
 package thresher
 
 import (
+	"bytes"
 	"reflect"
 
 	"github.com/adamcolton/luce/ds/lmap"
@@ -28,31 +29,61 @@ var decoders = lmap.Map[typeEncoding, decoder]{
 	}: func(d compact.Deserializer) any {
 		return d.Byte() == 1
 	},
+	{
+		encID: string(compactSliceEncID),
+	}: func(d compact.Deserializer) any {
+		return d.CompactSlice()
+	},
+	{
+		encID: string(byteEncID),
+	}: func(d compact.Deserializer) any {
+		return d.Byte()
+	},
 }
+
+// getDecdoer and getBaseDecoder are confusing me
+// both Struct and slice should either always encode thier ID
+// or only encode when base...
 
 func getDecoder(t reflect.Type, id []byte) decoder {
 	te := typeEncoding{
 		encID: string(id),
 		t:     t,
 	}
-	d, found := decoders[te]
+	dec, found := decoders[te]
 	if found {
-		return d
+		return dec
 	}
 	str := t.String()
 	_ = str
-	switch t.Kind() {
-	case reflect.Struct:
-		d = makeStructDecoder(t, id)
-	case reflect.Slice:
-		d = makeSliceDecoder(t, id)
-	case reflect.Pointer:
-		d = pointerDecoder(t)
-	default:
+
+	encoding := id
+	var d compact.Deserializer
+	if len(encoding) > 2 {
+		d = compact.NewDeserializer(store[string(encoding)])
+		encoding = d.CompactSlice()
+	}
+
+	if bytes.Equal(structEncID, encoding) {
+		if k := t.Kind(); !(k == reflect.Invalid || k == reflect.Struct) {
+			panic("should be struct")
+		}
+		dec = makeStructDecoder(t, d)
+	} else if bytes.Equal(sliceEncID, encoding) {
+		if k := t.Kind(); !(k == reflect.Invalid || k == reflect.Slice) {
+			panic("should be slice")
+		}
+		dec = makeSliceDecoder(t, d)
+	} else if bytes.Equal(compactSliceEncID, encoding) {
+		if k := t.Kind(); !(k == reflect.Invalid || k == reflect.Pointer) {
+			panic("should be pointer")
+		}
+		dec = pointerDecoder(t)
+	} else {
 		panic("deocder not found")
 	}
-	decoders[te] = d
-	return d
+	decoders[te] = dec
+	return dec
 }
 
 func addDecoder(t reflect.Type, id []byte, d decoder) {

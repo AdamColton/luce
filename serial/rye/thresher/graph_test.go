@@ -78,7 +78,7 @@ func TestStructCodec(t *testing.T) {
 		Value: "this is a test",
 	}
 
-	size := c.size(n)
+	size := c.size(n, true)
 	s := compact.MakeSerializer(int(size))
 	c.encode(n, s, true)
 	d := compact.NewDeserializer(s.Data)
@@ -212,7 +212,6 @@ func TestStructEncoding(t *testing.T) {
 	name := compact.NewDeserializer(store[string(e.CompactSlice())])
 	assert.Equal(t, "Name", name.CompactString())
 	assert.Equal(t, compactSliceEncID, name.CompactSlice())
-
 }
 
 type PersonV2 struct {
@@ -292,7 +291,6 @@ type PersonV3 struct {
 }
 
 func TestRmFieldMigration(t *testing.T) {
-	t.Skip()
 	p := &Person{
 		Name: "Adam",
 		Age:  39,

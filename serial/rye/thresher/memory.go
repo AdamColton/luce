@@ -21,19 +21,12 @@ type rootObj struct {
 }
 
 func (ro *rootObj) init() {
-	ptr := ro.addr
-	byPtr[ptr] = ro
-	idStr := string(ro.id)
-	byID[idStr] = ro
-	// runtime.SetFinalizer(ro.v.Interface(), func(any) {
-	// 	delete(byPtr, ptr)
-	// 	delete(byID, idStr)
-	// })
+	byPtr[ro.addr] = ro
+	byID[string(ro.id)] = ro
 }
 
 func (ro *rootObj) baseValue() reflect.Value {
-	switch ro.v.Kind() {
-	case reflect.Slice:
+	if ro.v.Kind() == reflect.Slice {
 		return ro.v
 	}
 	return ro.v.Elem()
@@ -48,8 +41,10 @@ func (ro *rootObj) getID() []byte {
 	return ro.id
 }
 
+const idLength = 12
+
 func newRootObj(ptr uintptr, v reflect.Value) *rootObj {
-	id := make([]byte, 12)
+	id := make([]byte, idLength)
 	lerr.Must(rand.Read(id))
 
 	ro := &rootObj{
@@ -107,32 +102,22 @@ func getStoreByID(t reflect.Type, id []byte) *rootObj {
 	if !found {
 		return ro
 	}
-
-	str := t.String()
-	_ = str
-	isPtr := t.Kind() == reflect.Pointer
-	if isPtr {
-		t = t.Elem()
-	}
-
-	ro.v = reflect.New(t)
-
 	d := compact.NewDeserializer(data)
 	encID := d.CompactSlice()
-	set := ro.v.Elem()
 
-	switch t.Kind() {
-	case reflect.Slice:
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	ro.v = reflect.New(t)
+	set := ro.v.Elem()
+	if t.Kind() == reflect.Slice {
 		ro.v = ro.v.Elem()
 	}
 	ro.addr = uintptr(ro.v.UnsafePointer())
 	ro.init()
 
-	str = t.String()
-	_ = str
 	dec := getDecoder(t, encID)
 	v := reflect.ValueOf(dec(d))
-
 	set.Set(v)
 
 	return ro

@@ -25,8 +25,6 @@ func sliceRoots(v reflect.Value) []*rootObj {
 
 var sliceEncoders = lmap.Map[reflect.Type, *encoder]{}
 
-var sliceHashPrefix = []byte{1, 1}
-
 func getSliceEncoder(t reflect.Type) *encoder {
 	sc, found := sliceEncoders[t]
 	if !found {
@@ -34,11 +32,15 @@ func getSliceEncoder(t reflect.Type) *encoder {
 		ec := getEncoder(et)
 		edec := getDecoder(et, ec.encodingID)
 
+		size := sliceEncIDSize + compact.Size(ec.encodingID)
+		encoding := compact.MakeSerializer(int(size))
+		encoding.CompactSlice(sliceEncID)
+		encoding.CompactSlice(ec.encodingID)
 		h := sha256.New()
-		h.Write(sliceHashPrefix)
-		h.Write(ec.encodingID)
+		h.Write(encoding.Data)
 		encID := h.Sum(nil)
 		encIDSize := compact.Size(encID)
+
 		sc = &encoder{
 			encode: func(i any, s compact.Serializer, base bool) {
 				if base {
@@ -46,19 +48,21 @@ func getSliceEncoder(t reflect.Type) *encoder {
 				}
 				v := reflect.ValueOf(i)
 				ln := v.Len()
-				s.Uint64(uint64(v.Len()))
-				c := getEncoder(v.Type().Elem())
+				s.CompactUint64(uint64(ln))
 				for i := 0; i < ln; i++ {
-					c.encode(v.Index(i).Interface(), s, false)
+					ec.encode(v.Index(i).Interface(), s, false)
 				}
 			},
-			size: func(i any) uint64 {
+			size: func(i any, base bool) uint64 {
 				v := reflect.ValueOf(i)
 				c := getEncoder(v.Type().Elem())
 				ln := v.Len()
-				var out uint64 = encIDSize + 8 // for size
+				out := compact.SizeUint64(uint64(v.Len()))
+				if base {
+					out += encIDSize
+				}
 				for i := 0; i < ln; i++ {
-					out += c.size(v.Index(i).Interface())
+					out += c.size(v.Index(i).Interface(), false)
 				}
 				return out
 			},
@@ -66,9 +70,10 @@ func getSliceEncoder(t reflect.Type) *encoder {
 			encodingID: encID,
 		}
 		sliceEncoders[t] = sc
-		store[string(encID)] = ec.encodingID
+
+		store[string(encID)] = encoding.Data
 		dec := func(d compact.Deserializer) any {
-			ln := int(d.Uint64())
+			ln := int(d.CompactUint64())
 			s := reflect.MakeSlice(t, ln, ln)
 			for i := 0; i < ln; i++ {
 				s.Index(i).Set(reflect.ValueOf(edec(d)))
@@ -80,10 +85,26 @@ func getSliceEncoder(t reflect.Type) *encoder {
 	return sc
 }
 
-func makeSliceDecoder(t reflect.Type, id []byte) decoder {
-	edec := getDecoder(t.Elem(), store[string(id)])
+func makeSliceDecoder(t reflect.Type, d compact.Deserializer) decoder {
+	nilType := t.Kind() == reflect.Invalid
+	var et reflect.Type
+	if !nilType {
+		et = t.Elem()
+	}
+	edec := getDecoder(et, d.CompactSlice())
+
+	if nilType {
+		return func(d compact.Deserializer) any {
+			ln := int(d.CompactUint64())
+			for i := 0; i < ln; i++ {
+				edec(d)
+			}
+			return nil
+		}
+	}
+
 	return func(d compact.Deserializer) any {
-		ln := int(d.Uint64())
+		ln := int(d.CompactUint64())
 		s := reflect.MakeSlice(t, ln, ln)
 		for i := 0; i < ln; i++ {
 			s.Index(i).Set(reflect.ValueOf(edec(d)))

@@ -56,7 +56,7 @@ func (g *grapher) enc() {
 		t := v.Type()
 		c := getBaseEncoder(t)
 
-		size := c.size(i)
+		size := c.size(i, true)
 		s := compact.MakeSerializer(int(size))
 		c.encode(i, s, true)
 		store[string(ro.id)] = s.Data
