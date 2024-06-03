@@ -105,3 +105,18 @@ func OK[T any](t T, ok bool) func(err error) T {
 		return t
 	}
 }
+
+// Recover should be invoked with defer. If it recovers an error, that will
+// be passed into the error handler. A recovered value that is not an error is
+// re-panicked. Recover must be deferred directly, as in defer lerr.Recover(h);
+// invoking it from within a deferred func will not work.
+func Recover(h ErrHandler) {
+	r := recover()
+	if r != nil {
+		if rerr, ok := r.(error); ok {
+			h(rerr)
+		} else {
+			panic(r)
+		}
+	}
+}
