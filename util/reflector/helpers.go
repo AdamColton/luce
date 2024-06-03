@@ -112,3 +112,15 @@ func Set(target, to reflect.Value) (out bool) {
 	out = true
 	return
 }
+
+// EnsurePointer returns v if it is a pointer. If it is not, it returns a pointer
+// to a copy of v, so changes made through the pointer do not affect the
+// original.
+func EnsurePointer(v reflect.Value) reflect.Value {
+	if v.Kind() != reflect.Pointer {
+		v2 := reflect.New(v.Type())
+		v2.Elem().Set(v)
+		v = v2
+	}
+	return v
+}

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/util/reflector"
+	"github.com/adamcolton/luce/util/reflector/ltype"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -244,4 +245,26 @@ func TestSet(t *testing.T) {
 	got = reflector.Set(strv, setv)
 	assert.True(t, got)
 	assert.Equal(t, set, *strptr)
+
+}
+
+func TestEnsurePointerCopies(t *testing.T) {
+	type point struct {
+		X int
+	}
+	p := point{X: 1}
+	ptr := reflector.EnsurePointer(reflect.ValueOf(p))
+	ptr.Elem().Field(0).SetInt(9)
+	assert.Equal(t, 1, p.X, "the original is not changed")
+	assert.Equal(t, int64(9), ptr.Elem().Field(0).Int())
+}
+
+func TestEnsurePointer(t *testing.T) {
+	v := reflect.ValueOf("this is a string")
+	v = reflector.EnsurePointer(v)
+	strPtr := reflect.PointerTo(ltype.String)
+	assert.Equal(t, strPtr, v.Type())
+
+	v = reflector.EnsurePointer(v)
+	assert.Equal(t, strPtr, v.Type())
 }
