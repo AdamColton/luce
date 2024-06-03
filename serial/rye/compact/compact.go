@@ -14,6 +14,12 @@ func NewSerializer(size int) Serializer {
 	}}
 }
 
+func MakeSerializer(size int) Serializer {
+	return Serializer{(&rye.Serializer{
+		Size: size,
+	}).Make()}
+}
+
 type Deserializer struct {
 	*rye.Deserializer
 }
@@ -126,6 +132,10 @@ func Size(data []byte) uint64 {
 		return 1 + uln
 	}
 	return 1 + SizeUint(uln) + uln
+}
+
+func SizeString(s string) uint64 {
+	return Size([]byte(s))
 }
 
 // SizeUint is the number of bytes needed to encode x ignoring leading zero
