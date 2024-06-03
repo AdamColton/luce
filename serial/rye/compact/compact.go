@@ -44,6 +44,14 @@ func NewSerializer(size int) Serializer {
 	}}
 }
 
+// MakeSerializer creates an instance of Serializer with the underlying []byte
+// allocated.
+func MakeSerializer(size int) Serializer {
+	return Serializer{(&rye.Serializer{
+		Size: size,
+	}).Make()}
+}
+
 // Deserializer wraps a rye.Deserializer and extends it with Compact methods.
 type Deserializer struct {
 	*rye.Deserializer
@@ -209,6 +217,11 @@ func Size(data []byte) uint64 {
 		return 2 + ln
 	}
 	return 3 + uint64(tier(ln)) + ln
+}
+
+// SizeString returns the size of the string in compact form.
+func SizeString(s string) uint64 {
+	return Size([]byte(s))
 }
 
 // SizeUint is the number of bytes needed to encode x ignoring leading zero
