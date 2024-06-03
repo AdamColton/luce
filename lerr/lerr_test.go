@@ -242,3 +242,29 @@ func TestOK(t *testing.T) {
 	}()
 	lerr.OK(notOk())(testErr)
 }
+
+func TestRecover(t *testing.T) {
+	testErr := lerr.Str("test err")
+	recoverError := func() (err error) {
+		defer lerr.Recover(func(e error) {
+			err = e
+		})
+		panic(testErr)
+	}
+	assert.Equal(t, testErr, recoverError())
+
+	notAnError := "not an error"
+	recoverNonError := func() (err error) {
+		defer lerr.Recover(func(e error) {
+			t.Error("this should not be reached")
+		})
+		panic(notAnError)
+	}
+
+	func() {
+		defer func() {
+			assert.Equal(t, notAnError, recover())
+		}()
+		recoverNonError()
+	}()
+}
