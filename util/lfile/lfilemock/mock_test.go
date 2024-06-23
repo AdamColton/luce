@@ -1,9 +1,12 @@
 package lfilemock_test
 
 import (
+	"fmt"
 	"io"
 	"io/fs"
 	"io/ioutil"
+	"os"
+	"syscall"
 	"testing"
 	"time"
 
@@ -119,4 +122,60 @@ func TestByteFile(t *testing.T) {
 	tree, ok := bf.Next("foo", true, navigator.Void)
 	assert.Nil(t, tree)
 	assert.False(t, ok)
+}
+
+func TestScratch(t *testing.T) {
+	f := lerr.Must(os.Open("/home/adam/Audiobooks/Fiction/Scott Hawkins/Library at Mount Char"))
+
+	all := lerr.Must(f.Readdirnames(500))
+	fmt.Println(len(all))
+
+	f = lerr.Must(os.Open("/home/adam/Audiobooks/Fiction/Scott Hawkins/Library at Mount Char"))
+	head := lerr.Must(f.Readdirnames(20))
+	assert.Len(t, head, 20)
+	tail := lerr.Must(f.Readdirnames(-1))
+
+	assert.Equal(t, all, append(head, tail...))
+}
+
+func TestReaddirnames(t *testing.T) {
+	file1 := "this is test file 1"
+	file2 := []byte{3, 1, 4, 1, 5, 9, 2, 6, 5}
+	r := lfilemock.Parse(map[string]any{
+		"file1.txt": file1,
+		"dir1": map[string]any{
+			"file2.bin": file2,
+		},
+		"file2.bin": file2,
+		"file3.txt": "file3.txt",
+		"file4.txt": "file4.txt",
+	}).Repository()
+
+	f, err := r.Open("file1.txt")
+	assert.NoError(t, err)
+
+	expectErr := &fs.PathError{Op: "readdirent", Path: "file1.txt", Err: syscall.ENOTDIR}
+	_, err = f.Readdirnames(-1)
+	assert.Equal(t, expectErr, err)
+
+	f, err = r.Open("/")
+	assert.NoError(t, err)
+	names, err := f.Readdirnames(-1)
+	assert.NoError(t, err)
+	slice.LT[string]().Sort(names)
+	expected := []string{"dir1", "file1.txt", "file2.bin", "file3.txt", "file4.txt"}
+	assert.Equal(t, expected, names)
+	_, err = f.Readdirnames(-1)
+	assert.Equal(t, io.EOF, err)
+
+	f, err = r.Open("/")
+	assert.NoError(t, err)
+	names, err = f.Readdirnames(2)
+	assert.NoError(t, err)
+	assert.Len(t, names, 2)
+	names, err = f.Readdirnames(-1)
+	assert.NoError(t, err)
+	assert.Len(t, names, 3)
+	_, err = f.Readdirnames(-1)
+	assert.Equal(t, io.EOF, err)
 }
