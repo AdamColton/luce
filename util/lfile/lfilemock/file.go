@@ -5,10 +5,13 @@ package lfilemock
 
 import (
 	"bytes"
+	"io"
 	"io/fs"
 	"os"
+	"syscall"
 	"time"
 
+	"github.com/adamcolton/luce/ds/list"
 	"github.com/adamcolton/luce/lerr"
 )
 
@@ -21,7 +24,8 @@ type File struct {
 	os.FileInfo
 	FileSize int64
 	os.FileMode
-	Err error
+	Err          error
+	readdirnames int
 }
 
 const (
@@ -79,6 +83,28 @@ func (f *File) Stat() (os.FileInfo, error) {
 		Dir:      f.Dir,
 	}
 	return fi, f.Err
+}
+
+func (f *File) Readdirnames(n int) (names []string, err error) {
+	if !f.Dir {
+		return nil, &fs.PathError{Op: "readdirent", Path: f.FileName, Err: syscall.ENOTDIR}
+	}
+
+	ln := len(f.DirEntries)
+	start := f.readdirnames
+	if start >= ln {
+		return nil, io.EOF
+	}
+
+	end := n
+	if end <= 0 || end > ln {
+		end = ln
+	}
+
+	out := list.TransformSlice(f.DirEntries[start:end], os.DirEntry.Name).ToSlice(nil)
+	f.readdirnames = end
+
+	return out, nil
 }
 
 // DirEntry fulfills os.DirEntry.
