@@ -12,6 +12,7 @@ type File interface {
 	io.Reader
 	io.WriteCloser
 	Stat() (os.FileInfo, error)
+	Readdirnames(n int) (names []string, err error)
 }
 
 // Repository is an interface to the file system.
