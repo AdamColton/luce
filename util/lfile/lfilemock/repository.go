@@ -2,8 +2,10 @@ package lfilemock
 
 import (
 	"bytes"
+	"io/fs"
 	"os"
 	"strings"
+	"syscall"
 
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/filter"
@@ -26,8 +28,7 @@ func (r *Repository) navigator(path []string) *navigator.Navigator[string, Node,
 var notEmptyStr = filter.NEQ("")
 
 func getPath(name string) slice.Slice[string] {
-	path, _ := notEmptyStr.SliceInPlace(strings.Split(name, "/"))
-	return path
+	return notEmptyStr.Slice(strings.Split(name, "/"))
 }
 
 // Open fulfills lfile.Repository. It opens a file or directory if it exists.
@@ -65,6 +66,17 @@ func (r *Repository) Create(name string) (lfile.File, error) {
 		AddFile(name, nil).
 		File()
 	return f, nil
+}
+
+func (r *Repository) Stat(name string) (os.FileInfo, error) {
+	f, err := r.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	if f == nil {
+		return nil, &fs.PathError{Op: "stat", Path: name, Err: syscall.ENOENT}
+	}
+	return f.Stat()
 }
 
 // ByteFile is used to create files in mock directory trees. ByteFiles are
@@ -227,9 +239,11 @@ func (d *Directory) Repository() lfile.Repository {
 	}
 }
 
-// ParseDir allows for mock directory trees to be setup easily. To create a
-// File the value can be either a string or a []byte. To create a sub directory
-// the value should be another map[string]any which will be recursivly parsed.
+// ParseDir allows for mock directory trees to be setup easily. To create a File
+// the value can be either a string or a []byte. To create a sub directory the
+// value should be another map[string]any which will be recursivly parsed.
+// Adding a []string will create a directory where each file's name and contents
+// are the same.
 func Parse(root map[string]any) *Directory {
 	out := &Directory{
 		Children: make(map[string]Node),
@@ -242,6 +256,20 @@ func Parse(root map[string]any) *Directory {
 			out.Children[name] = s
 		case string:
 			out.AddFile(name, []byte(x))
+		case []string:
+			var s *Directory
+			if name == "." {
+				s = out
+			} else {
+				s = &Directory{
+					Name:     name,
+					Children: make(map[string]Node, len(x)),
+				}
+				out.Children[name] = s
+			}
+			for _, file := range x {
+				s.AddFile(file, []byte(file))
+			}
 		case []byte:
 			out.AddFile(name, x)
 		default:
