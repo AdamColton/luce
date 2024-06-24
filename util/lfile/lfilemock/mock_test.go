@@ -1,11 +1,9 @@
 package lfilemock_test
 
 import (
-	"fmt"
 	"io"
 	"io/fs"
 	"io/ioutil"
-	"os"
 	"syscall"
 	"testing"
 	"time"
@@ -122,20 +120,6 @@ func TestByteFile(t *testing.T) {
 	tree, ok := bf.Next("foo", true, navigator.Void)
 	assert.Nil(t, tree)
 	assert.False(t, ok)
-}
-
-func TestScratch(t *testing.T) {
-	f := lerr.Must(os.Open("/home/adam/Audiobooks/Fiction/Scott Hawkins/Library at Mount Char"))
-
-	all := lerr.Must(f.Readdirnames(500))
-	fmt.Println(len(all))
-
-	f = lerr.Must(os.Open("/home/adam/Audiobooks/Fiction/Scott Hawkins/Library at Mount Char"))
-	head := lerr.Must(f.Readdirnames(20))
-	assert.Len(t, head, 20)
-	tail := lerr.Must(f.Readdirnames(-1))
-
-	assert.Equal(t, all, append(head, tail...))
 }
 
 func TestReaddirnames(t *testing.T) {

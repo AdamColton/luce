@@ -20,6 +20,7 @@ type Repository interface {
 	Open(name string) (File, error)
 	Create(name string) (File, error)
 	Remove(name string) error
+	Stat(name string) (os.FileInfo, error)
 }
 
 // OSRepository fulfills Repository by using functions from the "os" package.
@@ -38,4 +39,8 @@ func (OSRepository) Create(name string) (File, error) {
 // Remove is a wrapper for os.Remove
 func (OSRepository) Remove(name string) error {
 	return os.Remove(name)
+}
+
+func (OSRepository) Stat(name string) (os.FileInfo, error) {
+	return os.Stat(name)
 }
