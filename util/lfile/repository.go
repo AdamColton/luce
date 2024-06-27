@@ -21,6 +21,7 @@ type Repository interface {
 	Create(name string) (File, error)
 	Remove(name string) error
 	Stat(name string) (os.FileInfo, error)
+	ReadFile(name string) ([]byte, error)
 }
 
 // OSRepository fulfills Repository by using functions from the "os" package.
@@ -43,4 +44,8 @@ func (OSRepository) Remove(name string) error {
 
 func (OSRepository) Stat(name string) (os.FileInfo, error) {
 	return os.Stat(name)
+}
+
+func (OSRepository) ReadFile(name string) ([]byte, error) {
+	return os.ReadFile(name)
 }
