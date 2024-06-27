@@ -2,6 +2,7 @@ package lfilemock
 
 import (
 	"bytes"
+	"io"
 	"io/fs"
 	"os"
 	"strings"
@@ -77,6 +78,17 @@ func (r *Repository) Stat(name string) (os.FileInfo, error) {
 		return nil, &fs.PathError{Op: "stat", Path: name, Err: syscall.ENOENT}
 	}
 	return f.Stat()
+}
+
+func (r *Repository) ReadFile(name string) ([]byte, error) {
+	f, err := r.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	if f == nil {
+		return nil, &fs.PathError{Op: "readfile", Path: name, Err: syscall.ENOENT}
+	}
+	return io.ReadAll(f)
 }
 
 // ByteFile is used to create files in mock directory trees. ByteFiles are
