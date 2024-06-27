@@ -121,7 +121,7 @@ func setupForTestMRI() func() {
 		"/dir/dir2": {"j", "k"},
 		"/.hidden1": {"x", "y", "z"},
 	}
-	readDirNames = func(dirname string) ([]string, error) {
+	readDirNames = func(r Repository, dirname string) ([]string, error) {
 		return mockDir[dirname], nil
 	}
 	Stat = func(name string) (os.FileInfo, error) {
@@ -140,7 +140,7 @@ func setupForTestMRI() func() {
 func TestReadDirNames(t *testing.T) {
 	// TODO: Use lfilemock
 	t.Skip()
-	names, err := readDirNames(".")
+	names, err := readDirNames(nil, ".")
 	assert.NoError(t, err)
 	expected := []string{"dir.go", "dir_test.go", "doc.go", "exts.go",
 		"exts_test.go", "handlers.go", "handlers_test.go", "iterator.go",
@@ -156,7 +156,7 @@ func TestMRIErr(t *testing.T) {
 		readDirNames = restoreReadDirNames
 	}()
 
-	readDirNames = func(dirname string) ([]string, error) {
+	readDirNames = func(r Repository, dirname string) ([]string, error) {
 		return nil, lerr.Str("test error")
 	}
 
