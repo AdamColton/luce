@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/filter"
 	"github.com/adamcolton/luce/util/liter"
@@ -67,7 +68,8 @@ func (m Match) Root(root string) MatchRoot {
 
 type matchRootIter struct {
 	MatchRoot
-	files []string
+	path  string
+	files slice.Slice[string]
 	err   error
 	done  bool
 	data  []byte
@@ -90,7 +92,7 @@ func (mr MatchRoot) Factory() (i liter.Iter[string], str string, done bool) {
 	}
 	done = mri.Reset()
 	if !done {
-		str = mri.path()
+		str = mri.path
 	}
 	i = mri
 	return
@@ -102,75 +104,54 @@ func (mri *matchRootIter) Idx() int {
 
 func (mri *matchRootIter) Next() (string, bool) {
 	mri.data = nil
-	ln := len(mri.files) - 1
-	var path string
-	updatePath := func() {
-		if ln >= 0 {
-			path = mri.files[ln]
+	done := func() bool {
+		mri.done = mri.done || len(mri.files) == 0
+		return mri.done
+	}
+	for !done() {
+		mri.path, mri.files = mri.files.Pop()
+		mri.info, mri.err = mri.Repository.Stat(mri.path)
+		foundNext, doAppend := mri.checkFilters()
+		if doAppend {
+			mri.appendFiles()
+		}
+		if foundNext {
+			break
 		}
 	}
-	updatePath()
-	var foundNext bool
-	defer func() {
-		if !mri.done {
-			mri.idx++
-		}
-	}()
-	for mri.done = ln < 0; !mri.done; mri.done = ln < 0 {
-		doAppend := true
-		if mri.info == nil {
-			foundNext, doAppend = mri.checkFilters(path)
-			if foundNext {
-				break
-			}
-		}
-
-		mri.files = mri.files[:ln]
-		ln--
-		if doAppend {
-			ln += mri.appendFiles(path)
-		}
-		mri.info = nil
-		updatePath()
-		continue
+	if !mri.done {
+		mri.idx++
 	}
 	return mri.Path(), mri.done
 }
 
-func (mri *matchRootIter) checkFilters(path string) (foundNext, doAppend bool) {
-	mri.info, mri.err = mri.Repository.Stat(path)
+func (mri *matchRootIter) checkFilters() (foundNext, doAppend bool) {
 	if mri.err != nil {
 		mri.done = true
 		return true, false
 	} else if mri.info.IsDir() {
-		doAppend = mri.SkipDir == nil || !mri.SkipDir(path)
-		return (doAppend && mri.Find.Dir != nil && mri.Find.Dir(path)), doAppend
+		doAppend = mri.SkipDir == nil || !mri.SkipDir(mri.path)
+		return (doAppend && mri.Find.Dir != nil && mri.Find.Dir(mri.path)), doAppend
 	}
-	return (mri.Find.File != nil && mri.Find.File(path)), false
-
+	return (mri.Find.File != nil && mri.Find.File(mri.path)), false
 }
 
-func (mri *matchRootIter) appendFiles(path string) int {
-	files, err := readDirNames(mri.Repository, path)
+func (mri *matchRootIter) appendFiles() {
+	files, err := readDirNames(mri.Repository, mri.path)
 	if err != nil {
 		mri.err, mri.done = err, true
-		return 0
+		return
 	}
 	for _, f := range files {
-		mri.files = append(mri.files, filepath.Join(path, f))
+		mri.files = append(mri.files, filepath.Join(mri.path, f))
 	}
-	return len(files)
 }
 
 func (mri *matchRootIter) Path() string {
 	if mri.done {
 		return ""
 	}
-	return mri.path()
-}
-
-func (mri *matchRootIter) path() string {
-	return mri.files[len(mri.files)-1]
+	return mri.path
 }
 
 func (mri *matchRootIter) Done() bool {
@@ -183,7 +164,7 @@ func (mri *matchRootIter) Cur() (path string, done bool) {
 
 func (mri *matchRootIter) Data() []byte {
 	if mri.data == nil && !mri.done {
-		mri.data, mri.err = mri.Repository.ReadFile(mri.path())
+		mri.data, mri.err = mri.Repository.ReadFile(mri.path)
 		mri.done = mri.err != nil
 	}
 	return mri.data
@@ -200,7 +181,8 @@ func (mri *matchRootIter) Stat() os.FileInfo {
 func (mri *matchRootIter) Reset() bool {
 	mri.files = mri.files[:0]
 	mri.info = nil
-	mri.appendFiles(mri.Root)
+	mri.path = mri.Root
+	mri.appendFiles()
 	mri.done = mri.done || len(mri.files) == 0
 	mri.Next()
 	mri.idx = 0
