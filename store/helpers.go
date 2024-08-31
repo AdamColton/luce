@@ -5,6 +5,8 @@ import (
 	"github.com/adamcolton/luce/lerr"
 )
 
+var Zero = []byte{0}
+
 func GetStoresStr(f Factory, names ...string) (slice.Slice[Store], error) {
 	ns := slice.TransformSlice(names, func(n string, _ int) ([]byte, bool) {
 		return []byte(n), true
