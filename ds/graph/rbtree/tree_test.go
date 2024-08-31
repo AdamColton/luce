@@ -89,7 +89,7 @@ func TestTree(t *testing.T) {
 }
 
 func TestGob(t *testing.T) {
-	ptr := rbtree.MakePtrType[int, string]()
+	ptr := rbtree.MakeEntType[int, string]()
 	gob.Register(ptr)
 	rb := rbtree.New(ptr, filter.Comparer[int]())
 	add := []int{737, 244, 263, 302, 559, 581, 508, 246, 780, 403}
@@ -100,6 +100,12 @@ func TestGob(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	err := gob.NewEncoder(buf).Encode(rb)
 	assert.NoError(t, err)
+
+	// This only translates the tree root to encoded Gob.
+	// Using an EntType means it won't walk the whole tree.
+	// I want to demonstrate saving all the nodes.
+	// Then I need to force the references clear.
+	// Then repopulate from the saved data.
 }
 
 // func TestFoo(t *testing.T) {
@@ -116,3 +122,28 @@ func TestGob(t *testing.T) {
 
 // 	rb.Remove(41)
 // }
+
+type Foo struct {
+	name string
+}
+
+func (f *Foo) GobEncode() (b []byte, err error) {
+	return []byte(f.name), nil
+}
+
+type Bar struct {
+	F *Foo
+}
+
+func TestGobScratch(t *testing.T) {
+	b := &Bar{}
+	b.F = &Foo{
+		name: "adam",
+	}
+
+	buf := bytes.NewBuffer(nil)
+	err := gob.NewEncoder(buf).Encode(b)
+	assert.NoError(t, err)
+
+	assert.True(t, bytes.Contains(buf.Bytes(), []byte(b.F.name)))
+}

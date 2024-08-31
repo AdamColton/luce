@@ -108,7 +108,7 @@ func TestRefPtrGob(t *testing.T) {
 	buf := lgob.Enc(ptr)
 	assert.NotNil(t, buf)
 
-	ptr2 := graph.Ptr[*Sub](nil)
-	lgob.Dec(buf, ptr2)
-	assert.NotNil(t, ptr2)
+	ptr2 := entity.Reference[*Sub]{}
+	lgob.Dec(buf, &ptr2)
+	assert.NotNil(t, ptr2.ID)
 }

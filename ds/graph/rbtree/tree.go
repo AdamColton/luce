@@ -3,6 +3,7 @@ package rbtree
 import (
 	"github.com/adamcolton/luce/ds/graph"
 	"github.com/adamcolton/luce/ds/lset"
+	"github.com/adamcolton/luce/store/entity"
 	"github.com/adamcolton/luce/util/filter"
 )
 
@@ -15,6 +16,10 @@ type Tree[Key, Val any] struct {
 
 func MakePtrType[Key, Val any]() graph.Ptr[*Node[Key, Val]] {
 	return graph.RawPointer[Node[Key, Val]]{}
+}
+
+func MakeEntType[Key, Val any]() graph.Ptr[*Node[Key, Val]] {
+	return &entity.Reference[*Node[Key, Val]]{}
 }
 
 func New[Key, Val any](ptr graph.Ptr[*Node[Key, Val]], cmpr filter.Compare[Key]) *Tree[Key, Val] {
