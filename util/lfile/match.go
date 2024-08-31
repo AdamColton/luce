@@ -1,6 +1,7 @@
 package lfile
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -131,9 +132,12 @@ func (mri *matchRootIter) checkFilters() (foundNext, doAppend bool) {
 		return true, false
 	} else if mri.info.IsDir() {
 		doAppend = mri.SkipDir == nil || !mri.SkipDir(mri.path)
-		return (doAppend && mri.Find.Dir != nil && mri.Find.Dir(mri.path)), doAppend
+		foundNext = (doAppend && mri.Find.Dir != nil && mri.Find.Dir(mri.path))
+		return
 	}
-	return (mri.Find.File != nil && mri.Find.File(mri.path)), false
+	doAppend = false
+	foundNext = (mri.Find.File != nil && mri.Find.File(mri.path))
+	return
 }
 
 func (mri *matchRootIter) appendFiles() {
@@ -197,7 +201,8 @@ var readDirNames = func(r Repository, dirname string) ([]string, error) {
 	}
 	names, err := f.Readdirnames(-1)
 	f.Close()
-	if err != nil {
+
+	if err != nil && !lerr.Except(err, io.EOF) {
 		return nil, err
 	}
 	sort.Strings(names)
