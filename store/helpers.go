@@ -2,8 +2,11 @@ package store
 
 import (
 	"github.com/adamcolton/luce/ds/list"
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
 )
+
+var Zero = []byte{0}
 
 func GetStoresStr(f Factory, names ...string) (list.Wrapper[Store], error) {
 	ns := list.TransformSlice(names, func(n string) []byte {
