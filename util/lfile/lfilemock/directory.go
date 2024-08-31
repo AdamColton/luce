@@ -22,6 +22,7 @@ type Directory struct {
 // Adding a []string will create a directory where each file's name and contents
 // are the same.
 func Parse(root map[string]any) *Directory {
+	// TODO: handle bad characters like /
 	out := &Directory{
 		Children: make(map[string]Node),
 	}
