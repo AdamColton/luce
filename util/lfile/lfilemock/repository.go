@@ -88,6 +88,10 @@ func (r *Repository) Stat(name string) (os.FileInfo, error) {
 	return f.Stat()
 }
 
+func (r *Repository) Lstat(name string) (os.FileInfo, error) {
+	return r.Stat(name)
+}
+
 func (r *Repository) ReadFile(name string) ([]byte, error) {
 	f, err := r.Open(name)
 	if err != nil {
