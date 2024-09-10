@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/adamcolton/luce/ds/channel"
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/cli"
 	"github.com/adamcolton/luce/util/handler"
@@ -79,6 +80,9 @@ func (c *cliHandlers) Handlers(rnr *cli.Runner) []any {
 		},
 		func(r Settings) {
 			fmt.Fprintf(rnr, "  AdminLockUserCreation %t", r.AdminLockUserCreation)
+		},
+		func(r *RoutesResp) {
+			fmt.Fprint(rnr, string(*r))
 		},
 		rnr.ExitRespHandler,
 		rnr.CloseRespHandler,
@@ -265,4 +269,27 @@ func (c *cliHandlers) Commands() *handler.Commands {
 	cs := cmds.Vals(nil).Sort(handler.CmdNameLT)
 
 	return lerr.Must(handler.Cmds(cs))
+}
+
+type RoutesReq struct {
+}
+type RoutesResp string
+
+func (c *cliHandlers) RoutesHandler(req *RoutesReq) *RoutesResp {
+	out := make(slice.Slice[string], 0, len(c.Server.serviceRoutes))
+	for k, route := range c.Server.serviceRoutes {
+		if route.active {
+			out = append(out, k)
+		}
+	}
+	out.Sort(slice.LT[string]())
+	resp := RoutesResp(strings.Join(out, "\n"))
+	return &resp
+}
+
+func (*cliHandlers) RoutesUsage() *handler.CommandDetails {
+	return &handler.CommandDetails{
+		Usage: "Show Routes",
+		Alias: "sr",
+	}
 }

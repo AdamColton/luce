@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net"
@@ -97,9 +96,8 @@ func (sc *serviceConn) RoutesHandler(routes service.Routes) {
 
 func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 	cvrt := sc.routeConfigToRequestConverter(route)
-	fmt.Println("Register Route: ", route.PathPrefix, route.Path)
 	h := func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Route Request: ", route.PathPrefix, route.Path)
+		//fmt.Println("Route Request: ", route.PathPrefix, route.Path)
 		req := cvrt(r)
 		if req == nil {
 			return
