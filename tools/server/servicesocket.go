@@ -111,6 +111,11 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 		lerr.Panic(err)
 		select {
 		case resp := <-ch:
+			if resp.Status == service.HttpRedirect {
+				url := string(resp.Body)
+				http.Redirect(w, r, url, resp.Status)
+				break
+			}
 			if resp.Status > 0 {
 				w.WriteHeader(resp.Status)
 			}
