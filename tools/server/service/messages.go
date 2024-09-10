@@ -109,6 +109,14 @@ func (r *Request) ResponseErr(err error, status int) *Response {
 	return resp
 }
 
+const HttpRedirect = 302
+
+func (r *Request) Redirect(url string) *Response {
+	resp := r.ResponseString(url)
+	resp.Status = HttpRedirect
+	return resp
+}
+
 // ResponseErr sets the response body to the error and sets the status.
 func (r *Request) ErrCheck(err error) *Response {
 	s := lhttp.ErrStatus(err)
