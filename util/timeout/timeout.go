@@ -133,3 +133,17 @@ func wg(d time.Duration, wg *sync.WaitGroup) (err error) {
 	}
 	return
 }
+
+// Signal is used by Run
+type Signal struct{}
+
+// Run the provided function in a go routine and close the returned channel when
+// the function returns.
+func Run(fn func()) <-chan Signal {
+	ch := make(chan Signal)
+	go func() {
+		fn()
+		close(ch)
+	}()
+	return ch
+}
