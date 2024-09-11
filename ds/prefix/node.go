@@ -57,6 +57,21 @@ func newNode() *node {
 	}
 }
 
+func (n *node) Next(r rune, create bool, p *Prefix) (*node, bool) {
+	next, ok := n.children.Get(r)
+	if !ok && create {
+		next = &node{
+			r:        r,
+			parent:   n,
+			children: lmap.New[rune, *node](nil),
+		}
+		p.starts[r] = append(p.starts[r], next)
+		n.children.Set(r, next)
+		ok = true
+	}
+	return next, ok
+}
+
 func (n *node) IsWord() bool {
 	return n.isWord
 }
