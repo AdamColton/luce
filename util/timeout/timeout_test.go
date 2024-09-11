@@ -98,3 +98,17 @@ func TestMust(t *testing.T) {
 
 	timeout.Must(0, ch)
 }
+
+func TestRun(t *testing.T) {
+	fn := func() {
+		time.Sleep(time.Millisecond)
+	}
+
+	ch := timeout.Run(fn)
+
+	select {
+	case <-ch:
+	case <-time.After(time.Millisecond * 5):
+		t.Error("time out")
+	}
+}
