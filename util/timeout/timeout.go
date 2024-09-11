@@ -128,3 +128,18 @@ func wg(d time.Duration, wg *sync.WaitGroup) (err error) {
 	}
 	return
 }
+
+// Signal is the element type of the channel that Run returns. Nothing is sent
+// on it, the channel is closed.
+type Signal struct{}
+
+// Run calls fn in a Go routine and closes the returned channel when fn returns,
+// so it can be passed to After to wait for fn with a time limit.
+func Run(fn func()) <-chan Signal {
+	ch := make(chan Signal)
+	go func() {
+		fn()
+		close(ch)
+	}()
+	return ch
+}
