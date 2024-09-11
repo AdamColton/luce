@@ -4,7 +4,10 @@
 // then the tree contains the gram 'tes' but it will not be a word.
 package prefix
 
-import "github.com/adamcolton/luce/ds/slice"
+import (
+	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/util/navigator"
+)
 
 // Prefix is the root of a prefix tree
 type Prefix struct {
@@ -24,9 +27,11 @@ func New() *Prefix {
 
 func (p *Prefix) seeker(str string) *seeker {
 	s := &seeker{
-		runes: []rune(str),
-		p:     p,
-		n:     p.root,
+		p: p,
+		Navigator: &navigator.Navigator[rune, *node, *Prefix]{
+			Cur:  p.root,
+			Keys: []rune(str),
+		},
 	}
 	return s
 }
@@ -37,34 +42,32 @@ func (p *Prefix) Upsert(word string) (n Node, insert bool) {
 	if len(word) == 0 {
 		return nil, false
 	}
-	s := p.seeker(word)
-	for done := s.moveNext(true); !done; done = s.moveNext(true) {
-	}
-	if !s.n.isWord {
+	nd, _ := p.seeker(word).Seek(true, p)
+	if !nd.isWord {
 		insert = true
-		s.n.isWord = true
-		for p := s.n.parent; p != nil; p = p.parent {
+		nd.isWord = true
+		for p := nd.parent; p != nil; p = p.parent {
 			p.childrenCount++
 		}
 	}
-	n = s.n
+	n = nd
 	return
 }
 
 // Find a node by it's gram. If there are no prefixes starting with the gram,
 // nil is returned.
 func (p *Prefix) Find(gram string) Node {
-	n := p.find(gram).n
+	n := p.find(gram, false).Cur
 	if n == nil {
 		return nil
 	}
 	return n
 }
 
-func (p *Prefix) find(gram string) *seeker {
+func (p *Prefix) find(gram string, trace bool) *seeker {
 	s := p.seeker(gram)
-	for done := false; !done; done = s.moveNext(false) {
-	}
+	s.Trace(trace)
+	s.Seek(false, p)
 	return s
 }
 
@@ -80,37 +83,41 @@ func (p *Prefix) Containing(gram string) Nodes {
 	if len(rs) == 0 {
 		return nil
 	}
+	//s := p.seeker(gram)
 	s := &seeker{
-		runes: rs[1:],
-		p:     p,
+		p: p,
+		Navigator: &navigator.Navigator[rune, *node, *Prefix]{
+			Keys: rs[1:],
+		},
 	}
 
 	var out slice.Slice[Node]
 	starts := p.starts[rs[0]]
 	for _, n := range starts {
-		s.idx = 0
-		s.n = n
-		for done := false; !done; done = s.moveNext(false) {
+		s.Idx = 0
+		s.Cur = n
+		n, ok := s.Seek(false, p)
+		if ok {
+			out = append(out, n)
 		}
-		out = out.AppendNotZero(s.n)
 	}
 	return Nodes(out)
 }
 
 func (p *Prefix) Remove(word string) {
-	s := p.find(word)
-	if s.n == nil || !s.n.isWord {
+	s := p.find(word, true)
+	if s.Cur == nil || !s.Cur.isWord {
 		return
 	}
-	s.n.isWord = false
-	for n, done := s.movePrev(); !done; n, done = s.movePrev() {
+	s.Cur.isWord = false
+	for n, ok := s.Pop(); ok; n, ok = s.Pop() {
 		if len(n.children) > 0 || n.isWord {
 			break
 		}
-		delete(n.parent.children, s.runes[s.idx])
+		delete(n.parent.children, s.Keys[s.Idx])
 		n.parent = nil
 	}
-	for _, r := range s.runes {
+	for _, r := range s.Keys {
 		p.purge[r] = true
 	}
 
