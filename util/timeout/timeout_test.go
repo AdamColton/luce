@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/adamcolton/luce/util/timeout"
 	"github.com/stretchr/testify/assert"
@@ -98,4 +99,14 @@ func TestMust(t *testing.T) {
 	}()
 
 	timeout.Must(0, ch)
+}
+
+func TestRun(t *testing.T) {
+	fn := func() {
+		time.Sleep(time.Millisecond)
+	}
+
+	ch := timeout.Run(fn)
+
+	assert.NoError(t, timeout.After(1000, ch))
 }
