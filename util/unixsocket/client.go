@@ -2,10 +2,11 @@ package unixsocket
 
 import (
 	"net"
-	"path/filepath"
 	"strconv"
 
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/cli"
+	"github.com/adamcolton/luce/util/lfile"
 )
 
 func Client(ctx cli.Context) error {
@@ -49,16 +50,17 @@ func Client(ctx cli.Context) error {
 	return nil
 }
 
-func getSock(ctx cli.Context) (string, error) {
-	local, err := filepath.Glob("*.sock")
-	if err != nil {
-		return "", err
-	}
+var Repository lfile.Repository = lfile.OSRepository{}
 
-	tmp, err := filepath.Glob("/tmp/*.sock")
-	if err != nil {
-		return "", err
-	}
+func getSock(ctx cli.Context) (string, error) {
+	m := lfile.MustRegexMatch(`.+\.sock`, "", ".*")
+
+	mr := m.Root("")
+	mr.Repository = Repository
+	local := slice.FromIterFactory(mr.Factory, nil)
+
+	mr.Root = "/tmp/"
+	tmp := slice.FromIterFactory(mr.Factory, nil)
 
 	all := append(local, tmp...)
 	if len(all) == 0 {
@@ -73,7 +75,7 @@ func getSock(ctx cli.Context) (string, error) {
 	}
 	var idx int
 	ctx.Input("(socket) ", &idx)
-	if err == nil && idx < len(all) {
+	if idx < len(all) {
 		return all[idx], nil
 	}
 	return "", nil

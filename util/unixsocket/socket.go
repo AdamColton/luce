@@ -2,8 +2,9 @@ package unixsocket
 
 import (
 	"net"
-	"os"
 	"sync"
+
+	"github.com/adamcolton/luce/util/lfile"
 )
 
 type Socket struct {
@@ -11,12 +12,14 @@ type Socket struct {
 	Handler func(conn net.Conn)
 	stop    chan bool
 	mux     sync.Mutex
+	lfile.Repository
 }
 
 func New(addr string, handler func(conn net.Conn)) *Socket {
 	return &Socket{
-		Addr:    addr,
-		Handler: handler,
+		Addr:       addr,
+		Handler:    handler,
+		Repository: lfile.OSRepository{},
 	}
 }
 
@@ -34,7 +37,7 @@ func (s *Socket) Close() {
 // Run the socket
 func (s *Socket) Run() error {
 	addr := s.Addr
-	if err := os.RemoveAll(addr); err != nil {
+	if err := s.Remove(addr); err != nil {
 		return err
 	}
 
@@ -50,7 +53,7 @@ func (s *Socket) Run() error {
 		<-s.stop
 		closed = true
 		l.Close()
-		os.RemoveAll(addr)
+		s.Remove(addr)
 		close(s.stop)
 	}()
 

@@ -1,7 +1,7 @@
 package unixsocket
 
 import (
-	"net"
+	"io"
 	"time"
 
 	"github.com/adamcolton/luce/ds/bus/iobus"
@@ -10,7 +10,7 @@ import (
 	"github.com/adamcolton/luce/util/packeter/prefix"
 )
 
-func ConnPipe(conn net.Conn) channel.Pipe[[]byte] {
+func ConnPipe(conn io.ReadWriter) channel.Pipe[[]byte] {
 	rw := iobus.Config{
 		CloseOnEOF: true,
 		Sleep:      time.Millisecond,
