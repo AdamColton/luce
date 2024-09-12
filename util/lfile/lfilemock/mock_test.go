@@ -1,6 +1,7 @@
 package lfilemock_test
 
 import (
+	"bytes"
 	"io"
 	"io/fs"
 	"io/ioutil"
@@ -115,7 +116,7 @@ func TestParseDirPanic(t *testing.T) {
 func TestByteFile(t *testing.T) {
 	bf := &lfilemock.ByteFile{
 		Name: "Test",
-		Data: []byte{1, 2, 3, 4, 5},
+		Data: bytes.NewBuffer([]byte{1, 2, 3, 4, 5}),
 	}
 	tree, ok := bf.Next("foo", true, navigator.Void)
 	assert.Nil(t, tree)
@@ -162,4 +163,32 @@ func TestReaddirnames(t *testing.T) {
 	assert.Len(t, names, 3)
 	_, err = f.Readdirnames(-1)
 	assert.Equal(t, io.EOF, err)
+}
+
+func TestWriteByteFile(t *testing.T) {
+	file1 := "this is test file 1"
+	file2 := []byte{3, 1, 4, 1, 5, 9, 2, 6, 5}
+	r := lfilemock.Parse(map[string]any{
+		"file1.txt": file1,
+		"dir1": map[string]any{
+			"file2.bin": file2,
+		},
+		"dir2": map[string]any{
+			"dir3":      map[string]any{},
+			"file4.txt": "this is file 4",
+		},
+	}).Repository()
+
+	f, err := r.Open("/dir1/file2.bin")
+	assert.NoError(t, err)
+	f.Write([]byte("test"))
+	f.Close()
+
+	f2, err := r.Open("/dir1/file2.bin")
+	assert.NoError(t, err)
+	expected := append(file2, []byte("test")...)
+	got, err := io.ReadAll(f2)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, got)
+
 }
