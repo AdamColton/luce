@@ -1,6 +1,7 @@
 package lfilemock
 
 import (
+	"bytes"
 	"os"
 	"strings"
 
@@ -94,7 +95,7 @@ func (d *Directory) AddDir(name string) *Directory {
 func (d *Directory) AddFile(name string, contents []byte) *ByteFile {
 	f := &ByteFile{
 		Name: name,
-		Data: contents,
+		Data: bytes.NewBuffer(contents),
 	}
 	d.Children[name] = f
 	return f
