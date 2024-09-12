@@ -11,18 +11,19 @@ import (
 // created when calling ParseDir.
 type ByteFile struct {
 	Name string
-	Data []byte
+	Data *bytes.Buffer
 	Err  error
 }
 
 // File fulfills Node. It uses a ByteFile to create an instance of File that
 // fulfills lfile.File.
 func (f *ByteFile) File() *File {
+	f.Data = bytes.NewBuffer(f.Data.Bytes())
 	return &File{
 		FileName: f.Name,
-		Buffer:   bytes.NewBuffer(f.Data),
+		Buffer:   f.Data,
 		Dir:      false,
-		FileSize: int64(len(f.Data)),
+		FileSize: int64(f.Data.Len()),
 		FileInfo: &FileInfo{
 			FileName: f.Name,
 			Dir:      false,
