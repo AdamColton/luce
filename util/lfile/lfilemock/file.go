@@ -40,9 +40,9 @@ func New(name string, contents any) *File {
 	})
 	switch c := contents.(type) {
 	case []byte:
-		f.Data = c
+		f.Data = bytes.NewBuffer(c)
 	case string:
-		f.Data = []byte(c)
+		f.Data = bytes.NewBufferString(c)
 	default:
 		panic(ErrNewType)
 	}
