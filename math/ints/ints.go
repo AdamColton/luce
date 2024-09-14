@@ -115,6 +115,18 @@ func Prod[T Number](ns ...T) T {
 	return Reduce(ProdFn, ns)
 }
 
+// Range limits x to the range from start to end. If it is less than start,
+// start is returned. If it is greater than end, end is returned.
+func Range[T Number](start, x, end T) T {
+	if x < start {
+		return start
+	}
+	if x > end {
+		return end
+	}
+	return x
+}
+
 // Int converts any integer type to an int. This and the other conversion
 // functions truncate a value that does not fit in the result type, as a Go
 // conversion does.
