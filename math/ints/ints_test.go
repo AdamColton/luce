@@ -144,3 +144,9 @@ func TestCompoundZero(t *testing.T) {
 	assert.Equal(t, 3, ints.Reduce(ints.SumFn, []int{1, 2}))
 	assert.Equal(t, 6, ints.Reduce(ints.SumFn, []int{1, 2, 3}))
 }
+
+func TestRange(t *testing.T) {
+	assert.Equal(t, 5, ints.Range(0, 5, 10))
+	assert.Equal(t, 0, ints.Range(0, -1, 10))
+	assert.Equal(t, 10, ints.Range(0, 11, 10))
+}
