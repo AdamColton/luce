@@ -1,9 +1,10 @@
 package lfilemock
 
 import (
-	"bytes"
+	"io"
 	"os"
 
+	"github.com/adamcolton/luce/ds/lbuf"
 	"github.com/adamcolton/luce/util/navigator"
 )
 
@@ -11,14 +12,14 @@ import (
 // created when calling ParseDir.
 type ByteFile struct {
 	Name string
-	Data *bytes.Buffer
+	Data *lbuf.Buffer
 	Err  error
 }
 
 // File fulfills Node. It uses a ByteFile to create an instance of File that
 // fulfills lfile.File.
 func (f *ByteFile) File() *File {
-	f.Data = bytes.NewBuffer(f.Data.Bytes())
+	f.Data.Seek(0, io.SeekStart)
 	return &File{
 		FileName: f.Name,
 		Buffer:   f.Data,
