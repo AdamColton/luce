@@ -1,10 +1,10 @@
 package lfilemock
 
 import (
-	"bytes"
 	"os"
 	"strings"
 
+	"github.com/adamcolton/luce/ds/lbuf"
 	"github.com/adamcolton/luce/util/lfile"
 	"github.com/adamcolton/luce/util/navigator"
 )
@@ -95,7 +95,7 @@ func (d *Directory) AddDir(name string) *Directory {
 func (d *Directory) AddFile(name string, contents []byte) *ByteFile {
 	f := &ByteFile{
 		Name: name,
-		Data: bytes.NewBuffer(contents),
+		Data: lbuf.New(contents),
 	}
 	d.Children[name] = f
 	return f
