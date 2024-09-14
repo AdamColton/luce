@@ -1,14 +1,15 @@
 package lfilemock_test
 
 import (
-	"bytes"
 	"io"
 	"io/fs"
 	"io/ioutil"
+	"sort"
 	"syscall"
 	"testing"
 	"time"
 
+	"github.com/adamcolton/luce/ds/lbuf"
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/lfile/lfilemock"
@@ -116,7 +117,7 @@ func TestParseDirPanic(t *testing.T) {
 func TestByteFile(t *testing.T) {
 	bf := &lfilemock.ByteFile{
 		Name: "Test",
-		Data: bytes.NewBuffer([]byte{1, 2, 3, 4, 5}),
+		Data: lbuf.New([]byte{1, 2, 3, 4, 5}),
 	}
 	tree, ok := bf.Next("foo", true, navigator.Void)
 	assert.Nil(t, tree)
@@ -190,5 +191,31 @@ func TestWriteByteFile(t *testing.T) {
 	got, err := io.ReadAll(f2)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, got)
+}
 
+func TestReadTwice(t *testing.T) {
+	repo := lfilemock.Parse(map[string]any{
+		".": []string{"a", "aa", "b", "c"},
+		"dir": map[string]any{
+			".":    []string{"d", "e", "f"},
+			"dir1": []string{"g", "h", "hh", "i"},
+			"dir2": []string{"j", "k"},
+		},
+		".hidden1": []string{"x", "y", "z"},
+	}).Repository()
+
+	f := lerr.Must(repo.Open("/dir/dir1"))
+	names := lerr.Must(f.Readdirnames(-1))
+	sort.Strings(names)
+	expected := []string{"g", "h", "hh", "i"}
+	assert.Equal(t, expected, names)
+
+	f = lerr.Must(repo.Open("/dir/dir1/g"))
+	got := string(lerr.Must(io.ReadAll(f)))
+	assert.Equal(t, "g", got)
+	f.Close()
+
+	f = lerr.Must(repo.Open("/dir/dir1/g"))
+	got = string(lerr.Must(io.ReadAll(f)))
+	assert.Equal(t, "g", got)
 }
