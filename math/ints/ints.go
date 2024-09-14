@@ -104,6 +104,18 @@ func Prod[T Number](ns ...T) T {
 	return Reduce(ProdFn, ns)
 }
 
+// Range checks that x is within the defined range. If it is less than start,
+// start is returned. If it is greater than end, end is returned.
+func Range[T Number](start, x, end T) T {
+	if x < start {
+		return start
+	}
+	if x > end {
+		return end
+	}
+	return x
+}
+
 // Int converts any integer type to an int
 func Int[T constraints.Integer](i T) int { return int(i) }
 
