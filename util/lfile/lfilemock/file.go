@@ -4,13 +4,13 @@
 package lfilemock
 
 import (
-	"bytes"
 	"io"
 	"io/fs"
 	"os"
 	"syscall"
 	"time"
 
+	"github.com/adamcolton/luce/ds/lbuf"
 	"github.com/adamcolton/luce/ds/list"
 	"github.com/adamcolton/luce/lerr"
 )
@@ -18,7 +18,7 @@ import (
 // File mock allows for *os.File to be simulated including various errors.
 type File struct {
 	FileName string
-	*bytes.Buffer
+	*lbuf.Buffer
 	Dir        bool
 	DirEntries []os.DirEntry
 	os.FileInfo
@@ -40,9 +40,9 @@ func New(name string, contents any) *File {
 	})
 	switch c := contents.(type) {
 	case []byte:
-		f.Data = bytes.NewBuffer(c)
+		f.Data = lbuf.New(c)
 	case string:
-		f.Data = bytes.NewBufferString(c)
+		f.Data = lbuf.String(c)
 	default:
 		panic(ErrNewType)
 	}
