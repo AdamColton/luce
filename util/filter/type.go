@@ -100,6 +100,15 @@ func Implements[I any]() Type {
 	}}
 }
 
+// ConvertableTo creates a Type filter that returns true when the type can be
+// converted to I, using the conversion rules of the language.
+func ConvertableTo[I any]() Type {
+	i := reflector.Type[I]()
+	return Type{func(t reflect.Type) bool {
+		return t.ConvertibleTo(i)
+	}}
+}
+
 // OnInterface applies the filter to the TypeOf i.
 func (t Type) OnInterface(i any) bool {
 	return t.Filter(reflect.TypeOf(i))
