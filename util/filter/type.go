@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/math/ints"
 	"github.com/adamcolton/luce/util/reflector"
 )
@@ -176,6 +177,22 @@ func (t Type) Or(t2 Type) Type {
 // filter is false.
 func (t Type) Not() Type {
 	return Type{t.Filter.Not()}
+}
+
+// SliceAnyInPlace reorders vals so that the values whose type passes the filter
+// come first. It returns those values and the rest, both slices of vals. The
+// order inside each is not kept.
+func (t Type) SliceAnyInPlace(vals []any) (passing, failing slice.Slice[any]) {
+	start, end := 0, len(vals)-1
+	for start <= end {
+		if t.Filter(reflect.TypeOf(vals[start])) {
+			start++
+		} else {
+			vals[start], vals[end] = vals[end], vals[start]
+			end--
+		}
+	}
+	return vals[:start], vals[start:]
 }
 
 // TypeChecker checks a value's type against a filter. It returns the underlying
