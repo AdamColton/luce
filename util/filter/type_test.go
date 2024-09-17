@@ -2,6 +2,7 @@ package filter_test
 
 import (
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/adamcolton/luce/lerr"
@@ -188,4 +189,20 @@ func TestMethodFirst(t *testing.T) {
 func TestAnyType(t *testing.T) {
 	a := filter.AnyType()
 	assert.True(t, a.OnInterface("string"))
+}
+
+func TestSliceAnyInPlace(t *testing.T) {
+	s := []any{3.1415, "test", 123, "foo", false, t, "bar"}
+	f := filter.IsType(ltype.String)
+	passing, failing := f.SliceAnyInPlace(s)
+	assert.Len(t, passing, 3)
+	assert.Len(t, failing, 4)
+
+	strs := make([]string, 3)
+	for i, s := range passing {
+		strs[i] = s.(string)
+	}
+	sort.Strings(strs)
+	expected := []string{"bar", "foo", "test"}
+	assert.Equal(t, expected, strs)
 }
