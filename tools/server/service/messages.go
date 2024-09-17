@@ -9,11 +9,13 @@ import (
 	"github.com/adamcolton/luce/lhttp"
 	"github.com/adamcolton/luce/serial"
 	"github.com/adamcolton/luce/serial/type32"
+	"github.com/adamcolton/luce/util/lfile"
 	"github.com/adamcolton/luce/util/luceio"
 	"github.com/adamcolton/luce/util/lusers"
 )
 
 var tm = type32.NewTypeMap()
+var OS lfile.FSFileReader = lfile.OSRepository{}
 
 // Register types with both gob and the typemap.
 func Register(zeroValues ...type32.TypeIDer32) {
@@ -60,6 +62,15 @@ func (r *Request) Response(body []byte) *Response {
 		Body:   body,
 		Status: http.StatusOK,
 	}
+}
+
+func (r *Request) ServeFile(path string) (resp *Response) {
+	file, err := OS.ReadFile(path)
+	resp = r.ErrCheck(err)
+	if resp == nil {
+		resp = r.Response(file)
+	}
+	return
 }
 
 // SerializeResponse uses the provided Serializer and data to create a Response
