@@ -27,6 +27,22 @@ func (f Filter[T]) And(f2 Filter[T]) Filter[T] {
 	}
 }
 
+// AndN builds a new Filter that will return true if f and every one of fs are
+// true. It stops at the first one that is false.
+func (f Filter[T]) AndN(fs ...Filter[T]) Filter[T] {
+	return func(val T) bool {
+		if !f(val) {
+			return false
+		}
+		for _, fn := range fs {
+			if !fn(val) {
+				return false
+			}
+		}
+		return true
+	}
+}
+
 // Not builds a new Filter that will return true if the underlying
 // Filter is false.
 func (f Filter[T]) Not() Filter[T] {
