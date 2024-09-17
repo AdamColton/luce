@@ -1,6 +1,8 @@
 package lmap
 
 import (
+	"fmt"
+
 	"github.com/adamcolton/luce/ds/slice"
 	"golang.org/x/exp/constraints"
 )
@@ -21,6 +23,14 @@ func (m Map[K, V]) Pop(key K) (V, bool) {
 		delete(m, key)
 	}
 	return v, found
+}
+
+func (m Map[K, V]) MustPop(key K) V {
+	v, ok := m.Pop(key)
+	if !ok {
+		panic(fmt.Errorf("failed to pop key: %v", key))
+	}
+	return v
 }
 
 func (m Map[K, V]) Vals(buf slice.Slice[V]) slice.Slice[V] {
