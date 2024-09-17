@@ -94,6 +94,13 @@ func Implements[I any]() Type {
 	}}
 }
 
+func ConvertableTo[I any]() Type {
+	i := reflector.Type[I]()
+	return Type{func(t reflect.Type) bool {
+		return t.ConvertibleTo(i)
+	}}
+}
+
 // OnInterface applies the filter to the TypeOf i.
 func (t Type) OnInterface(i any) bool {
 	return t.Filter(reflect.TypeOf(i))
