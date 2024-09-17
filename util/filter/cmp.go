@@ -37,7 +37,7 @@ func GTE[T constraints.Ordered](a T) Filter[T] {
 // Compare should return 0 if a==0, -1 if a<b and 1 if a>b.
 type Compare[T any] func(a, b T) int
 
-func Comparer[C Comparable]() Compare[C] {
+func Comparer[C constraints.Ordered]() Compare[C] {
 	return func(a, b C) int {
 		if a < b {
 			return -1
