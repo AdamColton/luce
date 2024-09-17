@@ -143,6 +143,20 @@ func (t Type) And(t2 Type) Type {
 	return Type{t.Filter.And(t2.Filter)}
 }
 
+func (t Type) AndN(ts ...Type) Type {
+	return Type{func(val reflect.Type) bool {
+		if !t.Filter(val) {
+			return false
+		}
+		for _, tn := range ts {
+			if !tn.Filter(val) {
+				return false
+			}
+		}
+		return true
+	}}
+}
+
 // Or builds a new Type filter that will return true if either underlying
 // Type filters is true.
 func (t Type) Or(t2 Type) Type {
