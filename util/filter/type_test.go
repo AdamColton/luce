@@ -2,6 +2,7 @@ package filter_test
 
 import (
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/adamcolton/luce/lerr"
@@ -194,4 +195,20 @@ func TestTypeErr(t *testing.T) {
 	fn := filter.TypeErr("Foo: %v")
 	got := fn(ltype.String)
 	assert.Equal(t, "Foo: string", got.Error())
+}
+
+func TestSliceAnyInPlace(t *testing.T) {
+	s := []any{3.1415, "test", 123, "foo", false, t, "bar"}
+	f := filter.IsType(ltype.String)
+	passing, failing := f.SliceAnyInPlace(s)
+	assert.Len(t, passing, 3)
+	assert.Len(t, failing, 4)
+
+	strs := make([]string, 3)
+	for i, s := range passing {
+		strs[i] = s.(string)
+	}
+	sort.Strings(strs)
+	expected := []string{"bar", "foo", "test"}
+	assert.Equal(t, expected, strs)
 }
