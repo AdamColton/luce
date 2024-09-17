@@ -206,3 +206,22 @@ func TestSliceAnyInPlace(t *testing.T) {
 	expected := []string{"bar", "foo", "test"}
 	assert.Equal(t, expected, strs)
 }
+
+func TestConvertableTo(t *testing.T) {
+	type Action func()
+	tfn := reflect.TypeOf(func() {})
+
+	// because fn is not of type Action, this is false
+	f := filter.IsType(reflector.Type[Action]())
+	got := f.Filter(tfn)
+	assert.False(t, got)
+
+	// this panics
+	f = filter.ConvertableTo[Action]()
+	got = f.Filter(tfn)
+	assert.True(t, got)
+
+	tfn = reflect.TypeOf(func(int) {})
+	got = f.Filter(tfn)
+	assert.False(t, got)
+}
