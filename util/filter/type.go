@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/math/ints"
 	"github.com/adamcolton/luce/util/reflector"
 )
@@ -164,6 +165,40 @@ func (t Type) Or(t2 Type) Type {
 // filter is false.
 func (t Type) Not() Type {
 	return Type{t.Filter.Not()}
+}
+
+func (t Type) SliceAnyInPlace(vals []any) (passing, failing slice.Slice[any]) {
+	f := t.Filter
+	ln := len(vals)
+	if ln == 0 {
+		return vals, nil
+	}
+	start := 0
+	end := ln - 1
+	startType := reflect.TypeOf(vals[start])
+	endType := reflect.TypeOf(vals[end])
+	for {
+		for {
+			if start >= ln || !f(startType) {
+				break
+			}
+			start++
+			startType = reflect.TypeOf(vals[start])
+		}
+		for {
+			if end <= 0 || f(endType) {
+				break
+			}
+			end--
+			endType = reflect.TypeOf(vals[end])
+		}
+		if start > end {
+			break
+		}
+		vals[start], vals[end] = vals[end], vals[start]
+		startType, endType = endType, startType
+	}
+	return vals[:start], vals[start:]
 }
 
 // TypeChecker checks a value's type against a filter. It returns the underlying
