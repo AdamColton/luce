@@ -9,7 +9,6 @@ import (
 	"sync/atomic"
 
 	"github.com/adamcolton/luce/ds/slice"
-	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/upgrade"
 )
 
@@ -21,13 +20,21 @@ type File interface {
 	io.Writer
 }
 
+type FileCreator interface {
+	Create(name string) (fs.File, error)
+}
+
+type FileRemover interface {
+	Remove(name string) error
+}
+
 // Repository is an interface to the file system.
 type Repository interface {
 	FSOpener
-	Create(name string) (fs.File, error)
-	Remove(name string) error
+	FileCreator
+	FileRemover
 	FileStater
-	Lstat(name string) (os.FileInfo, error)
+	FileLstater
 	FileReader
 }
 
@@ -36,9 +43,8 @@ type OSRepository struct{}
 
 // Open is a wrapper for os.Open
 func (OSRepository) Open(name string) (fs.File, error) {
-	f, err := os.Open(name)
-	f.Readdirnames(-1)
-	return f, err
+	//fmt.Println("Reading ", name, " from OS")
+	return os.Open(name)
 }
 
 // Create is a wrapper for os.Create
@@ -139,20 +145,29 @@ type embedWrapper struct {
 	EmbedFS
 }
 
-func (embedWrapper) Create(name string) (fs.File, error) {
-	return nil, lerr.Str("embed.FS cannot Create")
+func (ew embedWrapper) Stat(name string) (os.FileInfo, error) {
+	f, err := ew.EmbedFS.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	return f.Stat()
 }
 
-func (embedWrapper) Lstat(name string) (os.FileInfo, error) {
-	return nil, lerr.Str("embed.FS cannot Lstat")
+func (ew embedWrapper) Open(name string) (fs.File, error) {
+	f, err := ew.EmbedFS.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	out := &fsFile{
+		File: f,
+		name: name,
+		ew:   ew,
+	}
+	return out, err
 }
 
-func (embedWrapper) Stat(name string) (os.FileInfo, error) {
-	return nil, lerr.Str("embed.FS cannot Stat")
-}
-
-func (embedWrapper) Remove(name string) error {
-	return lerr.Str("embed.FS cannot Remove")
+func WrapEmbed(fs EmbedFS) FSReader {
+	return embedWrapper{fs}
 }
 
 type fsFile struct {
@@ -179,26 +194,6 @@ func (f *fsFile) Readdirnames(n int) (names []string, err error) {
 		out[i] = de.Name()
 	}
 	return out, nil
-}
-
-func (f *fsFile) Write(p []byte) (n int, err error) {
-	return 0, lerr.Str("embed.FS cannot write")
-}
-
-func (ew embedWrapper) Open(name string) (fs.File, error) {
-	f, err := ew.EmbedFS.Open(name)
-	if err != nil {
-		return nil, err
-	}
-	out := &fsFile{
-		File: f,
-		name: name,
-	}
-	return out, err
-}
-
-func WrapEmbed(fs EmbedFS) Repository {
-	return embedWrapper{fs}
 }
 
 type FSReader interface {
