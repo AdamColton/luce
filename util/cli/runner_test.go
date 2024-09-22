@@ -80,6 +80,7 @@ func TestRunner(t *testing.T) {
 
 type cmdr struct {
 	*cli.ExitCloseHandler
+	*cli.HTMLTemplateLoadHandler
 	cli.Helper
 	out chan<- string
 }
@@ -142,14 +143,18 @@ func (r *reader) read() string {
 }
 
 type domainObject struct {
-	out chan string
-	wg  sync.WaitGroup
+	out                        chan string
+	wg                         sync.WaitGroup
+	htmlTemplateLoaderCallback chan bool
 }
 
 func (do *domainObject) Cli(ctx cli.Context, onExit func()) {
 	c := &cmdr{
 		ExitCloseHandler: cli.NewExitClose(onExit, nil).Commands(),
 		out:              do.out,
+		HTMLTemplateLoadHandler: cli.NewHTMLTemplateLoadHandler(func() {
+			do.htmlTemplateLoaderCallback <- true
+		}),
 	}
 	rnr := cli.NewRunner(c, ctx)
 	rnr.Run()
@@ -162,7 +167,8 @@ func TestNewRunner(t *testing.T) {
 	ctx := cli.NewContext(r.buf, in, nil)
 
 	do := &domainObject{
-		out: make(chan string),
+		out:                        make(chan string),
+		htmlTemplateLoaderCallback: make(chan bool),
 	}
 	do.wg.Add(1)
 	go do.Cli(ctx, func() {})
@@ -176,14 +182,18 @@ func TestNewRunner(t *testing.T) {
 	assert.Equal(t, "\n> ", r.read())
 	in <- []byte("help")
 	help := []string{
-		"q, exit Exit the client",
+		"q, exit          Exit the client",
 		"help",
-		"sayHi   say hi",
+		"loadHTMLTemplate Reload HTML Templates",
+		"sayHi            say hi",
 	}
 	tfn := slice.ForAll(func(cmd string) string { return "   " + cmd })
 	help = tfn.Slice(help, nil)
 	expected := strings.Join(help, "\n") + "\n> "
 	assert.Equal(t, expected, r.read())
+
+	in <- []byte("loadHTMLTemplate")
+	assert.True(t, <-do.htmlTemplateLoaderCallback)
 
 	in <- []byte("exit")
 
