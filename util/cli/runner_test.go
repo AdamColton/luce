@@ -149,6 +149,9 @@ type domainObject struct {
 }
 
 func (do *domainObject) Cli(ctx cli.Context, onExit func()) {
+	if onExit == nil {
+		onExit = func() {}
+	}
 	c := &cmdr{
 		ExitCloseHandler: cli.NewExitClose(onExit, nil).Commands(),
 		out:              do.out,
@@ -163,24 +166,25 @@ func (do *domainObject) Cli(ctx cli.Context, onExit func()) {
 
 func TestNewRunner(t *testing.T) {
 	r := reader{bytes.NewBuffer(nil)}
-	in := make(chan []byte)
-	ctx := cli.NewContext(r.buf, in, nil)
+	in := bytes.NewBuffer(nil)
+	cli.StdOut = r.buf
+	cli.StdIn = in
 
 	do := &domainObject{
 		out:                        make(chan string),
 		htmlTemplateLoaderCallback: make(chan bool),
 	}
 	do.wg.Add(1)
-	go do.Cli(ctx, func() {})
+	go cli.StdIO(do)
 
 	assert.Equal(t, "> ", r.read())
-	in <- []byte("sayHi")
+	in.WriteString("sayHi")
 	assert.Equal(t, "(sayHi:Name) ", r.read())
-	in <- []byte("Adam")
+	in.WriteString("Adam")
 	assert.Equal(t, "Hi Adam", <-do.out)
 
 	assert.Equal(t, "\n> ", r.read())
-	in <- []byte("help")
+	in.WriteString("help")
 	help := []string{
 		"q, exit          Exit the client",
 		"help",
@@ -191,10 +195,10 @@ func TestNewRunner(t *testing.T) {
 	expected := strings.Join(help, "\n") + "\n> "
 	assert.Equal(t, expected, r.read())
 
-	in <- []byte("loadHTMLTemplate")
+	in.WriteString("loadHTMLTemplate")
 	assert.True(t, <-do.htmlTemplateLoaderCallback)
 
-	in <- []byte("exit")
+	in.WriteString("exit")
 
 	assert.NoError(t, timeout.After(25, &(do.wg)))
 }
