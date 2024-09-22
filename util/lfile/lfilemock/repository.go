@@ -32,7 +32,7 @@ func getPath(name string) slice.Slice[string] {
 }
 
 // Open fulfills lfile.Repository. It opens a file or directory if it exists.
-func (r *Repository) Open(name string) (lfile.File, error) {
+func (r *Repository) Open(name string) (fs.File, error) {
 	if err := r.Error(); err != nil {
 		return nil, err
 	}
