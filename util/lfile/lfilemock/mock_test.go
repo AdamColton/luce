@@ -12,6 +12,7 @@ import (
 	"github.com/adamcolton/luce/ds/lbuf"
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/util/lfile"
 	"github.com/adamcolton/luce/util/lfile/lfilemock"
 	"github.com/adamcolton/luce/util/navigator"
 	"github.com/stretchr/testify/assert"
@@ -31,14 +32,12 @@ func TestRepository(t *testing.T) {
 		},
 	}).Repository()
 
-	f, err := r.Open("file1.txt")
-	assert.NoError(t, err)
+	f := lerr.Must(r.Open("file1.txt")).(lfile.File)
 	b, err := io.ReadAll(f)
 	assert.NoError(t, err)
 	assert.Equal(t, file1, string(b))
 
-	f, err = r.Open("dir2")
-	assert.NoError(t, err)
+	f = lerr.Must(r.Open("dir2")).(lfile.File)
 	des, err := f.ReadDir(0)
 	assert.NoError(t, err)
 	slice.Less[fs.DirEntry](func(i, j fs.DirEntry) bool {
@@ -57,8 +56,7 @@ func TestRepository(t *testing.T) {
 	assert.Equal(t, time.Time{}, fi.ModTime())
 	assert.Nil(t, fi.Sys())
 
-	f, err = r.Open("dir2/dir3")
-	assert.NoError(t, err)
+	f = lerr.Must(r.Open("dir2/dir3")).(lfile.File)
 	fi2, err := f.Stat()
 	assert.NoError(t, err)
 	assert.Equal(t, fi, fi2)
@@ -67,8 +65,7 @@ func TestRepository(t *testing.T) {
 	assert.Equal(t, "file4.txt", des[1].Name())
 	assert.False(t, des[1].IsDir())
 
-	f, err = r.Open("dir1/file2.bin")
-	assert.NoError(t, err)
+	f = lerr.Must(r.Open("dir1/file2.bin")).(lfile.File)
 	b, err = io.ReadAll(f)
 	assert.NoError(t, err)
 	assert.Equal(t, file2, b)
@@ -79,11 +76,12 @@ func TestRepository(t *testing.T) {
 
 	err = r.Remove("dir1/file2.bin")
 	assert.NoError(t, err)
-	f, _ = r.Open("dir1/file2.bin")
-	assert.Nil(t, f)
+	nilFile, err := r.Open("dir1/file2.bin")
+	assert.Nil(t, nilFile)
+	assert.NoError(t, err)
 
 	lf := lfilemock.New("test.txt", "this is a test")
-	got, err := ioutil.ReadAll(lf)
+	got, err := io.ReadAll(lf)
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("this is a test"), got)
 	te := lerr.Str("test_error")
@@ -137,15 +135,13 @@ func TestReaddirnames(t *testing.T) {
 		"file4.txt": "file4.txt",
 	}).Repository()
 
-	f, err := r.Open("file1.txt")
-	assert.NoError(t, err)
+	f := lerr.Must(r.Open("file1.txt")).(lfile.File)
 
 	expectErr := &fs.PathError{Op: "readdirent", Path: "file1.txt", Err: syscall.ENOTDIR}
-	_, err = f.Readdirnames(-1)
+	_, err := f.Readdirnames(-1)
 	assert.Equal(t, expectErr, err)
 
-	f, err = r.Open("/")
-	assert.NoError(t, err)
+	f = lerr.Must(r.Open("/")).(lfile.File)
 	names, err := f.Readdirnames(-1)
 	assert.NoError(t, err)
 	slice.LT[string]().Sort(names)
@@ -154,8 +150,7 @@ func TestReaddirnames(t *testing.T) {
 	_, err = f.Readdirnames(-1)
 	assert.Equal(t, io.EOF, err)
 
-	f, err = r.Open("/")
-	assert.NoError(t, err)
+	f = lerr.Must(r.Open("/")).(lfile.File)
 	names, err = f.Readdirnames(2)
 	assert.NoError(t, err)
 	assert.Len(t, names, 2)
@@ -180,8 +175,7 @@ func TestWriteByteFile(t *testing.T) {
 		},
 	}).Repository()
 
-	f, err := r.Open("/dir1/file2.bin")
-	assert.NoError(t, err)
+	f := lerr.Must(r.Open("/dir1/file2.bin")).(lfile.File)
 	f.Write([]byte("test"))
 	f.Close()
 
@@ -204,18 +198,18 @@ func TestReadTwice(t *testing.T) {
 		".hidden1": []string{"x", "y", "z"},
 	}).Repository()
 
-	f := lerr.Must(repo.Open("/dir/dir1"))
+	f := lerr.Must(repo.Open("/dir/dir1")).(lfile.File)
 	names := lerr.Must(f.Readdirnames(-1))
 	sort.Strings(names)
 	expected := []string{"g", "h", "hh", "i"}
 	assert.Equal(t, expected, names)
 
-	f = lerr.Must(repo.Open("/dir/dir1/g"))
+	f = lerr.Must(repo.Open("/dir/dir1/g")).(lfile.File)
 	got := string(lerr.Must(io.ReadAll(f)))
 	assert.Equal(t, "g", got)
 	f.Close()
 
-	f = lerr.Must(repo.Open("/dir/dir1/g"))
+	f = lerr.Must(repo.Open("/dir/dir1/g")).(lfile.File)
 	got = string(lerr.Must(io.ReadAll(f)))
 	assert.Equal(t, "g", got)
 }

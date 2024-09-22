@@ -19,25 +19,31 @@ type File interface {
 	fs.File
 	Dir
 	io.WriteCloser
+	DirNameReader
+}
+
+type DirNameReader interface {
 	Readdirnames(n int) (names []string, err error)
 }
 
 // Repository is an interface to the file system.
 type Repository interface {
-	Open(name string) (File, error)
+	FSOpener
 	Create(name string) (File, error)
 	Remove(name string) error
-	Stat(name string) (os.FileInfo, error)
+	FileStater
 	Lstat(name string) (os.FileInfo, error)
-	ReadFile(name string) ([]byte, error)
+	FileReader
 }
 
 // OSRepository fulfills Repository by using functions from the "os" package.
 type OSRepository struct{}
 
 // Open is a wrapper for os.Open
-func (OSRepository) Open(name string) (File, error) {
-	return os.Open(name)
+func (OSRepository) Open(name string) (fs.File, error) {
+	f, err := os.Open(name)
+	f.Readdirnames(-1)
+	return f, err
 }
 
 // Create is a wrapper for os.Create
@@ -90,7 +96,11 @@ func Size(repo Repository, path string) (int64, error) {
 				return
 			}
 
-			entries, localErr := dir.ReadDir(-1)
+			var entries []os.DirEntry
+			if drrdr, ok := upgrade.To[DirReader](dir); ok {
+				entries, localErr = drrdr.ReadDir(-1)
+			}
+
 			dir.Close()
 			if localErr != nil {
 				err = localErr
@@ -179,7 +189,7 @@ func (f *fsFile) Write(p []byte) (n int, err error) {
 	return 0, lerr.Str("embed.FS cannot write")
 }
 
-func (ew embedWrapper) Open(name string) (File, error) {
+func (ew embedWrapper) Open(name string) (fs.File, error) {
 	f, err := ew.EmbedFS.Open(name)
 	if err != nil {
 		return nil, err
@@ -210,7 +220,7 @@ type FileReader interface {
 }
 
 type FSOpener interface {
-	Open(name string) (File, error)
+	Open(name string) (fs.File, error)
 }
 
 func WrapReadFile(fsr FSOpener) func(name string) ([]byte, error) {
@@ -264,4 +274,13 @@ func (wr wrappedFSReader) ReadFile(name string) ([]byte, error) {
 
 func (wr wrappedFSReader) Stat(name string) (os.FileInfo, error) {
 	return wr.stat(name)
+}
+
+func ToReaddirnames(f fs.File) func(n int) (names []string, err error) {
+	if rdn, ok := upgrade.To[DirNameReader](f); ok {
+		return rdn.Readdirnames
+	}
+
+	//TODO: Can I use f.FileInfo.Sys to do this
+	return nil
 }
