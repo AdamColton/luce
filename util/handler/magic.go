@@ -97,6 +97,16 @@ func (mr MethodsRegistrar) Commands(handlerType any) lmap.Wrapper[string, *Comma
 	return out
 }
 
+func AddAlias(cmds lmap.Mapper[string, *Command], cmdAliasPairs ...string) {
+	for i := 0; i < len(cmdAliasPairs); i += 2 {
+		cmd, alias := cmdAliasPairs[i], cmdAliasPairs[i+1]
+		if c, ok := cmds.Get(cmd); ok {
+			c.Alias = alias
+		}
+	}
+
+}
+
 type CommandDetails struct {
 	Name     string
 	Usage    string
