@@ -16,9 +16,14 @@ type DirReader interface {
 	ReadDir(n int) ([]os.DirEntry, error)
 }
 
+type DirNameReader interface {
+	Readdirnames(n int) (names []string, err error)
+}
+
 // Dir is fulfilled by *os.File.
 type Dir interface {
 	DirReader
+	DirNameReader
 	Name() string
 }
 

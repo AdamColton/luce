@@ -70,8 +70,7 @@ func TestRepository(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, file2, b)
 
-	f, err = r.Create("dir1/dir4/file3.txt")
-	assert.NoError(t, err)
+	f = lerr.Must(r.Create("dir1/dir4/file3.txt")).(lfile.File)
 	assert.Equal(t, "file3.txt", f.Name())
 
 	err = r.Remove("dir1/file2.bin")

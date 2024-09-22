@@ -9,7 +9,6 @@ import (
 
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/filter"
-	"github.com/adamcolton/luce/util/lfile"
 	"github.com/adamcolton/luce/util/navigator"
 )
 
@@ -62,7 +61,7 @@ func (r *Repository) Remove(name string) error {
 }
 
 // Create fulfills lfile.Repository. It creates a file.
-func (r *Repository) Create(name string) (lfile.File, error) {
+func (r *Repository) Create(name string) (fs.File, error) {
 	if err := r.Error(); err != nil {
 		return nil, err
 	}
