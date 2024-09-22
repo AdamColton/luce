@@ -54,16 +54,16 @@ func MustRegexMatch(findFile, findDir, skipDir string) Match {
 // Repository allows for testing. If Repository is nil, OSRepository is used.
 type MatchRoot struct {
 	Match
-	Root string
-	Repository
+	Root     string
+	FSReader FSReader
 }
 
 // Root to Match against, return MatchRoot which fulfills IteratorSource.
 func (m Match) Root(root string) MatchRoot {
 	return MatchRoot{
-		Match:      m,
-		Root:       root,
-		Repository: OSRepository{},
+		Match:    m,
+		Root:     root,
+		FSReader: OSRepository{},
 	}
 }
 
@@ -111,7 +111,7 @@ func (mri *matchRootIter) Next() (string, bool) {
 	}
 	for !done() {
 		mri.path, mri.files = mri.files.Pop()
-		mri.info, mri.err = mri.Repository.Stat(mri.path)
+		mri.info, mri.err = mri.FSReader.Stat(mri.path)
 		foundNext, doAppend := mri.checkFilters()
 		if doAppend {
 			mri.appendFiles()
@@ -141,7 +141,7 @@ func (mri *matchRootIter) checkFilters() (foundNext, doAppend bool) {
 }
 
 func (mri *matchRootIter) appendFiles() {
-	files, err := readDirNames(mri.Repository, mri.path)
+	files, err := readDirNames(mri.FSReader, mri.path)
 	if err != nil {
 		mri.err, mri.done = err, true
 		return
@@ -168,7 +168,7 @@ func (mri *matchRootIter) Cur() (path string, done bool) {
 
 func (mri *matchRootIter) Data() []byte {
 	if mri.data == nil && !mri.done {
-		mri.data, mri.err = mri.Repository.ReadFile(mri.path)
+		mri.data, mri.err = mri.FSReader.ReadFile(mri.path)
 		mri.done = mri.err != nil
 	}
 	return mri.data
@@ -194,7 +194,11 @@ func (mri *matchRootIter) Reset() bool {
 	return mri.done
 }
 
-var readDirNames = func(r Repository, dirname string) ([]string, error) {
+type readDirNamesIfc interface {
+	Open(name string) (File, error)
+}
+
+var readDirNames = func(r readDirNamesIfc, dirname string) ([]string, error) {
 	f, err := r.Open(dirname)
 	if err != nil {
 		return nil, err
