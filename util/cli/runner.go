@@ -1,11 +1,14 @@
 package cli
 
 import (
+	"io"
+	"os"
 	"reflect"
 	"slices"
 	"strings"
 	"time"
 
+	"github.com/adamcolton/luce/ds/bus/iobus"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/handler"
 	"github.com/adamcolton/luce/util/reflector"
@@ -204,4 +207,28 @@ func NewRunner(c Commander, ctx Context) *Runner {
 	}
 
 	return rnr
+}
+
+// CLIRunner can run a command line on a Context. The onExit func is called when
+// it exits, if it is not nil.
+type CLIRunner interface {
+	Cli(ctx Context, onExit func())
+}
+
+// StdIn is what StdIO reads. It can be replaced, for instance to test a command
+// line.
+var StdIn io.Reader = os.Stdin
+
+// StdOut is what StdIO writes. It can be replaced, for instance to capture the
+// output of a command line.
+var StdOut io.Writer = os.Stdout
+
+// StdIO runs rnr on StdIn and StdOut. The input is read by an iobus.Reader that
+// polls every millisecond, and the input is not closed at the end of it.
+func StdIO(rnr CLIRunner) {
+	rdr := iobus.Config{
+		Sleep: time.Millisecond,
+	}.NewReader(StdIn)
+	ctx := NewContext(StdOut, rdr.Out, nil)
+	rnr.Cli(ctx, nil)
 }
