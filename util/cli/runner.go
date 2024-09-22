@@ -1,10 +1,12 @@
 package cli
 
 import (
+	"os"
 	"reflect"
 	"strings"
 	"time"
 
+	"github.com/adamcolton/luce/ds/bus/iobus"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/handler"
 	"github.com/adamcolton/luce/util/reflector"
@@ -149,4 +151,16 @@ func NewRunner(c Commander, ctx Context) *Runner {
 	}
 
 	return rnr
+}
+
+type CLIRunner interface {
+	Cli(ctx Context, onExit func())
+}
+
+func StdIO(rnr CLIRunner) {
+	rdr := iobus.Config{
+		Sleep: time.Millisecond,
+	}.NewReader(os.Stdin)
+	ctx := NewContext(os.Stdout, rdr.Out, nil)
+	rnr.Cli(ctx, nil)
 }
