@@ -63,9 +63,10 @@ func (OSRepository) ReadFile(name string) ([]byte, error) {
 	return os.ReadFile(name)
 }
 
-func Size(repo Repository, path string) (int64, error) {
+func Size(o FSOpener, path string) (int64, error) {
 	size := &atomic.Int64{}
 	var err error
+	lstat := WrapLstat(o)
 
 	// Function to calculate size for a given path
 	var calculateSize func(string) *sync.WaitGroup
@@ -73,7 +74,7 @@ func Size(repo Repository, path string) (int64, error) {
 		if err != nil {
 			return
 		}
-		fileInfo, localErr := repo.Lstat(p)
+		fileInfo, localErr := lstat(p)
 		if localErr != nil {
 			err = localErr
 			return
@@ -85,7 +86,7 @@ func Size(repo Repository, path string) (int64, error) {
 		}
 
 		if fileInfo.IsDir() {
-			dir, localErr := repo.Open(p)
+			dir, localErr := o.Open(p)
 			if localErr != nil {
 				err = localErr
 				return
@@ -210,6 +211,10 @@ type FileStater interface {
 	Stat(name string) (os.FileInfo, error)
 }
 
+type FileLstater interface {
+	Lstat(name string) (os.FileInfo, error)
+}
+
 type FileReader interface {
 	ReadFile(name string) ([]byte, error)
 }
@@ -246,6 +251,27 @@ func WrapStat(fsr FSOpener) func(name string) (os.FileInfo, error) {
 	}
 }
 
+type Lstater interface {
+	Lstat() (os.FileInfo, error)
+}
+
+func WrapLstat(fsr FSOpener) func(name string) (os.FileInfo, error) {
+	if fr, ok := upgrade.To[FileLstater](fsr); ok {
+		return fr.Lstat
+	}
+
+	return func(name string) (os.FileInfo, error) {
+		f, err := fsr.Open(name)
+		if err != nil {
+			return nil, err
+		}
+		if ls, ok := upgrade.To[Lstater](f); ok {
+			return ls.Lstat()
+		}
+		return f.Stat()
+	}
+}
+
 func WrappedFSReader(o FSOpener) FSReader {
 	if r, ok := upgrade.To[FSReader](o); ok {
 		return r
@@ -261,6 +287,7 @@ type wrappedFSReader struct {
 	FSOpener
 	readFile func(name string) ([]byte, error)
 	stat     func(name string) (os.FileInfo, error)
+	lstat    func(name string) (os.FileInfo, error)
 }
 
 func (wr wrappedFSReader) ReadFile(name string) ([]byte, error) {
@@ -269,6 +296,10 @@ func (wr wrappedFSReader) ReadFile(name string) ([]byte, error) {
 
 func (wr wrappedFSReader) Stat(name string) (os.FileInfo, error) {
 	return wr.stat(name)
+}
+
+func (wr wrappedFSReader) Lstat(name string) (os.FileInfo, error) {
+	return wr.lstat(name)
 }
 
 func ToReaddirnames(f fs.File) func(n int) (names []string, err error) {
