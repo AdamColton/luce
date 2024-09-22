@@ -12,9 +12,13 @@ type DirContents struct {
 	Files      []string
 }
 
+type DirReader interface {
+	ReadDir(n int) ([]os.DirEntry, error)
+}
+
 // Dir is fulfilled by *os.File.
 type Dir interface {
-	ReadDir(n int) ([]os.DirEntry, error)
+	DirReader
 	Name() string
 }
 
