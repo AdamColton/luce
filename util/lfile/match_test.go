@@ -90,7 +90,7 @@ func TestMRILMock(t *testing.T) {
 	for n, tc := range tt {
 		t.Run(n, func(t *testing.T) {
 			r := tc.Match.Root("/")
-			r.Repository = repo
+			r.FSReader = repo
 			got := slice.FromIterFactory(r.Factory, nil)
 			got.Sort(lt)
 			expected := slice.New(append(slice.New(tc.expectedDirs).Clone(), tc.expectedFiles...))
@@ -133,7 +133,7 @@ func TestMRIErr(t *testing.T) {
 
 	mr := lfile.MustRegexMatch(`\/[a-z]$`, `[0-9]$`, lfile.FilterHidden).
 		Root("/")
-	mr.Repository = dir.Repository()
+	mr.FSReader = dir.Repository()
 	i, _ := mr.Iterator()
 
 	assert.Equal(t, "test error", i.Err().Error())
