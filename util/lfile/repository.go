@@ -18,18 +18,13 @@ import (
 type File interface {
 	fs.File
 	Dir
-	io.WriteCloser
-	DirNameReader
-}
-
-type DirNameReader interface {
-	Readdirnames(n int) (names []string, err error)
+	io.Writer
 }
 
 // Repository is an interface to the file system.
 type Repository interface {
 	FSOpener
-	Create(name string) (File, error)
+	Create(name string) (fs.File, error)
 	Remove(name string) error
 	FileStater
 	Lstat(name string) (os.FileInfo, error)
@@ -47,7 +42,7 @@ func (OSRepository) Open(name string) (fs.File, error) {
 }
 
 // Create is a wrapper for os.Create
-func (OSRepository) Create(name string) (File, error) {
+func (OSRepository) Create(name string) (fs.File, error) {
 	return os.Create(name)
 }
 
@@ -143,7 +138,7 @@ type embedWrapper struct {
 	EmbedFS
 }
 
-func (embedWrapper) Create(name string) (File, error) {
+func (embedWrapper) Create(name string) (fs.File, error) {
 	return nil, lerr.Str("embed.FS cannot Create")
 }
 
