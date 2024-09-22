@@ -128,6 +128,18 @@ func (mr MethodsRegistrar) Commands(handlerType any) lmap.Wrapper[string, *Comma
 	return out
 }
 
+// AddAlias sets aliases on commands. The arguments are pairs of a command's name
+// and the alias for it. A name that is not in cmds is skipped, and so is a
+// final name that has no alias.
+func AddAlias(cmds lmap.Mapper[string, *Command], cmdAliasPairs ...string) {
+	for i := 0; i+1 < len(cmdAliasPairs); i += 2 {
+		cmd, alias := cmdAliasPairs[i], cmdAliasPairs[i+1]
+		if c, ok := cmds.Get(cmd); ok {
+			c.Alias = alias
+		}
+	}
+}
+
 // CommandDetails describes the Command that a handler method makes. A method
 // named <Name>Usage returns them for <Name>Handler when DefaultRegistrar is
 // used.
