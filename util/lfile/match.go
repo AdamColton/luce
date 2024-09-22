@@ -10,6 +10,7 @@ import (
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/filter"
 	"github.com/adamcolton/luce/util/liter"
+	"github.com/adamcolton/luce/util/upgrade"
 )
 
 // Match will walk a directory and match files and subdirectories. SkipDir can
@@ -194,16 +195,15 @@ func (mri *matchRootIter) Reset() bool {
 	return mri.done
 }
 
-type readDirNamesIfc interface {
-	Open(name string) (File, error)
-}
-
-var readDirNames = func(r readDirNamesIfc, dirname string) ([]string, error) {
+var readDirNames = func(r FSOpener, dirname string) ([]string, error) {
 	f, err := r.Open(dirname)
 	if err != nil {
 		return nil, err
 	}
-	names, err := f.Readdirnames(-1)
+	var names []string
+	if drnrdr, ok := upgrade.To[DirNameReader](f); ok {
+		names, err = drnrdr.Readdirnames(-1)
+	}
 	f.Close()
 
 	if err != nil && !lerr.Except(err, io.EOF) {
