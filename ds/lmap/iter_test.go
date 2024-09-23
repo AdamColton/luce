@@ -6,12 +6,12 @@ import (
 
 	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/ds/morph"
-	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/math/numiter"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestIter(t *testing.T) {
-	i := slice.New([]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}).Iter()
+	i := numiter.NewRange(0, 10, 1).Iter()
 	mi := morph.NewValAll(func(i int) lmap.KeyVal[int, string] {
 		return lmap.NewKV(i, strconv.Itoa(i))
 	}).Iter(i)
