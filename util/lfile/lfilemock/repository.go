@@ -9,6 +9,7 @@ import (
 
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/filter"
+	"github.com/adamcolton/luce/util/lfile"
 	"github.com/adamcolton/luce/util/navigator"
 )
 
@@ -40,6 +41,20 @@ func (r *Repository) Open(name string) (fs.File, error) {
 		return nil, nil
 	}
 	return f.File(), nil
+}
+
+func (r *Repository) ReadDir(name string) ([]fs.DirEntry, error) {
+	f, err := r.Open(name)
+	if err != nil {
+		return nil, err
+	}
+
+	dr, ok := f.(lfile.DirReader)
+	if !ok {
+		return nil, nil
+	}
+
+	return dr.ReadDir(-1)
 }
 
 // Remove fulfills lfile.Repository. It removes a file if it exists.
