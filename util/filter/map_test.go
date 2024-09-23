@@ -8,12 +8,13 @@ import (
 	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/ds/morph"
 	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/math/numiter"
 	"github.com/adamcolton/luce/util/filter"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMapSliceAndMap(t *testing.T) {
-	i := slice.New([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}).Iter()
+	i := numiter.NewRange(1, 13, 1).Iter()
 	mi := morph.NewValAll(func(i int) lmap.KeyVal[int, string] {
 		return lmap.NewKV(i, fmt.Sprintf("%02d", i))
 	}).Iter(i)
@@ -79,7 +80,7 @@ func TestMapSliceAndMap(t *testing.T) {
 }
 
 func TestPurge(t *testing.T) {
-	i := slice.New([]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}).Iter()
+	i := numiter.NewRange(1, 13, 1).Iter()
 	intStrKV := func(i int) lmap.KeyVal[int, string] {
 		return lmap.NewKV(i, fmt.Sprintf("%02d", i))
 	}
