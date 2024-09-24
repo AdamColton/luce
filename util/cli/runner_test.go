@@ -82,6 +82,7 @@ type cmdr struct {
 	*cli.ExitCloseHandler
 	*cli.HTMLTemplateLoadHandler
 	cli.Helper
+	*cli.ConfigHandlers
 	out chan<- string
 }
 
@@ -114,6 +115,8 @@ func (c *cmdr) Handlers(rnr *cli.Runner) []any {
 		rnr.CloseRespHandler,
 		rnr.HelpRespHandler,
 		func(r *cli.HTMLTemplateLoadResp) {},
+		rnr.ShowConfigRespHandler,
+		rnr.UpdateConfigRespHandler,
 		func(r *SayHiResp) {
 			c.out <- r.Msg
 		},
@@ -155,6 +158,11 @@ type domainObject struct {
 	out                        chan string
 	wg                         sync.WaitGroup
 	htmlTemplateLoaderCallback chan bool
+	config                     struct {
+		On     bool
+		Name   string
+		Volume byte
+	}
 }
 
 func (do *domainObject) Cli(ctx cli.Context, onExit func()) {
@@ -167,6 +175,7 @@ func (do *domainObject) Cli(ctx cli.Context, onExit func()) {
 		HTMLTemplateLoadHandler: cli.NewHTMLTemplateLoadHandler(func() {
 			do.htmlTemplateLoaderCallback <- true
 		}),
+		ConfigHandlers: lerr.Must(cli.NewConfigHandlers(&(do.config))),
 	}
 	rnr := cli.NewRunner(c, ctx)
 	rnr.Run()
@@ -187,6 +196,7 @@ func TestNewRunner(t *testing.T) {
 		out:                        make(chan string),
 		htmlTemplateLoaderCallback: make(chan bool),
 	}
+	do.config.Name = "Adam"
 	do.wg.Add(1)
 	go cli.StdIO(do)
 
@@ -198,11 +208,14 @@ func TestNewRunner(t *testing.T) {
 
 	assert.Equal(t, "\n> ", r.read())
 	in.WriteString("help")
+	time.Sleep(time.Millisecond)
 	help := []string{
 		"q, exit          Exit the client",
 		"help",
 		"loadHTMLTemplate Reload HTML Templates",
 		"sayHi            say hi",
+		"showConfig       show current config values",
+		"updateConfig     update a config value",
 	}
 	tfn := morph.NewValAll(func(cmd string) string { return "   " + cmd })
 	help = tfn.Slice(help, nil)
@@ -211,6 +224,22 @@ func TestNewRunner(t *testing.T) {
 
 	in.WriteString("loadHTMLTemplate")
 	assert.True(t, <-do.htmlTemplateLoaderCallback)
+
+	assert.Equal(t, "\n> ", r.read())
+	in.WriteString("showConfig")
+	time.Sleep(time.Millisecond)
+	assert.Equal(t, "Name: Adam\nOn: false\nVolume: 0\n> ", r.read())
+
+	in.WriteString("updateConfig")
+	assert.Equal(t, "(updateConfig:Field) ", r.read())
+	in.WriteString("Name")
+	assert.Equal(t, "(updateConfig:Value) ", r.read())
+	in.WriteString("Stephen")
+
+	assert.Equal(t, "updated\n> ", r.read())
+	in.WriteString("showConfig")
+	time.Sleep(time.Millisecond)
+	assert.Equal(t, "Name: Stephen\nOn: false\nVolume: 0\n> ", r.read())
 
 	in.WriteString("exit")
 
