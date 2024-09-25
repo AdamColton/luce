@@ -1,7 +1,7 @@
 package server
 
 import (
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net"
 	"net/http"
@@ -179,7 +179,7 @@ func (sc *serviceConn) routeConfigToRequestConverter(cfg service.RouteConfig) fu
 		}
 
 		if cfg.Body {
-			out.Body, _ = ioutil.ReadAll(r.Body)
+			out.Body, _ = io.ReadAll(r.Body)
 		}
 
 		if cfg.Form {
