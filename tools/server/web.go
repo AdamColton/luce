@@ -17,10 +17,10 @@ type TemplateNames struct {
 
 func (s *Server) setRoutes(host string) {
 	m := midware.New(
+		midware.NewRedirect("Redirect"),
 		s.Users.Midware(),
 		midware.NewDecoder(valuedecoder.Form(), "Form"),
 		midware.NewDecoder(valuedecoder.Query(), "URLData"),
-		midware.NewRedirect("Redirect"),
 	)
 
 	r := s.Router
