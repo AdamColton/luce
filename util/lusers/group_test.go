@@ -35,6 +35,10 @@ func TestGroups(t *testing.T) {
 	assert.Equal(t, g, g2)
 	g2 = us.HasGroup("not-a-group")
 	assert.Nil(t, g2)
+
+	u2, err := us.Login("testUser", "password")
+	assert.NoError(t, err)
+	assert.True(t, u2.In("admin"))
 }
 
 func TestInGroup(t *testing.T) {
