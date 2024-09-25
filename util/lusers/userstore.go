@@ -55,7 +55,22 @@ func (us *UserStore) Login(name, password string) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	return u, nil
+	return u, us.loadGroups(u)
+}
+
+func (us *UserStore) loadGroups(u *User) error {
+	us.groups.Get(nil)
+	for cur := us.groups.Next(nil); cur != nil; cur = us.groups.Next(cur) {
+		g, err := us.Group(string(cur))
+		if err != nil {
+			return err
+		}
+		if g.HasUser(u) {
+			u.Groups = append(u.Groups, g.Name)
+		}
+	}
+	u.sortGroups()
+	return nil
 }
 
 func (us *UserStore) GetByID(id []byte) (*User, error) {
