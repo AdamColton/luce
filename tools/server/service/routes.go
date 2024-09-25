@@ -35,6 +35,7 @@ func (Routes) TypeID32() uint32 {
 type RouteConfigGen struct {
 	Base string
 	Host string
+	User bool
 	Require
 }
 
@@ -59,12 +60,18 @@ func (r *RouteConfigGen) SetHost(host string) *RouteConfigGen {
 	return r
 }
 
+func (g *RouteConfigGen) WithUser() *RouteConfigGen {
+	g.User = true
+	return g
+}
+
 // Path creates a RouteConfig appending path to the Base and copying the Require
 // object.
 func (g *RouteConfigGen) Path(path string) *RouteConfig {
 	r := NewRoute(slash.Join(g.Base, path))
 	r.Require = g.Require
 	r.Host = g.Host
+	r.User = g.User
 	return r
 }
 
