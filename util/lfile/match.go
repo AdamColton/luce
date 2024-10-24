@@ -60,10 +60,10 @@ type MatchRoot struct {
 }
 
 // Root to Match against, return MatchRoot which fulfills IteratorSource.
-func (m Match) Root(root string) MatchRoot {
+func (m Match) Root(root ...string) MatchRoot {
 	return MatchRoot{
 		Match:    m,
-		Root:     root,
+		Root:     filepath.Join(root...),
 		FSReader: OSRepository{},
 	}
 }
