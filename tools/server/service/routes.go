@@ -60,6 +60,11 @@ func (r *RouteConfigGen) SetHost(host string) *RouteConfigGen {
 	return r
 }
 
+func (r *RouteConfigGen) Copy() *RouteConfigGen {
+	cp := *r
+	return &cp
+}
+
 func (g *RouteConfigGen) WithUser() *RouteConfigGen {
 	g.User = true
 	return g
