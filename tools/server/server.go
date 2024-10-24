@@ -3,14 +3,13 @@ package server
 import (
 	"fmt"
 	"html/template"
-	"net/http"
 	"time"
 
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/store"
+	"github.com/adamcolton/luce/tools/server/core"
 	"github.com/adamcolton/luce/util/lusers"
 	"github.com/adamcolton/luce/util/lusers/lusess"
-	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	"github.com/gorilla/sessions"
 )
@@ -23,31 +22,20 @@ type Config struct {
 	Templates    *template.Template
 	UserStore    store.Factory
 	TemplateNames
-	Addr          string
-	Socket        string
 	ServiceSocket string
-	Host          string
-	SSL           SSL
-}
-
-type SSL struct {
-	Cert, Key string
+	core.Config
 }
 
 // Server runs a webserver.
 type Server struct {
-	Router        *mux.Router
-	Addr          string
+	coreserver    *core.Server
 	Users         *lusess.Store
 	Settings      Settings
 	Templates     *template.Template
-	Socket        string
 	ServiceSocket string
 	TemplateNames
-	server        *http.Server
 	serviceRoutes map[string]*serviceRoute
 	lerr.ErrHandler
-	SSL SSL
 }
 
 var TimeoutDuration = time.Second * 5
@@ -60,55 +48,39 @@ func (c *Config) New() (*Server, error) {
 	}
 
 	srv := &Server{
-		Router: mux.NewRouter(),
+		coreserver: c.Config.NewServer(),
 		Users: &lusess.Store{
 			Store:     c.SessionStore,
 			UserStore: us,
 			Decoder:   schema.NewDecoder(),
 			FieldName: "Session",
 		},
-		Addr:          c.Addr,
 		Templates:     c.Templates,
-		Socket:        c.Socket,
 		ServiceSocket: c.ServiceSocket,
 		TemplateNames: c.TemplateNames,
-		SSL:           c.SSL,
-		server:        &http.Server{},
 		serviceRoutes: make(map[string]*serviceRoute),
 		ErrHandler: func(err error) {
 			fmt.Println(err)
 		},
 	}
+	srv.coreserver.CliHandler = srv.coreCommander
 
 	srv.setRoutes(c.Host)
 	return srv, nil
 }
 
-func (s *Server) ListenAndServe() error {
-	s.server.Addr = s.Addr
-	s.server.Handler = s.Router
-	if s.SSL.Cert != "" && s.SSL.Key != "" {
-		return s.server.ListenAndServeTLS(s.SSL.Cert, s.SSL.Key)
-	}
-	return s.server.ListenAndServe()
-}
-
 func (s *Server) Close() error {
-	return s.server.Close()
+	return s.coreserver.Close()
 }
 
 // Run the server. If Socket or ServiceSocket is defined, they will be run as
 // well.
 func (s *Server) Run() {
-	if s.Socket != "" {
-		go s.RunSocket()
-	}
-
 	if s.ServiceSocket != "" {
 		go func() {
 			lerr.Panic(s.RunServiceSocket())
 		}()
 	}
 
-	lerr.Panic(s.ListenAndServe(), http.ErrServerClosed)
+	s.coreserver.Run()
 }
