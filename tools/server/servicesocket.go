@@ -3,8 +3,10 @@ package server
 import (
 	"io"
 	"math/rand"
+	"mime"
 	"net"
 	"net/http"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
@@ -115,6 +117,17 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 				url := string(resp.Body)
 				http.Redirect(w, r, url, resp.Status)
 				break
+			}
+
+			h := w.Header()
+			for key, val := range resp.Header {
+				h[key] = val
+			}
+			if h[service.ContentType] == nil {
+				ct := mime.TypeByExtension(filepath.Ext(r.URL.Path))
+				if ct != "" {
+					h.Set(service.ContentType, ct)
+				}
 			}
 			if resp.Status > 0 {
 				w.WriteHeader(resp.Status)
