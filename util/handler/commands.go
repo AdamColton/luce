@@ -3,14 +3,17 @@ package handler
 import (
 	"io"
 	"maps"
+	"reflect"
 	"slices"
 	"strings"
 
 	"github.com/adamcolton/luce/ds/idx/hierarchy"
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/serial"
 	"github.com/adamcolton/luce/util/liter"
 	"github.com/adamcolton/luce/util/luceio"
+	"github.com/adamcolton/luce/util/reflector"
 )
 
 // hid identifies a command in the hierarchy. 0 is the root, above the top-level
@@ -121,6 +124,35 @@ func (cs *Commands) Get(path []string) (*Command, *Handler) {
 		return nil, nil
 	}
 	return cs.cmds[cid], cs.handlers[cid]
+}
+
+// Deserialize finds the command at the path, uses d to deserialize the data into
+// the argument that the command takes, and calls it. If the argument is not a
+// pointer it is deserialized into a new value of its type. It returns an error
+// if there is no command at the path or if the command takes no argument.
+func (cs *Commands) Deserialize(d serial.Deserializer, data []byte, path ...string) (any, error) {
+	cmd, h := cs.Get(path)
+	if cmd == nil {
+		return nil, lerr.Str("Could not find command: " + strings.Join(path, "/"))
+	}
+
+	t := h.Type()
+	if t == nil {
+		return nil, lerr.Str("command takes no argument: " + strings.Join(path, "/"))
+	}
+
+	// Make gives a pointer for a pointer type, and an addressable value
+	// otherwise. The deserializer needs a pointer to write to.
+	arg := reflector.Make(t)
+	target := arg
+	if t.Kind() != reflect.Ptr {
+		target = arg.Addr()
+	}
+	err := d.Deserialize(target.Interface(), data)
+	if err != nil {
+		return nil, err
+	}
+	return h.HandleValue(arg)
 }
 
 // Seek consumes 'path' until no command is found. The int indicates the
