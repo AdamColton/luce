@@ -18,6 +18,7 @@ func epMethodToKV(m *reflector.Method, idx int) (string, RequestResponder, bool)
 type ClientEndpoints struct {
 	*Client
 	Endpoints lmap.Wrapper[string, RequestResponder]
+	Counters  lmap.Wrapper[string, int]
 }
 
 // NewClientEndpoints solves a specific problem. Creating an endpoint function
@@ -33,19 +34,39 @@ func NewClientEndpoints(addr string, endpoints any) (ce ClientEndpoints, err err
 	}
 	epMethods, _ := RequestResponderFilter.Method().SliceInPlace(reflector.MethodsOn(endpoints))
 	ce.Endpoints = lmap.New(lmap.FromIter(epMethods.Iter(), epMethodToKV))
+	ce.Counters = lmap.New(lmap.FromIter(ce.Endpoints.Keys(nil).Iter(), func(str string, idx int) (string, int, bool) {
+		return str, 0, true
+	}))
 	return
 }
 
+var zc = filter.MapFilter[string, int]{
+	Val: func(i int) bool {
+		return i == 0
+	},
+}
+
+// var zeroCounter filter.MapValueFilter[string, int] = func(i int) bool {
+// 	return i == 0
+// }
+
 // UnusedEnpoints panics if any endpoints are unused
 func (ce ClientEndpoints) UnusedEnpoints() {
-	if ce.Endpoints.Len() != 0 {
-		panic("Unused Handlers: " + strings.Join(ce.Endpoints.Keys(nil), "; "))
+	//unused := zeroCounter.KeySlice(ce.Counters.Map())
+	unused, _ := zc.Slice(ce.Counters, nil, nil, filter.ReturnKeys)
+	if len(unused) > 0 {
+		panic("Unused Handlers: " + strings.Join(unused, "; "))
 	}
 }
 
 // Add pops the endpoints associated with the handler and adds it to the client
 // with the given route. Ths allows UnusedEnpoints to be called which will
 // panic if any handlers are unused.
-func (ce ClientEndpoints) Add(handler string, r *RouteConfig) {
-	ce.Client.Add(ce.Endpoints.MustPop(handler), r)
+func (ce ClientEndpoints) Add(handler string, rCfg *RouteConfig) {
+	rr := ce.Endpoints.GetVal(handler)
+	if rr == nil {
+		panic("coud not find handler " + handler)
+	}
+	ce.Counters.Set(handler, ce.Counters.GetVal(handler)+1)
+	ce.Client.Add(rr, rCfg)
 }
