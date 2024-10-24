@@ -2,12 +2,16 @@ package handler
 
 import (
 	"io"
+	"reflect"
 	"strings"
 
 	"github.com/adamcolton/luce/ds/idx/hierarchy"
 	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/serial"
 	"github.com/adamcolton/luce/util/liter"
 	"github.com/adamcolton/luce/util/luceio"
+	"github.com/adamcolton/luce/util/reflector"
 )
 
 type hid int
@@ -88,6 +92,22 @@ func (cs *Commands) Get(path []string) (*Command, *Handler) {
 		return nil, nil
 	}
 	return cs.cmds[cid], cs.handlers[cid]
+}
+
+func (cs *Commands) Deserialize(d serial.Deserializer, data []byte, path ...string) (any, error) {
+	cmd, h := cs.Get(path)
+	if cmd == nil {
+		return nil, lerr.Str("Could not find command: " + strings.Join(path, "/"))
+	}
+
+	t := reflect.TypeOf(cmd.Action)
+	// TODO: handle cases where t.In(0) is not a pointer
+	i := reflector.Make(t.In(0)).Interface()
+	err := d.Deserialize(i, data)
+	if err != nil {
+		return nil, err
+	}
+	return h.Handle(i)
 }
 
 // Seek consumes 'path' until no command is found. The int indicates the
