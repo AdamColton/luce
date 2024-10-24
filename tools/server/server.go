@@ -27,6 +27,11 @@ type Config struct {
 	Socket        string
 	ServiceSocket string
 	Host          string
+	SSL           SSL
+}
+
+type SSL struct {
+	Cert, Key string
 }
 
 // Server runs a webserver.
@@ -42,6 +47,7 @@ type Server struct {
 	server        *http.Server
 	serviceRoutes map[string]*serviceRoute
 	lerr.ErrHandler
+	SSL SSL
 }
 
 var TimeoutDuration = time.Second * 5
@@ -66,6 +72,7 @@ func (c *Config) New() (*Server, error) {
 		Socket:        c.Socket,
 		ServiceSocket: c.ServiceSocket,
 		TemplateNames: c.TemplateNames,
+		SSL:           c.SSL,
 		server:        &http.Server{},
 		serviceRoutes: make(map[string]*serviceRoute),
 		ErrHandler: func(err error) {
@@ -80,6 +87,9 @@ func (c *Config) New() (*Server, error) {
 func (s *Server) ListenAndServe() error {
 	s.server.Addr = s.Addr
 	s.server.Handler = s.Router
+	if s.SSL.Cert != "" && s.SSL.Key != "" {
+		return s.server.ListenAndServeTLS(s.SSL.Cert, s.SSL.Key)
+	}
 	return s.server.ListenAndServe()
 }
 
@@ -91,9 +101,7 @@ func (s *Server) Close() error {
 // well.
 func (s *Server) Run() {
 	if s.Socket != "" {
-		go func() {
-			s.RunSocket()
-		}()
+		go s.RunSocket()
 	}
 
 	if s.ServiceSocket != "" {
