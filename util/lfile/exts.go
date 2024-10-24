@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	FilterHidden = `\/\.[^\/]*$`
+	FilterHidden = `\/\.\.?[^\/]+$`
 )
 
 // Exts builds a regular expression for file extensions. If hiddenDirs is false
@@ -15,7 +15,8 @@ const (
 func Exts(hiddenDirs bool, exts ...string) string {
 	pre := ".*"
 	if !hiddenDirs {
-		pre = `([^\/]|(\/[^\.]))*`
+		//pre = `([^\/]|(\/[^\.]))*`
+		pre = `^\/?(((\.\.?)|([^\/\.][^\/]*))\/)*[^\/]*`
 	}
-	return fmt.Sprintf(`^%s\.((%s))$`, pre, strings.Join(exts, ")|("))
+	return fmt.Sprintf(`%s\.((%s))$`, pre, strings.Join(exts, ")|("))
 }
