@@ -37,6 +37,7 @@ type Config struct {
 	}
 	TemplateNames server.TemplateNames
 	Host          string
+	SSL           server.SSL
 }
 
 // SessionBytes converts Session into a format that memstore.NewMemStore can
@@ -76,6 +77,7 @@ func main() {
 		UserStore:     bstore.Factory(conf.BoltFile, 0777, nil),
 		SessionStore:  ss,
 		Host:          conf.Host,
+		SSL:           conf.SSL,
 	}
 
 	srvConf.Templates, err = (&ltmpl.HTMLLoader{
