@@ -146,9 +146,9 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 	if sr == nil {
 		var r *mux.Route
 		if route.PathPrefix {
-			r = sc.s.Router.PathPrefix(route.Path)
+			r = sc.s.coreserver.Router.PathPrefix(route.Path)
 		} else {
-			r = sc.s.Router.Path(route.Path)
+			r = sc.s.coreserver.Router.Path(route.Path)
 		}
 		if route.Method != "" {
 			r = r.Methods(route.Methods()...)
