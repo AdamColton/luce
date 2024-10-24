@@ -23,7 +23,7 @@ func (s *Server) setRoutes(host string) {
 		midware.NewDecoder(valuedecoder.Query(), "URLData"),
 	)
 
-	r := s.Router
+	r := s.coreserver.Router
 	if host != "" {
 		r = r.Host(host).Subrouter()
 	}

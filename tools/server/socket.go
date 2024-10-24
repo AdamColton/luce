@@ -2,47 +2,55 @@ package server
 
 import (
 	"fmt"
-	"net"
 	"strings"
 
-	"github.com/adamcolton/luce/ds/channel"
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/cli"
 	"github.com/adamcolton/luce/util/handler"
-	"github.com/adamcolton/luce/util/unixsocket"
 )
 
 // RunSocket for the admin interface. This is not invoked by ListenAndServe
 // and needs to be run seperately.
-func (s *Server) RunSocket() {
-	sck := unixsocket.New(s.Socket, func(conn net.Conn) {
-		pipe := unixsocket.ConnPipe(conn)
-		w := channel.Writer{pipe.Snd}
+// func (s *Server) RunSocket() {
+// 	sck := unixsocket.New(s.Socket, func(conn net.Conn) {
+// 		pipe := unixsocket.ConnPipe(conn)
+// 		w := channel.Writer{pipe.Snd}
 
-		ctx := cli.NewContext(w, pipe.Rcv, nil)
-		s.Cli(ctx, func() {
-			conn.Close()
-		})
-	})
+// 		ctx := cli.NewContext(w, pipe.Rcv, nil)
+// 		s.Cli(ctx, func() {
+// 			conn.Close()
+// 		})
+// 	})
 
-	sck.Run()
-}
+// 	sck.Run()
+// }
 
-func (s *Server) Cli(ctx cli.Context, onExit func()) {
-	onClose := func() {
-		s.Close()
-	}
-	ec := cli.NewExitClose(onExit, onClose)
-	c := &cliHandlers{
+// func (s *Server) Cli(ctx cli.Context, onExit func()) {
+// 	onClose := func() {
+// 		s.Close()
+// 	}
+// 	ec := cli.NewExitClose(onExit, onClose)
+// 	c := &cliHandlers{
+// 		Server:           s,
+// 		ExitCloseHandler: ec.Commands(),
+// 	}
+
+// 	r := cli.NewRunner(c, ctx)
+// 	r.Prompt = "> "
+// 	r.StartMessage = "Welcome to the luce server\nenter 'help' for more\n"
+// 	r.Run()
+// }
+
+func (s *Server) coreCommander(ec *cli.ExitClose) cli.Commander {
+	return &cliHandlers{
 		Server:           s,
 		ExitCloseHandler: ec.Commands(),
 	}
+}
 
-	r := cli.NewRunner(c, ctx)
-	r.Prompt = "> "
-	r.StartMessage = "Welcome to the luce server\nenter 'help' for more\n"
-	r.Run()
+func (s *Server) RunStdIO() {
+	s.coreserver.RunStdIO()
 }
 
 func (c *cliHandlers) Handlers(rnr *cli.Runner) []any {
@@ -209,8 +217,8 @@ type SetPortResp struct{}
 
 func (c *cliHandlers) SetPortHandler(req *SetPortReq) *SetPortResp {
 	c.Server.Close()
-	c.Server.Addr = req.Port
-	go c.Server.ListenAndServe()
+	c.Server.coreserver.Addr = req.Port
+	go c.Server.coreserver.ListenAndServe()
 	return &SetPortResp{}
 }
 
