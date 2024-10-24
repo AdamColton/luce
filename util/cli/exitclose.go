@@ -5,6 +5,7 @@ import "github.com/adamcolton/luce/util/handler"
 type ExitClose struct {
 	Exit, Close       bool
 	CanExit, CanClose bool
+	RunExit, RunClose bool
 	OnExit, OnClose   func()
 }
 
@@ -39,6 +40,9 @@ type CloseReq struct{}
 type CloseResp struct{}
 
 func (ech *ExitCloseHandler) CloseHandler(e *CloseReq) *CloseResp {
+	if ech.RunClose && ech.ExitClose.OnClose != nil {
+		ech.ExitClose.OnClose()
+	}
 	return &CloseResp{}
 }
 
