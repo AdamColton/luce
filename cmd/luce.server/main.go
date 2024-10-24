@@ -5,15 +5,12 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
-	"os"
 	"runtime"
-	"time"
 
-	"github.com/adamcolton/luce/ds/bus/iobus"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/store/bstore"
 	"github.com/adamcolton/luce/tools/server"
-	"github.com/adamcolton/luce/util/cli"
+	"github.com/adamcolton/luce/tools/server/core"
 	"github.com/adamcolton/luce/util/lfile"
 	"github.com/adamcolton/luce/util/ltmpl"
 	"github.com/quasoft/memstore"
@@ -37,7 +34,7 @@ type Config struct {
 	}
 	TemplateNames server.TemplateNames
 	Host          string
-	SSL           server.SSL
+	SSL           core.SSL
 }
 
 // SessionBytes converts Session into a format that memstore.NewMemStore can
@@ -70,14 +67,16 @@ func main() {
 	ss.Options.Domain = conf.Host
 
 	srvConf := &server.Config{
-		Addr:          conf.Addr,
+		Config: core.Config{
+			Addr:   conf.Addr,
+			Socket: conf.Socket,
+			Host:   conf.Host,
+			SSL:    conf.SSL,
+		},
 		TemplateNames: conf.TemplateNames,
-		Socket:        conf.Socket,
 		ServiceSocket: conf.ServiceSocket,
 		UserStore:     bstore.Factory(conf.BoltFile, 0777, nil),
 		SessionStore:  ss,
-		Host:          conf.Host,
-		SSL:           conf.SSL,
 	}
 
 	srvConf.Templates, err = (&ltmpl.HTMLLoader{
@@ -89,13 +88,7 @@ func main() {
 	s, err := srvConf.New()
 	lerr.Panic(err)
 
-	go func() {
-		rdr := iobus.Config{
-			Sleep: time.Millisecond,
-		}.NewReader(os.Stdin)
-		ctx := cli.NewContext(os.Stdout, rdr.Out, nil)
-		s.Cli(ctx, nil)
-	}()
+	go s.RunStdIO()
 
 	s.Run()
 }
