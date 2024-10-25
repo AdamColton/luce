@@ -18,3 +18,9 @@ func Wrap[K comparable, V any](m Mapper[K, V]) Wrapper[K, V] {
 func (w Wrapper[K, V]) Wrapped() any {
 	return w.Mapper
 }
+
+// GetVal returns the value for a key dropping the "found" boolean.
+func (w Wrapper[K, V]) GetVal(key K) V {
+	t, _ := w.Get(key)
+	return t
+}
