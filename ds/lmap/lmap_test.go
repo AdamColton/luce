@@ -30,10 +30,12 @@ func testMap(fn func(map[int]string) lmap.Wrapper[int, string], t *testing.T) {
 
 	v, found := m.Get(1)
 	assert.Equal(t, "1", v)
+	assert.Equal(t, "1", m.GetVal(1))
 	assert.True(t, found)
 
 	v, found = m.Get(4)
 	assert.Equal(t, "", v)
+	assert.Equal(t, "", m.GetVal(4))
 	assert.False(t, found)
 
 	m.Set(4, "4")
