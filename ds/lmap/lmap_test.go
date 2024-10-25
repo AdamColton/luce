@@ -14,9 +14,16 @@ func TestEmpty(t *testing.T) {
 	assert.Equal(t, 0, m.Len())
 }
 
-func TestMap(t *testing.T) {
+func TestEmptySafe(t *testing.T) {
+	m := lmap.EmptySafe[int, string](10)
+	assert.Equal(t, 0, m.Len())
+	m = lmap.NewSafe[int, string](nil)
+	assert.Equal(t, 0, m.Len())
+}
+
+func testMap(fn func(map[int]string) lmap.Wrapper[int, string], t *testing.T) {
 	base := map[int]string{1: "1", 2: "2", 3: "3"}
-	m := lmap.New(base)
+	m := fn(base)
 
 	assert.Equal(t, 3, m.Len())
 	assert.Equal(t, base, m.Map())
@@ -45,7 +52,7 @@ func TestMap(t *testing.T) {
 	m.Each(func(key int, val string, done *bool) {
 		got[key] = val
 	})
-	assert.Equal(t, m, lmap.New(got))
+	assert.Equal(t, base, got)
 
 	c := 0
 	m.Each(func(key int, val string, done *bool) {
@@ -53,4 +60,12 @@ func TestMap(t *testing.T) {
 		*done = true
 	})
 	assert.Equal(t, 1, c)
+}
+
+func TestMap(t *testing.T) {
+	testMap(lmap.New[int, string], t)
+}
+
+func TestSafe(t *testing.T) {
+	testMap(lmap.NewSafe[int, string], t)
 }
