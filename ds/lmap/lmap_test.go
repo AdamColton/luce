@@ -15,6 +15,17 @@ func TestEmpty(t *testing.T) {
 	assert.Equal(t, 0, m.Len())
 }
 
+func TestEmptySafe(t *testing.T) {
+	m := lmap.EmptySafe[int, string](10)
+	assert.Equal(t, 0, m.Len())
+	m = lmap.NewSafe[int, string](nil)
+	assert.Equal(t, 0, m.Len())
+}
+
 func TestMap(t *testing.T) {
 	testsuite.TestMap(lmap.New[int, string], t)
+}
+
+func TestSafe(t *testing.T) {
+	testsuite.TestMap(lmap.NewSafe[int, string], t)
 }
