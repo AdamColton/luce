@@ -15,6 +15,7 @@ import (
 
 	"github.com/adamcolton/luce/ds/bus"
 	"github.com/adamcolton/luce/ds/bus/serialbus"
+	"github.com/adamcolton/luce/ds/lset"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/tools/server/service"
 	"github.com/adamcolton/luce/util/lusers"
@@ -32,7 +33,7 @@ type serviceConn struct {
 	*serialbus.Sender
 	respMap map[uint32]chan<- *service.Response
 	mapLock sync.Mutex
-	routes  map[string]bool
+	routes  *lset.Set[string]
 }
 
 func (s *Server) handleServiceSocket(netConn net.Conn) {
@@ -45,16 +46,16 @@ func (s *Server) handleServiceSocket(netConn net.Conn) {
 		s:       s,
 		Sender:  conn.Sender,
 		respMap: make(map[uint32]chan<- *service.Response),
-		routes:  make(map[string]bool),
+		routes:  lset.New[string](),
 	}
 	err = bus.DefaultRegistrar.Register(conn.Listener, sc)
 	s.Handle(err)
 
 	conn.Listener.Run()
 
-	for id := range sc.routes {
+	sc.routes.Each(func(id string, done *bool) {
 		s.serviceRoutes[id].setActive(false)
-	}
+	})
 }
 
 type serviceRoute struct {
@@ -94,6 +95,33 @@ func (sc *serviceConn) RoutesHandler(routes service.Routes) {
 	for _, r := range routes {
 		sc.registerServiceRoute(r)
 	}
+}
+
+func (s *Server) getServiceRoute(rc service.RouteConfig) *serviceRoute {
+	sr, found := s.serviceRoutes[rc.ID]
+	if !found {
+		var r *mux.Route
+		var router = s.coreserver.Router
+		if rc.PathPrefix {
+			r = router.PathPrefix(rc.Path)
+		} else {
+			r = router.Path(rc.Path)
+		}
+		if rc.Method != "" {
+			r = r.Methods(rc.Methods()...)
+		}
+		if rc.Host != "" {
+			r = r.Host(rc.Host)
+		}
+		sr = &serviceRoute{
+			Route:  r,
+			active: true,
+		}
+		s.serviceRoutes[rc.ID] = sr
+	} else {
+		sr.setActive(true)
+	}
+	return sr
 }
 
 func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
@@ -142,29 +170,8 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 		sc.mapLock.Unlock()
 	}
 
-	sr := sc.s.serviceRoutes[route.ID]
-	if sr == nil {
-		var r *mux.Route
-		if route.PathPrefix {
-			r = sc.s.coreserver.Router.PathPrefix(route.Path)
-		} else {
-			r = sc.s.coreserver.Router.Path(route.Path)
-		}
-		if route.Method != "" {
-			r = r.Methods(route.Methods()...)
-		}
-		if route.Host != "" {
-			r = r.Host(route.Host)
-		}
-		sr = &serviceRoute{
-			Route:  r,
-			active: true,
-		}
-		sc.s.serviceRoutes[route.ID] = sr
-	} else {
-		sr.setActive(true)
-	}
-	sc.routes[route.ID] = true
+	sr := sc.s.getServiceRoute(route)
+	sc.routes.Add(route.ID)
 	sr.HandlerFunc(h)
 }
 
