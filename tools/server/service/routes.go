@@ -121,7 +121,7 @@ type RouteConfig struct {
 
 const ErrPathRequired = lerr.Str("RouteConfig: Path is required")
 
-// NewRoute defined by path (relative to the base path).
+// NewRoute defi* Routesned by path (relative to the base path).
 func NewRoute(path string) *RouteConfig {
 	return &RouteConfig{
 		Path: path,
