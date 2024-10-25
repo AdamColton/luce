@@ -2,6 +2,7 @@
 package testsuite
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/adamcolton/luce/ds/lmap"
@@ -43,7 +44,7 @@ func TestMap(fn func(map[int]string) lmap.Wrapper[int, string], t *testing.T) {
 	m.Each(func(key int, val string, done *bool) {
 		got[key] = val
 	})
-	assert.Equal(t, m, fn(got))
+	assert.Equal(t, base, got)
 
 	c := 0
 	m.Each(func(key int, val string, done *bool) {
@@ -52,6 +53,5 @@ func TestMap(fn func(map[int]string) lmap.Wrapper[int, string], t *testing.T) {
 	})
 	assert.Equal(t, 1, c)
 
-	_, ok := m.New().(lmap.Map[int, string])
-	assert.True(t, ok)
+	assert.Equal(t, reflect.TypeOf(m.Mapper), reflect.TypeOf(m.New()))
 }
