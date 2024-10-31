@@ -108,3 +108,9 @@ func TestLists(t *testing.T) {
 		})
 	}
 }
+
+func TestReduce(t *testing.T) {
+	l := slice.New([]int{1, 2, 3, 4, 5})
+	sum := list.Reduce(l, func(a, b int) int { return a + b })
+	assert.Equal(t, 15, sum)
+}
