@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/ds/list"
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/liter"
 	"github.com/adamcolton/luce/util/upgrade"
 	"github.com/stretchr/testify/assert"
@@ -100,4 +101,10 @@ func TestLists(t *testing.T) {
 			assert.True(t, done)
 		})
 	}
+}
+
+func TestReduce(t *testing.T) {
+	l := slice.New([]int{1, 2, 3, 4, 5})
+	sum := list.Reduce(l, func(a, b int) int { return a + b })
+	assert.Equal(t, 15, sum)
 }
