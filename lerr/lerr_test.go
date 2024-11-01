@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strconv"
 	"testing"
 
 	"github.com/adamcolton/luce/lerr"
@@ -75,6 +76,23 @@ func TestMust(t *testing.T) {
 	fmt.Println("This line is never reached", i)
 	// Output: No error, got: 5
 	// Panic: TestError
+}
+
+func TestMustFn(t *testing.T) {
+	mustAtoi := lerr.MustFn(strconv.Atoi)
+	got := mustAtoi("12")
+	assert.Equal(t, 12, got)
+
+	defer func() {
+		expected := &strconv.NumError{
+			Func: "Atoi",
+			Num:  "this will panic",
+			Err:  strconv.ErrSyntax,
+		}
+		assert.Equal(t, expected, recover())
+	}()
+	mustAtoi("this will panic")
+	t.Error("should have panicked")
 }
 
 func ExampleMust() {
