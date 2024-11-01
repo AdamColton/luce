@@ -127,3 +127,36 @@ func Float32[T constraints.Integer](i T) float32 { return float32(i) }
 
 // Float64 converts any integer type to a float64
 func Float64[T constraints.Integer](i T) float64 { return float64(i) }
+
+// Number is any integer or float.
+type Number interface {
+	constraints.Integer | constraints.Float
+}
+
+// Reducer is a function that combines two values into one. It is used to reduce
+// a slice of values to a single value.
+type Reducer[T Number] func(T, T) T
+
+// Reduce combines the values in ts with the Reducer, from the first to the
+// last. If ts is empty the zero value is returned.
+func (fn Reducer[T]) Reduce(ts []T) (t T) {
+	// Feels like this belongs in ds/slice or ds/list, but both of these
+	// use math/ints and it creates an import cycle. This is also why it's
+	// extended to constraints.Float
+	if len(ts) == 0 {
+		return
+	}
+	t = ts[0]
+	for _, ti := range ts[1:] {
+		t = fn(t, ti)
+	}
+	return
+}
+
+// Reduce calls fn on the first two elements of the slice, then for every
+// element after that calls the function with the previous result as the first
+// argument and the element as the second. If the slice is empty the zero value
+// is returned.
+func Reduce[T Number](fn Reducer[T], ts []T) (t T) {
+	return fn.Reduce(ts)
+}
