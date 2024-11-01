@@ -114,3 +114,11 @@ func testConversions[I constraints.Integer](t *testing.T, five I) {
 	assert.Equal(t, float32(5), ints.Float32(five))
 	assert.Equal(t, float64(5), ints.Float64(five))
 }
+
+func TestReduce(t *testing.T) {
+	got := ints.Reduce(ints.GCD, []int{6, 8, 10, 12})
+	assert.Equal(t, 2, got)
+
+	got = ints.Reduce(ints.GCD, []int{})
+	assert.Equal(t, 0, got)
+}
