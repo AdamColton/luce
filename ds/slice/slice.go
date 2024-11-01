@@ -205,14 +205,16 @@ func (s Slice[T]) Reverse() {
 
 // Transform one slice to another. The transformation function's second return
 // is a bool indicating if the returned value should be included in the result.
-// The returned Slice is sized exactly to the output.
+// The returned Slice is sized exactly to the output. If filtering is not
+// needed consider using list.Transform.
 func Transform[In, Out any](in liter.Iter[In], fn func(In, int) (Out, bool)) Slice[Out] {
 	return transform(in, fn)
 }
 
 // Transform one slice to another. The transformation function's second return
 // is a bool indicating if the returned value should be included in the result.
-// The returned Slice is sized exactly to the output.
+// The returned Slice is sized exactly to the output. If filtering is not
+// needed consider using list.TransformSlice.
 func TransformSlice[In, Out any](in []In, fn func(In, int) (Out, bool)) Slice[Out] {
 	return transform(NewIter(in), fn)
 }
