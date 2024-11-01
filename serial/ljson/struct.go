@@ -284,3 +284,41 @@ func GeneratedField[On, T, Ctx any](fg FieldGenerator[On, T, Ctx], ctx *TypesCon
 	}
 	ctx.fieldGenerators[fgKey] = append(ctx.fieldGenerators[fgKey], out)
 }
+
+// ConditionalFunc uses a MarshalContext to generate a boolean.
+type ConditionalFunc[Ctx any] func(ctx *MarshalContext[Ctx]) bool
+
+type conditionalField[Ctx any] struct {
+	cfn ConditionalFunc[Ctx]
+	fm  unsafeFieldMarshaler[Ctx]
+}
+
+func (cf conditionalField[Ctx]) unsafeFieldMarshaler(name string, ptr unsafe.Pointer, ctx *MarshalContext[Ctx]) (string, WriteNode) {
+	if cf.cfn(ctx) {
+		return cf.fm(name, ptr, ctx)
+	}
+	return "", nil
+}
+
+// ConditionalFields omits the specified fields when the ConditionalFunc returns
+// false.
+func (tctx *TypesContext[Ctx]) ConditionalFields(cfn ConditionalFunc[Ctx], fieldKeys map[string]FieldKey, fieldNames ...string) {
+	for _, n := range fieldNames {
+		k, found := fieldKeys[n]
+		if !found {
+			continue
+		}
+		sf, found := k.Type.FieldByName(k.Name)
+		if !found {
+			continue
+		}
+		fm, found := tctx.fieldMarshal[k]
+		if !found {
+			fm = defaultFieldMarshaler(sf.Type, tctx)
+		}
+		tctx.fieldMarshal[k] = conditionalField[Ctx]{
+			cfn: cfn,
+			fm:  fm,
+		}.unsafeFieldMarshaler
+	}
+}
