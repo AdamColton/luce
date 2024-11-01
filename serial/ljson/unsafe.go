@@ -22,6 +22,32 @@ func (ctx *TypesContext[Ctx]) buildUnsafeMarshaler(t reflect.Type) (m unsafeMars
 		m = makeUnsafe(MarshalString[Ctx])
 	case reflect.Struct:
 		m = ctx.buildStructMarsal(t).unsafeMarshal
+	case reflect.Int:
+		m = makeUnsafe(MarshalInt[int, Ctx])
+	case reflect.Int8:
+		m = makeUnsafe(MarshalInt[int8, Ctx])
+	case reflect.Int16:
+		m = makeUnsafe(MarshalInt[int16, Ctx])
+	case reflect.Int32:
+		m = makeUnsafe(MarshalInt[int32, Ctx])
+	case reflect.Int64:
+		m = makeUnsafe(MarshalInt[int64, Ctx])
+	case reflect.Uint:
+		m = makeUnsafe(MarshalUint[uint, Ctx])
+	case reflect.Uint8:
+		m = makeUnsafe(MarshalUint[uint8, Ctx])
+	case reflect.Uint16:
+		m = makeUnsafe(MarshalUint[uint16, Ctx])
+	case reflect.Uint32:
+		m = makeUnsafe(MarshalUint[uint32, Ctx])
+	case reflect.Uint64:
+		m = makeUnsafe(MarshalUint[uint64, Ctx])
+	case reflect.Bool:
+		m = makeUnsafe(MarshalBool[Ctx])
+	case reflect.Float64:
+		m = makeUnsafe(MarshalFloat[float64, Ctx])
+	case reflect.Float32:
+		m = makeUnsafe(MarshalFloat[float32, Ctx])
 	default:
 		panic(lerr.Str("could not marshal " + t.String()))
 	}
