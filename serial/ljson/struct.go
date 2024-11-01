@@ -53,7 +53,7 @@ func (tctx *TypesContext[Ctx]) buildStructMarsal(t reflect.Type) structMarshaler
 
 func (tctx *TypesContext[Ctx]) buildStructMarsalRecurse(t reflect.Type, i, n, ln int) structMarshaler[Ctx] {
 	if i == n {
-		return make(structMarshaler[Ctx], ln)
+		return tctx.attachFieldGenerators(t, ln)
 	}
 	f := t.Field(i)
 	if !f.IsExported() {
@@ -72,6 +72,20 @@ func (tctx *TypesContext[Ctx]) buildStructMarsalRecurse(t reflect.Type, i, n, ln
 		t:                    f.Type,
 	}
 	return sm
+}
+
+// unsafeFieldGenerator[Ctx any] func(ptr unsafe.Pointer, ctx *MarshalContext[Ctx]) (string, WriteNode)
+// type unsafeFieldMarshaler[Ctx any] func(name string, ptr unsafe.Pointer, ctx *MarshalContext[Ctx]) (string, WriteNode)
+func (tctx *TypesContext[Ctx]) attachFieldGenerators(t reflect.Type, ln int) structMarshaler[Ctx] {
+	fgs := tctx.fieldGenerators[t]
+	out := make(structMarshaler[Ctx], ln+len(fgs))
+	for i, fg := range fgs {
+		fm := fg
+		out[i+ln] = fieldMarhsal[Ctx]{
+			unsafeFieldMarshaler: &fm,
+		}
+	}
+	return out
 }
 
 type fieldMarhsal[Ctx any] struct {
@@ -243,4 +257,30 @@ func (ctx *TypesContext[Ctx]) OmitEmpty(structKeys StructKeys, fieldNames ...str
 
 		ctx.fieldMarshal[key] = oe
 	}
+}
+
+// FieldGenerator adds a field to On when marshaling.
+type FieldGenerator[On, T, Ctx any] func(on On, ctx *MarshalContext[Ctx]) (string, T)
+
+// GeneratedField adds the FieldGenerator to the TypesContext.
+func GeneratedField[On, T, Ctx any](fg FieldGenerator[On, T, Ctx], ctx *TypesContext[Ctx]) {
+	t := reflector.Type[T]()
+	ot := reflector.Type[On]()
+
+	var um unsafeMarshal[Ctx]
+	ctx.lazyGetter(t, &um)
+	out := func(_ string, ptr unsafe.Pointer, ctx *MarshalContext[Ctx]) (string, WriteNode) {
+		if ot.Kind() == reflect.Pointer {
+			a := uintptr(ptr)
+			ptr = unsafe.Pointer(uintptr(unsafe.Pointer(&a)))
+		}
+		on := *(*On)(ptr)
+		name, t := fg(on, ctx)
+		return name, um(unsafe.Pointer(&t), ctx)
+	}
+	fgKey := ot
+	if fgKey.Kind() == reflect.Pointer {
+		fgKey = fgKey.Elem()
+	}
+	ctx.fieldGenerators[fgKey] = append(ctx.fieldGenerators[fgKey], out)
 }

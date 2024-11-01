@@ -14,17 +14,19 @@ import (
 // marshaled. Ctx defines the type for the Context field during the marshaling
 // phase.
 type TypesContext[Ctx any] struct {
-	marshalers    map[uintptr]unsafeMarshal[Ctx]
-	fieldMarshal  map[FieldKey]unsafeFieldMarshaler[Ctx]
-	circularGuard *lset.Set[reflect.Type]
+	marshalers      map[uintptr]unsafeMarshal[Ctx]
+	fieldMarshal    map[FieldKey]unsafeFieldMarshaler[Ctx]
+	circularGuard   *lset.Set[reflect.Type]
+	fieldGenerators map[reflect.Type][]unsafeFieldMarshaler[Ctx]
 }
 
 // NewTypesContext creates a TypesContext
 func NewTypesContext[Ctx any]() *TypesContext[Ctx] {
 	return &TypesContext[Ctx]{
-		marshalers:    make(map[uintptr]unsafeMarshal[Ctx]),
-		fieldMarshal:  make(map[FieldKey]unsafeFieldMarshaler[Ctx]),
-		circularGuard: lset.New[reflect.Type](),
+		marshalers:      make(map[uintptr]unsafeMarshal[Ctx]),
+		fieldMarshal:    make(map[FieldKey]unsafeFieldMarshaler[Ctx]),
+		circularGuard:   lset.New[reflect.Type](),
+		fieldGenerators: make(map[reflect.Type][]unsafeFieldMarshaler[Ctx]),
 	}
 }
 
