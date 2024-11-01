@@ -7,19 +7,19 @@ import (
 	"github.com/adamcolton/luce/lerr"
 )
 
-type unsafeMarshal func(ptr unsafe.Pointer, ctx *MarshalContext) WriteNode
+type unsafeMarshal[Ctx any] func(ptr unsafe.Pointer, ctx *MarshalContext[Ctx]) WriteNode
 
-func makeUnsafe[T any](m Marshaler[T]) unsafeMarshal {
-	return func(ptr unsafe.Pointer, ctx *MarshalContext) WriteNode {
+func makeUnsafe[T, Ctx any](m Marshaler[T, Ctx]) unsafeMarshal[Ctx] {
+	return func(ptr unsafe.Pointer, ctx *MarshalContext[Ctx]) WriteNode {
 		t := *(*T)(ptr)
 		return lerr.Must(m(t, ctx))
 	}
 }
 
-func (ctx *TypesContext) buildUnsafeMarshaler(t reflect.Type) (m unsafeMarshal) {
+func (ctx *TypesContext[Ctx]) buildUnsafeMarshaler(t reflect.Type) (m unsafeMarshal[Ctx]) {
 	switch t.Kind() {
 	case reflect.String:
-		m = makeUnsafe(MarshalString)
+		m = makeUnsafe(MarshalString[Ctx])
 	default:
 		panic(lerr.Str("could not marshal " + t.String()))
 	}
