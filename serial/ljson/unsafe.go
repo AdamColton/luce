@@ -50,6 +50,8 @@ func (ctx *TypesContext[Ctx]) buildUnsafeMarshaler(t reflect.Type) (m unsafeMars
 		m = makeUnsafe(MarshalFloat[float32, Ctx])
 	case reflect.Pointer:
 		m = marshalPointer(t, ctx)
+	case reflect.Slice:
+		m = unsafeSliceMarshal(t, ctx)
 	default:
 		panic(lerr.Str("could not marshal " + t.String()))
 	}
@@ -78,4 +80,42 @@ func marshalPointer[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) unsafeMarsh
 		ptAt := *(*unsafe.Pointer)(ptr)
 		return em(ptAt, ctx)
 	}
+}
+
+type sliceHeader struct {
+	Data uintptr
+	Len  int
+	Cap  int
+}
+
+type sliceWriter []WriteNode
+
+func unsafeSliceMarshal[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) (m unsafeMarshal[Ctx]) {
+	et := t.Elem()
+	var em unsafeMarshal[Ctx]
+	ctx.lazyGetter(et, &em)
+	size := et.Size()
+	return func(ptr unsafe.Pointer, ctx *MarshalContext[Ctx]) WriteNode {
+		s := *(*sliceHeader)(ptr)
+		end := uintptr(s.Len)*size + s.Data
+		out := make(sliceWriter, 0, s.Len)
+		for ptr := s.Data; ptr < end; ptr += size {
+			wn := em(unsafe.Pointer(ptr), ctx)
+			if wn != nil {
+				out = append(out, wn)
+			}
+		}
+		return out.writer
+	}
+}
+
+func (s sliceWriter) writer(ctx *WriteContext) {
+	ctx.WriteRune('[')
+	for i, wn := range s {
+		if i > 0 {
+			ctx.WriteRune(',')
+		}
+		wn(ctx)
+	}
+	ctx.WriteRune(']')
 }
