@@ -1,6 +1,8 @@
 package ljson
 
 import (
+	"bytes"
+	"fmt"
 	"reflect"
 	"unsafe"
 
@@ -201,5 +203,44 @@ func (tctx *TypesContext[Ctx]) OmitFields(structKeys StructKeys, fieldNames ...s
 		if found {
 			tctx.fieldMarshal[k] = nil
 		}
+	}
+}
+
+func (ctx *TypesContext[Ctx]) OmitEmpty(structKeys StructKeys, fieldNames ...string) {
+	for _, name := range fieldNames {
+		key := structKeys[name]
+		st, ok := key.Field()
+		if !ok {
+			panic(fmt.Errorf("could not find %s on type %s", key.Name, key.Type.String()))
+		}
+
+		var um unsafeMarshal[Ctx]
+		ctx.lazyGetter(st.Type, &um)
+		i := reflector.Make(st.Type).Interface()
+		ptr := toIface(&i)
+
+		size := int(st.Type.Size())
+		h := sliceHeader{
+			Data: uintptr(ptr.data),
+			Len:  size,
+			Cap:  size,
+		}
+		zero := *(*[]byte)(unsafe.Pointer(&h))
+
+		var oe unsafeFieldMarshaler[Ctx] = func(name string, ptr unsafe.Pointer, ctx *MarshalContext[Ctx]) (string, WriteNode) {
+			h := sliceHeader{
+				Data: uintptr(ptr),
+				Len:  size,
+				Cap:  size,
+			}
+
+			v := *(*[]byte)(unsafe.Pointer(&h))
+			if bytes.Equal(zero, v) {
+				return "", nil
+			}
+			return name, um(ptr, ctx)
+		}
+
+		ctx.fieldMarshal[key] = oe
 	}
 }
