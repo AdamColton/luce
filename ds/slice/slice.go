@@ -193,6 +193,16 @@ func (s Slice[T]) Sort(less Less[T]) Slice[T] {
 	return less.Sort(s)
 }
 
+// Reverse a slice in place.
+func (s Slice[T]) Reverse() {
+	ln := len(s)
+	end := ln / 2
+	ln--
+	for i := 0; i < end; i++ {
+		s.Swap(i, ln-i)
+	}
+}
+
 // Transform one slice to another. The transformation function's second return
 // is a bool indicating if the returned value should be included in the result.
 // The returned Slice is sized exactly to the output.
