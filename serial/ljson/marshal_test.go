@@ -101,3 +101,10 @@ func TestStructPtr(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, `{"Age":40,"ID":123,"Name":"Adam","Role":"admin"}`, str)
 }
+
+func TestSlice(t *testing.T) {
+	ctx := ljson.NewMarshalContext(false)
+	str, err := ljson.Stringify([]string{"a", "b", "c"}, ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, `["a","b","c"]`, str)
+}
