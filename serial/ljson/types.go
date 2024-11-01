@@ -10,13 +10,15 @@ import (
 // marshaled. Ctx defines the type for the Context field during the marshaling
 // phase.
 type TypesContext[Ctx any] struct {
-	marshalers map[uintptr]unsafeMarshal[Ctx]
+	marshalers   map[uintptr]unsafeMarshal[Ctx]
+	fieldMarshal map[FieldKey]unsafeFieldMarshaler[Ctx]
 }
 
 // NewTypesContext creates a TypesContext
 func NewTypesContext[Ctx any]() *TypesContext[Ctx] {
 	return &TypesContext[Ctx]{
-		marshalers: make(map[uintptr]unsafeMarshal[Ctx]),
+		marshalers:   make(map[uintptr]unsafeMarshal[Ctx]),
+		fieldMarshal: make(map[FieldKey]unsafeFieldMarshaler[Ctx]),
 	}
 }
 
