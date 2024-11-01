@@ -48,6 +48,8 @@ func (ctx *TypesContext[Ctx]) buildUnsafeMarshaler(t reflect.Type) (m unsafeMars
 		m = makeUnsafe(MarshalFloat[float64, Ctx])
 	case reflect.Float32:
 		m = makeUnsafe(MarshalFloat[float32, Ctx])
+	case reflect.Pointer:
+		m = marshalPointer(t, ctx)
 	default:
 		panic(lerr.Str("could not marshal " + t.String()))
 	}
@@ -67,4 +69,13 @@ func toIface[T any](ptr *T) iface {
 func getITab(t reflect.Type) uintptr {
 	a := reflect.New(t).Elem().Interface()
 	return uintptr(toIface(&a).tab)
+}
+
+func marshalPointer[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) unsafeMarshal[Ctx] {
+	var em unsafeMarshal[Ctx]
+	ctx.lazyGetter(t.Elem(), &em)
+	return func(ptr unsafe.Pointer, ctx *MarshalContext[Ctx]) WriteNode {
+		ptAt := *(*unsafe.Pointer)(ptr)
+		return em(ptAt, ctx)
+	}
 }
