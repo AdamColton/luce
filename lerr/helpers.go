@@ -21,6 +21,14 @@ func Must[T any](t T, err error) T {
 	return t
 }
 
+// MustFn wraps a function that takes one argument and returns one value
+// and one error.
+func MustFn[In, Out any](fn func(In) (Out, error)) func(In) Out {
+	return func(i In) Out {
+		return Must(fn(i))
+	}
+}
+
 // LogTo can be set to handle errors when Log is called.
 var LogTo func(err error)
 
