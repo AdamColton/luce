@@ -6,6 +6,7 @@ import (
 
 	"github.com/adamcolton/luce/ds/lset"
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/util/reflector"
 )
 
 // TypesContext is used to create marshalers. Once a marshaler for a type is
@@ -51,4 +52,17 @@ func (tctx *TypesContext[Ctx]) lazyGetter(t reflect.Type, self *unsafeMarshal[Ct
 
 		return (*self)(ptr, ctx)
 	}
+}
+
+// Convert a type before it is marshaled.
+func Convert[From, To, Ctx any](fn func(from From, ctx *MarshalContext[Ctx]) To, ctx *TypesContext[Ctx]) {
+	var umTo unsafeMarshal[Ctx]
+	ctx.lazyGetter(reflector.Type[To](), &umTo)
+	umFrom := func(ptr unsafe.Pointer, ctx *MarshalContext[Ctx]) WriteNode {
+		from := *(*From)(ptr)
+		to := fn(from, ctx)
+		return umTo(unsafe.Pointer(&to), ctx)
+	}
+	tab := getITab(reflector.Type[From]())
+	ctx.marshalers[tab] = umFrom
 }
