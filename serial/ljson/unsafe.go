@@ -52,6 +52,8 @@ func (ctx *TypesContext[Ctx]) buildUnsafeMarshaler(t reflect.Type) (m unsafeMars
 		m = marshalPointer(t, ctx)
 	case reflect.Slice:
 		m = unsafeSliceMarshal(t, ctx)
+	case reflect.Map:
+		m = unsafeMapMarshal(t, ctx)
 	default:
 		panic(lerr.Str("could not marshal " + t.String()))
 	}
@@ -100,7 +102,7 @@ func unsafeSliceMarshal[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) (m unsa
 		end := uintptr(s.Len)*size + s.Data
 		out := make(sliceWriter, 0, s.Len)
 		for ptr := s.Data; ptr < end; ptr += size {
-			wn := em(unsafe.Pointer(ptr), ctx)
+			wn := ctx.guardMarshal(et, unsafe.Pointer(ptr), em)
 			if wn != nil {
 				out = append(out, wn)
 			}
@@ -118,4 +120,43 @@ func (s sliceWriter) writer(ctx *WriteContext) {
 		wn(ctx)
 	}
 	ctx.WriteRune(']')
+}
+
+func unsafeMapMarshal[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) (m unsafeMarshal[Ctx]) {
+	kt := t.Key()
+	var km unsafeMarshal[Ctx]
+	ctx.lazyGetter(kt, &km)
+	vt := t.Elem()
+
+	// I don't entirely understand this.
+	// I guess an interface always holds the direct object
+	for vt.Kind() == reflect.Pointer {
+		vt = vt.Elem()
+	}
+	var vm unsafeMarshal[Ctx]
+	ctx.lazyGetter(vt, &vm)
+	return func(ptr unsafe.Pointer, ctx *MarshalContext[Ctx]) WriteNode {
+		v := reflect.NewAt(t, ptr).Elem()
+		out := make(StructWriter, 0, v.Len())
+		mi := v.MapRange()
+		for mi.Next() {
+			k := mi.Key().Interface()
+			ki := toIface(&k)
+			kwn := ctx.guardMarshal(kt, ki.data, km)
+
+			v := mi.Value().Interface()
+			vi := toIface(&v)
+			vwn := ctx.guardMarshal(vt, vi.data, vm)
+
+			out = append(out, FieldWriter{
+				Key:   kwn,
+				Value: vwn,
+			})
+		}
+
+		if ctx.Sort {
+			out.sort()
+		}
+		return out.WriteNode
+	}
 }
