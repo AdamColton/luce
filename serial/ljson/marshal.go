@@ -37,6 +37,11 @@ type Marshaler[T, Ctx any] func(v T, ctx *MarshalContext[Ctx]) (WriteNode, error
 type MarshalContext[Ctx any] struct {
 	Context      Ctx
 	TypesContext *TypesContext[Ctx]
+
+	// Setting Sort to true will sort the keys on structs and maps.
+	// This is useful for testing because it produces consistent output
+	// but may be skipped for effiency in production.
+	Sort bool
 }
 
 // NewMarshalContext creates a MarshalContext using the TypesContext.

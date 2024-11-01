@@ -20,6 +20,8 @@ func (ctx *TypesContext[Ctx]) buildUnsafeMarshaler(t reflect.Type) (m unsafeMars
 	switch t.Kind() {
 	case reflect.String:
 		m = makeUnsafe(MarshalString[Ctx])
+	case reflect.Struct:
+		m = ctx.buildStructMarsal(t).unsafeMarshal
 	default:
 		panic(lerr.Str("could not marshal " + t.String()))
 	}
