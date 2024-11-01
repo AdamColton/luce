@@ -1,8 +1,10 @@
 package ljson
 
 import (
+	"reflect"
 	"unsafe"
 
+	"github.com/adamcolton/luce/ds/lset"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/reflector"
 )
@@ -28,6 +30,11 @@ func getMarshaler[T, Ctx any](ctx *TypesContext[Ctx]) (m Marshaler[T, Ctx], err 
 	return
 }
 
+type guardKey struct {
+	ptr unsafe.Pointer
+	t   reflect.Type
+}
+
 // Marshaler is a function for creating a WriteNode for a value.
 type Marshaler[T, Ctx any] func(v T, ctx *MarshalContext[Ctx]) (WriteNode, error)
 
@@ -41,14 +48,16 @@ type MarshalContext[Ctx any] struct {
 	// Setting Sort to true will sort the keys on structs and maps.
 	// This is useful for testing because it produces consistent output
 	// but may be skipped for effiency in production.
-	Sort bool
+	Sort          bool
+	circularGuard *lset.Set[guardKey]
 }
 
 // NewMarshalContext creates a MarshalContext using the TypesContext.
 func (tctx *TypesContext[Ctx]) NewMarshalContext(ctx Ctx) *MarshalContext[Ctx] {
 	return &MarshalContext[Ctx]{
-		Context:      ctx,
-		TypesContext: tctx,
+		Context:       ctx,
+		TypesContext:  tctx,
+		circularGuard: lset.New[guardKey](),
 	}
 }
 
@@ -62,4 +71,30 @@ func NewMarshalContext[Ctx any](ctx Ctx) *MarshalContext[Ctx] {
 func AddMarshaler[T, Ctx any](m Marshaler[T, Ctx], ctx *TypesContext[Ctx]) {
 	tab := getITab(reflector.Type[T]())
 	ctx.marshalers[tab] = makeUnsafe(m)
+}
+
+func (ctx *MarshalContext[Ctx]) initGuard(t reflect.Type, ptr unsafe.Pointer) guardKey {
+	gk := guardKey{
+		ptr: ptr,
+		t:   t,
+	}
+	if ctx.circularGuard.Contains(gk) {
+		panic(lerr.Str("marshaled object contains circular reference"))
+	}
+	ctx.circularGuard.Add(gk)
+	return gk
+}
+
+func (ctx *MarshalContext[Ctx]) guardMarshal(t reflect.Type, ptr unsafe.Pointer, fn unsafeMarshal[Ctx]) WriteNode {
+	gk := ctx.initGuard(t, ptr)
+	wn := fn(ptr, ctx)
+	ctx.circularGuard.Remove(gk)
+	return wn
+}
+
+func (ctx *MarshalContext[Ctx]) guardFieldMarshaler(t reflect.Type, name string, ptr unsafe.Pointer, fm unsafeFieldMarshaler[Ctx]) (string, WriteNode) {
+	gk := ctx.initGuard(t, ptr)
+	name, wn := fm(name, ptr, ctx)
+	ctx.circularGuard.Remove(gk)
+	return name, wn
 }

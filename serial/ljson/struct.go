@@ -83,7 +83,7 @@ func (sm structMarshaler[Ctx]) unsafeMarshal(ptr unsafe.Pointer, ctx *MarshalCon
 
 		fp := unsafe.Pointer(fm.offset + start)
 		var name string
-		name, fw.Value = (*fm.unsafeFieldMarshaler)(fm.name, fp, ctx)
+		name, fw.Value = ctx.guardFieldMarshaler(fm.t, fm.name, fp, *fm.unsafeFieldMarshaler)
 		if name != "" {
 			fw.Key = lerr.Must(MarshalString(name, ctx))
 			out = append(out, fw)
