@@ -1,6 +1,9 @@
 package reflector
 
-import "reflect"
+import (
+	"reflect"
+	"unsafe"
+)
 
 // Type creates a reflect.Type from the generic type without allocating memory.
 // This is a wrapper around return reflect.TypeOf([0]T{}).Elem().
@@ -111,4 +114,11 @@ func EnsurePointer(v reflect.Value) reflect.Value {
 		v = v2
 	}
 	return v
+}
+
+// UnsafeByteSlice returns a byte slice holding the memory of an arbitrary type.
+func UnsafeByteSlice[T any](t T) []byte {
+	ln := unsafe.Sizeof(t)
+	p := (*byte)(unsafe.Pointer(&t))
+	return unsafe.Slice(p, ln)
 }
