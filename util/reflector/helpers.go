@@ -1,6 +1,9 @@
 package reflector
 
-import "reflect"
+import (
+	"reflect"
+	"unsafe"
+)
 
 // Type returns the reflect.Type of T without allocating memory. It wraps
 // reflect.TypeOf([0]T{}).Elem(), so unlike reflect.TypeOf(v) it also works for
@@ -123,4 +126,14 @@ func EnsurePointer(v reflect.Value) reflect.Value {
 		v = v2
 	}
 	return v
+}
+
+// UnsafeByteSlice returns a byte slice holding the memory of an arbitrary type.
+// It is the in-memory representation of t, so the byte order depends on the
+// platform and pointers inside t appear as their addresses. The slice shares
+// memory with a copy of t, not with the caller's value.
+func UnsafeByteSlice[T any](t T) []byte {
+	ln := unsafe.Sizeof(t)
+	p := (*byte)(unsafe.Pointer(&t))
+	return unsafe.Slice(p, ln)
 }
