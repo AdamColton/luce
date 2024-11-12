@@ -257,3 +257,19 @@ func TestEnsurePointer(t *testing.T) {
 	v = reflector.EnsurePointer(v)
 	assert.Equal(t, strPtr, v.Type())
 }
+
+func TestUnsafeByteSlice(t *testing.T) {
+	type Test struct {
+		A, B byte
+		C, D uint16
+	}
+	x := Test{
+		A: 1,
+		B: 2,
+		C: 1027,
+		D: 1541,
+	}
+	got := reflector.UnsafeByteSlice(x)
+	expected := []byte{1, 2, 3, 4, 5, 6}
+	assert.Equal(t, expected, got)
+}
