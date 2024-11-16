@@ -92,3 +92,18 @@ func TestMultiIntersection(t *testing.T) {
 	m = lset.Multi[int]{s1}
 	assert.Equal(t, s1, m.Intersection())
 }
+
+func TestUnique(t *testing.T) {
+	data := []int{3, 1, 4, 1, 5, 9}
+	expected := slice.Slice[int]{3, 1, 4, 5, 9}
+	l := slice.LT[int]()
+	l.Sort(expected)
+
+	got := lset.Unique(data, nil)
+	l.Sort(got)
+	assert.Equal(t, expected, got)
+
+	got = lset.Unique(data, data)
+	l.Sort(got)
+	assert.Equal(t, expected, got)
+}
