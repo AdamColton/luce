@@ -10,13 +10,15 @@ import (
 // created within a TypesContext it is reused everytime that type needs to be
 // marshaled.
 type TypesContext[Ctx any] struct {
-	marshalers map[reflect.Type]valMarshaler[Ctx]
+	marshalers      map[reflect.Type]valMarshaler[Ctx]
+	fieldMarshalers map[FieldKey]valFieldMarshaler[Ctx]
 }
 
 // NewTypesContext creates a TypesContext
 func NewTypesContext[Ctx any]() *TypesContext[Ctx] {
 	return &TypesContext[Ctx]{
-		marshalers: make(map[reflect.Type]valMarshaler[Ctx]),
+		marshalers:      make(map[reflect.Type]valMarshaler[Ctx]),
+		fieldMarshalers: make(map[FieldKey]valFieldMarshaler[Ctx]),
 	}
 }
 
@@ -45,6 +47,8 @@ func (tctx *TypesContext[Ctx]) buildValueMarshaler(t reflect.Type) (m valMarshal
 	switch t.Kind() {
 	case reflect.String:
 		m = valMarshal(MarshalString[Ctx])
+	case reflect.Struct:
+		m = tctx.buildStructMarshal(t).valMarshal
 	default:
 		panic(lerr.Str("could not marshal " + t.String()))
 	}
