@@ -285,3 +285,32 @@ func TestGeneratedFieldPointer(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, `{"Foo":"Bar","Name":"Adam","Role":"admin"}`, str)
 }
+
+func TestConditionalFields(t *testing.T) {
+	type Person struct {
+		ID   int
+		Name string
+		Age  int
+		Role string
+	}
+	p := &Person{
+		ID:   123,
+		Name: "Adam",
+		Age:  40,
+		Role: "admin",
+	}
+	ctx := ljson.NewMarshalContext(false)
+	ctx.Sort = true
+	keys := ljson.GetFieldKeys[Person]()
+	cfn := func(ctx *ljson.MarshalContext[bool]) bool {
+		return ctx.Context
+	}
+	ctx.TypesContext.ConditionalFields(cfn, keys, "Age", "ID")
+	str, err := ljson.Stringify(p, ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"Name":"Adam","Role":"admin"}`, str)
+	ctx.Context = true
+	str, err = ljson.Stringify(p, ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"Age":40,"ID":123,"Name":"Adam","Role":"admin"}`, str)
+}
