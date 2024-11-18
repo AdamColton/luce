@@ -232,15 +232,19 @@ func TestConvert(t *testing.T) {
 		"2": 2,
 		"3": 3,
 	})
+
 	ctx := ljson.NewMarshalContext(false)
 	ctx.Sort = true
-	_, err := ljson.Stringify(w, ctx)
-	assert.Error(t, err)
+	str, err := ljson.Stringify(w, ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"Mapper":{"1":1,"2":2,"3":3}}`, str)
+
 	cvrt := func(w lmap.Wrapper[string, int], ctx *ljson.MarshalContext[bool]) map[string]int {
 		return w.Map()
 	}
 	ljson.Convert(cvrt, ctx.TypesContext)
-	str, err := ljson.Stringify(w, ctx)
+
+	str, err = ljson.Stringify(w, ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, `{"1":1,"2":2,"3":3}`, str)
 }
@@ -313,4 +317,18 @@ func TestConditionalFields(t *testing.T) {
 	str, err = ljson.Stringify(p, ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, `{"Age":40,"ID":123,"Name":"Adam","Role":"admin"}`, str)
+}
+
+func TestInterface(t *testing.T) {
+	m := make(map[string]any)
+	m["A"] = "A"
+	m["B"] = 123
+	m["C"] = []int{3, 1, 4, 1, 5}
+
+	ctx := ljson.NewMarshalContext(false)
+	ctx.Sort = true
+
+	str, err := ljson.Stringify(m, ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"A":"A","B":123,"C":[3,1,4,1,5]}`, str)
 }
