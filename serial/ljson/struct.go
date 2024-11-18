@@ -60,7 +60,7 @@ func (tctx *TypesContext[Ctx]) buildStructMarshal(t reflect.Type) structMarshale
 
 func (tctx *TypesContext[Ctx]) buildStructMarshalRecurse(t reflect.Type, i, n, ln int) structMarshaler[Ctx] {
 	if i == n {
-		return make(structMarshaler[Ctx], ln)
+		return tctx.attachFieldGenerators(t, ln)
 	}
 	f := t.Field(i)
 	if !f.IsExported() {
@@ -80,13 +80,30 @@ func (tctx *TypesContext[Ctx]) buildStructMarshalRecurse(t reflect.Type, i, n, l
 	return sm
 }
 
+func (tctx *TypesContext[Ctx]) attachFieldGenerators(t reflect.Type, ln int) structMarshaler[Ctx] {
+	fgs := tctx.fieldGenerators[t]
+	out := make(structMarshaler[Ctx], ln+len(fgs))
+	for i, fg := range fgs {
+		fm := fg
+		out[i+ln] = fieldMarshal[Ctx]{
+			valFieldMarshaler: &fm,
+			idx:               -1,
+		}
+	}
+	return out
+}
+
 func (sm structMarshaler[Ctx]) valMarshal(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
 	out := make(StructWriter, 0, len(sm))
 	for _, fm := range sm {
 		var fw FieldWriter
 
 		var name string
-		name, fw.Value = ctx.guardFieldMarshaler(fm.name, v.Field(fm.idx), *fm.valFieldMarshaler)
+		if fm.idx >= 0 {
+			name, fw.Value = ctx.guardFieldMarshaler(fm.name, v.Field(fm.idx), *fm.valFieldMarshaler)
+		} else {
+			name, fw.Value = (*fm.valFieldMarshaler)("", v, ctx)
+		}
 		if name != "" {
 			fw.Key = lerr.Must(MarshalString(name, ctx))
 			out = append(out, fw)
@@ -220,4 +237,29 @@ func (tctx *TypesContext[Ctx]) OmitEmpty(structKeys StructKeys, fieldNames ...st
 			return name, vm(v, ctx)
 		}
 	}
+}
+
+// FieldGenerator adds a field to On when marshaling.
+type FieldGenerator[On, T, Ctx any] func(on On, ctx *MarshalContext[Ctx]) (string, T)
+
+// GeneratedField adds the FieldGenerator to the TypesContext.
+func GeneratedField[On, T, Ctx any](fg FieldGenerator[On, T, Ctx], ctx *TypesContext[Ctx]) {
+	t := reflector.Type[T]()
+	ot := reflector.Type[On]()
+
+	var um valMarshaler[Ctx]
+	ctx.get(t, &um)
+	out := func(_ string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
+		if ot.Kind() == reflect.Pointer {
+			v = reflector.EnsurePointer(v)
+		}
+		on := v.Interface().(On)
+		name, t := fg(on, ctx)
+		return name, um(reflect.ValueOf(t), ctx)
+	}
+	fgKey := ot
+	if fgKey.Kind() == reflect.Pointer {
+		fgKey = fgKey.Elem()
+	}
+	ctx.fieldGenerators[fgKey] = append(ctx.fieldGenerators[fgKey], out)
 }
