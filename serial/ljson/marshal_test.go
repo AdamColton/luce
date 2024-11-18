@@ -41,3 +41,19 @@ func TestMarshalContext(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "baz:bar", str)
 }
+
+func TestStruct(t *testing.T) {
+	type Person struct {
+		Name string
+		Role string
+	}
+	p := Person{
+		Name: "Adam",
+		Role: "admin",
+	}
+	ctx := ljson.NewMarshalContext(false)
+	ctx.Sort = true
+	str, err := ljson.Stringify(p, ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"Name":"Adam","Role":"admin"}`, str)
+}
