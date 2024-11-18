@@ -5,6 +5,7 @@ import (
 
 	"github.com/adamcolton/luce/ds/lset"
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/util/reflector"
 )
 
 // TypesContext is used to create marshalers. Once a marshaler for a type is
@@ -164,4 +165,16 @@ func mapMarshal[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) (m valMarshaler
 		}
 		return out.WriteNode
 	}
+}
+
+// Convert a type before it is marshaled.
+func Convert[From, To, Ctx any](fn func(from From, ctx *MarshalContext[Ctx]) To, ctx *TypesContext[Ctx]) {
+	var vmTo valMarshaler[Ctx]
+	ctx.get(reflector.Type[To](), &vmTo)
+	vmFrom := func(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
+		from := v.Interface().(From)
+		to := fn(from, ctx)
+		return vmTo(reflect.ValueOf(to), ctx)
+	}
+	ctx.marshalers[reflector.Type[From]()] = vmFrom
 }
