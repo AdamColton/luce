@@ -1,6 +1,7 @@
 package ljson
 
 import (
+	"bytes"
 	"reflect"
 
 	"github.com/adamcolton/luce/ds/lset"
@@ -94,4 +95,19 @@ func (ctx *MarshalContext[Ctx]) guardFieldMarshaler(name string, v reflect.Value
 	name, wn := fm(name, v, ctx)
 	ctx.circularGuard.Remove(v)
 	return name, wn
+}
+
+// Serialize fulfills serial.Serializer. It marshals i and appends the json to
+// buf. Errors, including a panic while marshaling, are returned.
+func (ctx *MarshalContext[Ctx]) Serialize(i any, buf []byte) (data []byte, err error) {
+	defer lerr.Recover(func(e error) { err = e })
+
+	v := reflect.ValueOf(i)
+	var um valMarshaler[Ctx]
+	ctx.TypesContext.get(v.Type(), &um)
+
+	out := bytes.NewBuffer(buf)
+	_, err = um(v, ctx).WriteTo(out)
+	data = out.Bytes()
+	return
 }
