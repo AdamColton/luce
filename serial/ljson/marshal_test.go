@@ -332,3 +332,33 @@ func TestInterface(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, `{"A":"A","B":123,"C":[3,1,4,1,5]}`, str)
 }
+
+func TestSerialize(t *testing.T) {
+	type Person struct {
+		ID   int
+		Name string
+		Role string
+	}
+	m := map[int]*Person{
+		1: {
+			ID:   1,
+			Name: "Adam",
+			Role: "admin",
+		},
+		2: {
+			ID:   2,
+			Name: "Fletcher",
+			Role: "user",
+		},
+	}
+
+	ctx := ljson.NewMarshalContext(false)
+	ctx.Sort = true
+
+	buf := make([]byte, 0, 100)
+	got, err := ctx.Serialize(m, buf)
+	assert.NoError(t, err)
+	expected := `{1:{"ID":1,"Name":"Adam","Role":"admin"},2:{"ID":2,"Name":"Fletcher","Role":"user"}}`
+	assert.Equal(t, expected, string(got))
+	assert.Equal(t, expected, string(buf[:len(expected)]))
+}
