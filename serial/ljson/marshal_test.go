@@ -244,3 +244,44 @@ func TestConvert(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, `{"1":1,"2":2,"3":3}`, str)
 }
+
+func TestGeneratedField(t *testing.T) {
+	type Person struct {
+		Name string
+		Role string
+	}
+	p := Person{
+		Name: "Adam",
+		Role: "admin",
+	}
+	ctx := ljson.NewMarshalContext(false)
+	ctx.Sort = true
+	fg := func(on Person, ctx *ljson.MarshalContext[bool]) (string, string) {
+		assert.Equal(t, p, on)
+		return "Foo", "Bar"
+	}
+	ljson.GeneratedField(fg, ctx.TypesContext)
+	str, err := ljson.Stringify(p, ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"Foo":"Bar","Name":"Adam","Role":"admin"}`, str)
+}
+func TestGeneratedFieldPointer(t *testing.T) {
+	type Person struct {
+		Name string
+		Role string
+	}
+	p := &Person{
+		Name: "Adam",
+		Role: "admin",
+	}
+	ctx := ljson.NewMarshalContext(false)
+	ctx.Sort = true
+	fg := func(on *Person, ctx *ljson.MarshalContext[bool]) (string, string) {
+		assert.Equal(t, p, on)
+		return "Foo", "Bar"
+	}
+	ljson.GeneratedField(fg, ctx.TypesContext)
+	str, err := ljson.Stringify(p, ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"Foo":"Bar","Name":"Adam","Role":"admin"}`, str)
+}

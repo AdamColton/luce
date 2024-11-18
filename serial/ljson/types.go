@@ -15,6 +15,7 @@ type TypesContext[Ctx any] struct {
 	marshalers      map[reflect.Type]valMarshaler[Ctx]
 	fieldMarshalers map[FieldKey]valFieldMarshaler[Ctx]
 	circularGuard   *lset.Set[reflect.Type]
+	fieldGenerators map[reflect.Type][]valFieldMarshaler[Ctx]
 }
 
 // NewTypesContext creates a TypesContext
@@ -23,6 +24,7 @@ func NewTypesContext[Ctx any]() *TypesContext[Ctx] {
 		marshalers:      make(map[reflect.Type]valMarshaler[Ctx]),
 		fieldMarshalers: make(map[FieldKey]valFieldMarshaler[Ctx]),
 		circularGuard:   lset.New[reflect.Type](),
+		fieldGenerators: make(map[reflect.Type][]valFieldMarshaler[Ctx]),
 	}
 }
 
