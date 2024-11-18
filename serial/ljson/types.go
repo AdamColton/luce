@@ -45,6 +45,8 @@ func (tctx *TypesContext[Ctx]) get(t reflect.Type, self *valMarshaler[Ctx]) {
 
 func (tctx *TypesContext[Ctx]) buildValueMarshaler(t reflect.Type) (m valMarshaler[Ctx]) {
 	switch t.Kind() {
+	case reflect.Pointer:
+		m = marshalPointer(t, tctx)
 	case reflect.String:
 		m = valMarshal(MarshalString[Ctx])
 	case reflect.Struct:
@@ -85,5 +87,13 @@ func valMarshal[T, Ctx any](m Marshaler[T, Ctx]) valMarshaler[Ctx] {
 	return func(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
 		t := v.Interface().(T)
 		return lerr.Must(m(t, ctx))
+	}
+}
+
+func marshalPointer[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) valMarshaler[Ctx] {
+	var em valMarshaler[Ctx]
+	ctx.get(t.Elem(), &em)
+	return func(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
+		return em(v.Elem(), ctx)
 	}
 }
