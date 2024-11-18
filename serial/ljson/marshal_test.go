@@ -8,13 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStringWriter(t *testing.T) {
-	strWriter, err := ljson.MarshalString("this is a test", nil)
+func TestMarshalString(t *testing.T) {
+	ctx := ljson.NewMarshalContext()
+	wn, err := ljson.Marshal("this is a test", ctx)
 	assert.NoError(t, err)
 	buf, sw := luceio.BufferSumWriter()
 	wctx := &ljson.WriteContext{
 		SumWriter: sw,
 	}
-	strWriter(wctx)
+	wn(wctx)
 	assert.Equal(t, `"this is a test"`, buf.String())
 }
