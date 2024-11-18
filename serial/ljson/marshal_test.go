@@ -57,3 +57,25 @@ func TestStruct(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, `{"Name":"Adam","Role":"admin"}`, str)
 }
+
+func check[T any](t *testing.T, ctx *ljson.MarshalContext[bool], v T, expected string) {
+	str, err := ljson.Stringify(v, ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, str)
+}
+func TestBuiltin(t *testing.T) {
+	ctx := ljson.NewMarshalContext(false)
+	check(t, ctx, int(123), "123")
+	check(t, ctx, int8(123), "123")
+	check(t, ctx, int16(123), "123")
+	check(t, ctx, int32(123), "123")
+	check(t, ctx, int64(123), "123")
+	check(t, ctx, uint(123), "123")
+	check(t, ctx, uint8(123), "123")
+	check(t, ctx, uint16(123), "123")
+	check(t, ctx, uint32(123), "123")
+	check(t, ctx, uint64(123), "123")
+	check(t, ctx, float32(123), "123")
+	check(t, ctx, float64(123), "123")
+	check(t, ctx, true, "true")
+}
