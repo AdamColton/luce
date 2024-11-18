@@ -49,6 +49,32 @@ func (tctx *TypesContext[Ctx]) buildValueMarshaler(t reflect.Type) (m valMarshal
 		m = valMarshal(MarshalString[Ctx])
 	case reflect.Struct:
 		m = tctx.buildStructMarshal(t).valMarshal
+	case reflect.Int:
+		m = valMarshal(MarshalInt[int, Ctx])
+	case reflect.Int8:
+		m = valMarshal(MarshalInt[int8, Ctx])
+	case reflect.Int16:
+		m = valMarshal(MarshalInt[int16, Ctx])
+	case reflect.Int32:
+		m = valMarshal(MarshalInt[int32, Ctx])
+	case reflect.Int64:
+		m = valMarshal(MarshalInt[int64, Ctx])
+	case reflect.Uint:
+		m = valMarshal(MarshalUint[uint, Ctx])
+	case reflect.Uint8:
+		m = valMarshal(MarshalUint[uint8, Ctx])
+	case reflect.Uint16:
+		m = valMarshal(MarshalUint[uint16, Ctx])
+	case reflect.Uint32:
+		m = valMarshal(MarshalUint[uint32, Ctx])
+	case reflect.Uint64:
+		m = valMarshal(MarshalUint[uint64, Ctx])
+	case reflect.Bool:
+		m = valMarshal(MarshalBool[Ctx])
+	case reflect.Float64:
+		m = valMarshal(MarshalFloat[float64, Ctx])
+	case reflect.Float32:
+		m = valMarshal(MarshalFloat[float32, Ctx])
 	default:
 		panic(lerr.Str("could not marshal " + t.String()))
 	}
