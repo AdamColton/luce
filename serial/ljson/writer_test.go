@@ -9,7 +9,8 @@ import (
 )
 
 func TestStringWriter(t *testing.T) {
-	strWriter := ljson.MarshalString("this is a test")
+	strWriter, err := ljson.MarshalString("this is a test", nil)
+	assert.NoError(t, err)
 	buf, sw := luceio.BufferSumWriter()
 	wctx := &ljson.WriteContext{
 		SumWriter: sw,
