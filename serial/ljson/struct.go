@@ -84,7 +84,7 @@ func (sm structMarshaler[Ctx]) valMarshal(v reflect.Value, ctx *MarshalContext[C
 		var fw FieldWriter
 
 		var name string
-		name, fw.Value = (*fm.valFieldMarshaler)(fm.name, v.Field(fm.idx), ctx)
+		name, fw.Value = ctx.guardFieldMarshaler(fm.name, v.Field(fm.idx), *fm.valFieldMarshaler)
 		if name != "" {
 			fw.Key = lerr.Must(MarshalString(name, ctx))
 			out = append(out, fw)
