@@ -106,3 +106,38 @@ func TestSlice(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, `["a","b","c"]`, str)
 }
+
+func TestMarshalMap(t *testing.T) {
+	m := map[string]int{
+		"1": 1,
+		"2": 2,
+		"3": 3,
+	}
+	ctx := ljson.NewMarshalContext(false)
+	ctx.Sort = true
+	got, err := ljson.Stringify(m, ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"1":1,"2":2,"3":3}`, got)
+}
+
+func TestMarshalMapOfPtr(t *testing.T) {
+	type Person struct {
+		Name string
+		Role string
+	}
+	m := map[int]*Person{
+		1: {
+			Name: "Adam",
+			Role: "admin",
+		},
+		2: {
+			Name: "Fletcher",
+			Role: "user",
+		},
+	}
+	ctx := ljson.NewMarshalContext(false)
+	ctx.Sort = true
+	str, err := ljson.Stringify(m, ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, `{1:{"Name":"Adam","Role":"admin"},2:{"Name":"Fletcher","Role":"user"}}`, str)
+}
