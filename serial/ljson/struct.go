@@ -1,6 +1,7 @@
 package ljson
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/adamcolton/luce/ds/slice"
@@ -196,6 +197,27 @@ func (tctx *TypesContext[Ctx]) OmitFields(structKeys StructKeys, fieldNames ...s
 		k, found := structKeys[n]
 		if found {
 			tctx.fieldMarshalers[k] = nil
+		}
+	}
+}
+
+// OmitEmpty for specified fields.
+func (tctx *TypesContext[Ctx]) OmitEmpty(structKeys StructKeys, fieldNames ...string) {
+	for _, name := range fieldNames {
+		key := structKeys[name]
+		st, ok := key.Field()
+		if !ok {
+			panic(fmt.Errorf("could not find %s on type %s", key.Name, key.Type.String()))
+		}
+
+		var vm valMarshaler[Ctx]
+		tctx.get(st.Type, &vm)
+
+		tctx.fieldMarshalers[key] = func(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
+			if v.IsZero() {
+				return "", nil
+			}
+			return name, vm(v, ctx)
 		}
 	}
 }

@@ -198,3 +198,29 @@ func TestFieldOptions(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, `{"Age":40,"Name":"Adam","Role":"admin"}`, str)
 }
+
+func TestOmitEmpty(t *testing.T) {
+	type Person struct {
+		ID   int
+		Name string
+		Age  int
+		Role string
+	}
+	ctx := ljson.NewMarshalContext(false)
+	ctx.Sort = true
+	keys := ljson.GetFieldKeys[Person]()
+	ctx.TypesContext.OmitEmpty(keys, "Role", "ID")
+	p := Person{
+		ID:   123,
+		Name: "Adam",
+		Age:  40,
+	}
+	str, err := ljson.Stringify(p, ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"Age":40,"ID":123,"Name":"Adam"}`, str)
+	p.Role = "admin"
+	p.ID = 0
+	str, err = ljson.Stringify(p, ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"Age":40,"Name":"Adam","Role":"admin"}`, str)
+}
