@@ -9,25 +9,25 @@ import (
 // TypesContext is used to create marshalers. Once a marshaler for a type is
 // created within a TypesContext it is reused everytime that type needs to be
 // marshaled.
-type TypesContext struct {
-	marshalers map[reflect.Type]valMarshaler
+type TypesContext[Ctx any] struct {
+	marshalers map[reflect.Type]valMarshaler[Ctx]
 }
 
 // NewTypesContext creates a TypesContext
-func NewTypesContext() *TypesContext {
-	return &TypesContext{
-		marshalers: make(map[reflect.Type]valMarshaler),
+func NewTypesContext[Ctx any]() *TypesContext[Ctx] {
+	return &TypesContext[Ctx]{
+		marshalers: make(map[reflect.Type]valMarshaler[Ctx]),
 	}
 }
 
-func (tctx *TypesContext) get(t reflect.Type, self *valMarshaler) {
+func (tctx *TypesContext[Ctx]) get(t reflect.Type, self *valMarshaler[Ctx]) {
 	m, found := tctx.marshalers[t]
 	if found {
 		*self = m
 		return
 	}
 
-	*self = func(v reflect.Value, ctx *MarshalContext) WriteNode {
+	*self = func(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
 		tctx := ctx.TypesContext
 
 		m, found := tctx.marshalers[t]
@@ -41,18 +41,18 @@ func (tctx *TypesContext) get(t reflect.Type, self *valMarshaler) {
 	}
 }
 
-func (tctx *TypesContext) buildValueMarshaler(t reflect.Type) (m valMarshaler) {
+func (tctx *TypesContext[Ctx]) buildValueMarshaler(t reflect.Type) (m valMarshaler[Ctx]) {
 	switch t.Kind() {
 	case reflect.String:
-		m = valMarshal(MarshalString)
+		m = valMarshal(MarshalString[Ctx])
 	default:
 		panic(lerr.Str("could not marshal " + t.String()))
 	}
 	return
 }
 
-func valMarshal[T any](m Marshaler[T]) valMarshaler {
-	return func(v reflect.Value, ctx *MarshalContext) WriteNode {
+func valMarshal[T, Ctx any](m Marshaler[T, Ctx]) valMarshaler[Ctx] {
+	return func(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
 		t := v.Interface().(T)
 		return lerr.Must(m(t, ctx))
 	}
