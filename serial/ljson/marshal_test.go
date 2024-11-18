@@ -165,3 +165,36 @@ func TestCircularRefErr(t *testing.T) {
 	_, err := ljson.Stringify(a, ctx)
 	assert.Error(t, err)
 }
+
+func TestFieldOptions(t *testing.T) {
+	type Person struct {
+		ID   int
+		Name string
+		Age  int
+		Role string
+	}
+	p := &Person{
+		Name: "Adam",
+		Age:  40,
+		Role: "admin",
+	}
+	ctx := ljson.NewMarshalContext(false)
+	ctx.Sort = true
+	keys := ljson.GetFieldKeys[Person]()
+	fm := func(name string, v int, ctx *ljson.MarshalContext[bool]) (string, ljson.WriteNode, error) {
+		if !ctx.Context {
+			return "", nil, nil
+		}
+		wn, err := ljson.Marshal(v, ctx)
+		return name, wn, err
+	}
+	ljson.AddFieldMarshal[int](keys["Age"], fm, ctx.TypesContext)
+	ctx.TypesContext.OmitFields(keys, "ID")
+	str, err := ljson.Stringify(p, ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"Name":"Adam","Role":"admin"}`, str)
+	ctx.Context = true
+	str, err = ljson.Stringify(p, ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"Age":40,"Name":"Adam","Role":"admin"}`, str)
+}
