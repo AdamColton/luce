@@ -66,6 +66,8 @@ func (tctx *TypesContext[Ctx]) buildValueMarshaler(t reflect.Type) (m valMarshal
 		m = tctx.buildStructMarshal(t).valMarshal
 	case reflect.Map:
 		m = mapMarshal(t, tctx)
+	case reflect.Interface:
+		m = marshalInterface
 	case reflect.Int:
 		m = valMarshal(MarshalInt[int, Ctx])
 	case reflect.Int8:
@@ -179,4 +181,15 @@ func Convert[From, To, Ctx any](fn func(from From, ctx *MarshalContext[Ctx]) To,
 		return vmTo(reflect.ValueOf(to), ctx)
 	}
 	ctx.marshalers[reflector.Type[From]()] = vmFrom
+}
+
+func marshalInterface[Ctx any](v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
+	t := v.Type()
+	if t.Kind() == reflect.Interface {
+		v = v.Elem()
+		t = v.Type()
+	}
+	var em valMarshaler[Ctx]
+	ctx.TypesContext.get(t, &em)
+	return ctx.guardMarshal(v, em)
 }
