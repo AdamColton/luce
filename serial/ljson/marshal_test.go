@@ -3,6 +3,7 @@ package ljson_test
 import (
 	"testing"
 
+	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/serial/ljson"
 	"github.com/stretchr/testify/assert"
 )
@@ -223,4 +224,23 @@ func TestOmitEmpty(t *testing.T) {
 	str, err = ljson.Stringify(p, ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, `{"Age":40,"Name":"Adam","Role":"admin"}`, str)
+}
+
+func TestConvert(t *testing.T) {
+	w := lmap.New(map[string]int{
+		"1": 1,
+		"2": 2,
+		"3": 3,
+	})
+	ctx := ljson.NewMarshalContext(false)
+	ctx.Sort = true
+	_, err := ljson.Stringify(w, ctx)
+	assert.Error(t, err)
+	cvrt := func(w lmap.Wrapper[string, int], ctx *ljson.MarshalContext[bool]) map[string]int {
+		return w.Map()
+	}
+	ljson.Convert(cvrt, ctx.TypesContext)
+	str, err := ljson.Stringify(w, ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"1":1,"2":2,"3":3}`, str)
 }
