@@ -8,21 +8,21 @@ import (
 )
 
 func TestUnsupportedType(t *testing.T) {
-	ctx := ljson.NewMarshalContext()
+	ctx := ljson.NewMarshalContext(false)
 	_, err := ljson.Marshal(make(chan int), ctx)
-	assert.Error(t, err)
+	assert.EqualError(t, err, "could not marshal chan int")
 	_, err = ljson.Stringify(make(chan int), ctx)
 	assert.Error(t, err)
 
 	// A MarshalContext without a TypesContext cannot marshal anything.
-	_, err = ljson.Marshal("x", &ljson.MarshalContext{})
+	_, err = ljson.Marshal("x", &ljson.MarshalContext[bool]{})
 	assert.Error(t, err)
-	_, err = ljson.Stringify("x", &ljson.MarshalContext{})
+	_, err = ljson.Stringify("x", &ljson.MarshalContext[bool]{})
 	assert.Error(t, err)
 }
 
 func TestMarshalTwice(t *testing.T) {
-	ctx := ljson.NewMarshalContext()
+	ctx := ljson.NewMarshalContext(false)
 	// The second time, the marshaler for the type is already built.
 	for i := 0; i < 2; i++ {
 		wn, err := ljson.Marshal("x", ctx)

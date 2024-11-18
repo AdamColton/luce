@@ -8,7 +8,7 @@ import (
 )
 
 func TestStringWriter(t *testing.T) {
-	strWriter, err := ljson.MarshalString("this is a test", nil)
+	strWriter, err := ljson.MarshalString[int]("this is a test", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, `"this is a test"`, strWriter.String())
 }
