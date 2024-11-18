@@ -49,6 +49,8 @@ func (ctx *TypesContext[Ctx]) buildValueMarshaler(t reflect.Type) (m valMarshale
 		m = marshalPointer(t, ctx)
 	case reflect.String:
 		m = valMarshal(MarshalString[Ctx])
+	case reflect.Slice:
+		m = valSliceMarshal(t, ctx)
 	case reflect.Struct:
 		m = ctx.buildStructMarshal(t).valMarshal
 	case reflect.Int:
@@ -95,5 +97,33 @@ func marshalPointer[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) valMarshale
 	ctx.get(t.Elem(), &em)
 	return func(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
 		return em(v.Elem(), ctx)
+	}
+}
+
+type sliceWriter []WriteNode
+
+func (s sliceWriter) writer(ctx *WriteContext) {
+	ctx.WriteRune('[')
+	if len(s) > 0 {
+		s[0](ctx)
+		for _, wn := range s[1:] {
+			ctx.WriteRune(',')
+			wn(ctx)
+		}
+	}
+	ctx.WriteRune(']')
+}
+
+func valSliceMarshal[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) valMarshaler[Ctx] {
+	et := t.Elem()
+	var em valMarshaler[Ctx]
+	ctx.get(et, &em)
+	return func(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
+		ln := v.Len()
+		out := make(sliceWriter, ln)
+		for i := 0; i < ln; i++ {
+			out[i] = em(v.Index(i), ctx)
+		}
+		return out.writer
 	}
 }
