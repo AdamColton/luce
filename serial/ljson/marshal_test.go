@@ -141,3 +141,27 @@ func TestMarshalMapOfPtr(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, `{1:{"Name":"Adam","Role":"admin"},2:{"Name":"Fletcher","Role":"user"}}`, str)
 }
+
+type A struct {
+	Name string
+	B    *B
+}
+type B struct {
+	Name string
+	C    *C
+}
+type C struct {
+	Name string
+	A    *A
+}
+
+func TestCircularRefErr(t *testing.T) {
+	a := A{Name: "A"}
+	b := B{Name: "B"}
+	c := C{Name: "C", A: &a}
+	b.C = &c
+	a.B = &b
+	ctx := ljson.NewMarshalContext(false)
+	_, err := ljson.Stringify(a, ctx)
+	assert.Error(t, err)
+}

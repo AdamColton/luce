@@ -3,6 +3,7 @@ package ljson
 import (
 	"reflect"
 
+	"github.com/adamcolton/luce/ds/lset"
 	"github.com/adamcolton/luce/lerr"
 )
 
@@ -12,6 +13,7 @@ import (
 type TypesContext[Ctx any] struct {
 	marshalers      map[reflect.Type]valMarshaler[Ctx]
 	fieldMarshalers map[FieldKey]valFieldMarshaler[Ctx]
+	circularGuard   *lset.Set[reflect.Type]
 }
 
 // NewTypesContext creates a TypesContext
@@ -19,6 +21,7 @@ func NewTypesContext[Ctx any]() *TypesContext[Ctx] {
 	return &TypesContext[Ctx]{
 		marshalers:      make(map[reflect.Type]valMarshaler[Ctx]),
 		fieldMarshalers: make(map[FieldKey]valFieldMarshaler[Ctx]),
+		circularGuard:   lset.New[reflect.Type](),
 	}
 }
 
@@ -31,6 +34,10 @@ func (tctx *TypesContext[Ctx]) get(t reflect.Type, self *valMarshaler[Ctx]) {
 
 	*self = func(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
 		tctx := ctx.TypesContext
+		if tctx.circularGuard.Contains(t) {
+			panic(lerr.Str("circular type reference"))
+		}
+		tctx.circularGuard.Add(t)
 
 		m, found := tctx.marshalers[t]
 		if !found {
@@ -38,6 +45,7 @@ func (tctx *TypesContext[Ctx]) get(t reflect.Type, self *valMarshaler[Ctx]) {
 			tctx.marshalers[t] = m
 		}
 		*self = m
+		tctx.circularGuard.Remove(t)
 
 		return (*self)(v, ctx)
 	}
@@ -98,7 +106,7 @@ func marshalPointer[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) valMarshale
 	var em valMarshaler[Ctx]
 	ctx.get(t.Elem(), &em)
 	return func(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
-		return em(v.Elem(), ctx)
+		return ctx.guardMarshal(v.Elem(), em)
 	}
 }
 
@@ -124,7 +132,7 @@ func valSliceMarshal[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) valMarshal
 		ln := v.Len()
 		out := make(sliceWriter, ln)
 		for i := 0; i < ln; i++ {
-			out[i] = em(v.Index(i), ctx)
+			out[i] = ctx.guardMarshal(v.Index(i), em)
 		}
 		return out.writer
 	}
@@ -143,8 +151,8 @@ func mapMarshal[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) (m valMarshaler
 		out := make(StructWriter, 0, v.Len())
 		mi := v.MapRange()
 		for mi.Next() {
-			kwn := km(mi.Key(), ctx)
-			vwn := vm(mi.Value(), ctx)
+			kwn := ctx.guardMarshal(mi.Key(), km)
+			vwn := ctx.guardMarshal(mi.Value(), vm)
 			out = append(out, FieldWriter{
 				Key:   kwn,
 				Value: vwn,
