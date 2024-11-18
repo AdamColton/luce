@@ -33,7 +33,7 @@ func (wn WriteNode) WriteTo(w io.Writer) (int64, error) {
 }
 
 // Stringify marshals the value given and returns a json string.
-func Stringify[T any](v T, ctx *MarshalContext) (string, error) {
+func Stringify[T, Ctx any](v T, ctx *MarshalContext[Ctx]) (string, error) {
 	wn, err := Marshal(v, ctx)
 	if err != nil {
 		return "", err
