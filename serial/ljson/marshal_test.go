@@ -79,3 +79,23 @@ func TestBuiltin(t *testing.T) {
 	check(t, ctx, float64(123), "123")
 	check(t, ctx, true, "true")
 }
+
+func TestStructPtr(t *testing.T) {
+	type Person struct {
+		ID   uint
+		Name string
+		Age  int
+		Role string
+	}
+	p := &Person{
+		ID:   123,
+		Name: "Adam",
+		Age:  40,
+		Role: "admin",
+	}
+	ctx := ljson.NewMarshalContext(false)
+	ctx.Sort = true
+	str, err := ljson.Stringify(p, ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"Age":40,"ID":123,"Name":"Adam","Role":"admin"}`, str)
+}
