@@ -1,24 +1,27 @@
 package server
 
 import (
-	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net"
 	"net/http"
+	"reflect"
+	"strings"
 	"sync"
 	"time"
+	"unsafe"
 
 	"github.com/adamcolton/luce/ds/bus"
 	"github.com/adamcolton/luce/ds/bus/serialbus"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/tools/server/service"
+	"github.com/adamcolton/luce/util/lusers"
 	"github.com/adamcolton/luce/util/unixsocket"
 	"github.com/gorilla/mux"
 )
 
-func (s *Server) RunServiceSocket(addr string) error {
-	sck := unixsocket.New(addr, s.handleServiceSocket)
+func (s *Server) RunServiceSocket() error {
+	sck := unixsocket.New(s.ServiceSocket, s.handleServiceSocket)
 	return sck.Run()
 }
 
@@ -27,33 +30,62 @@ type serviceConn struct {
 	*serialbus.Sender
 	respMap map[uint32]chan<- *service.Response
 	mapLock sync.Mutex
+	routes  map[string]bool
 }
 
 func (s *Server) handleServiceSocket(netConn net.Conn) {
 	defer netConn.Close()
 	conn, err := service.NewConn(netConn)
 	if err != nil {
-		fmt.Println(err)
+		// TODO: add err handler to Server and handle err
 		return
 	}
 	sc := &serviceConn{
 		s:       s,
 		Sender:  conn.Sender,
 		respMap: make(map[uint32]chan<- *service.Response),
+		routes:  make(map[string]bool),
 	}
 	bus.RegisterHandlerType(conn.Listener, sc)
 
 	conn.Listener.Run()
+
+	for id := range sc.routes {
+		s.serviceRoutes[id].setActive(false)
+	}
 }
 
-func (sc *serviceConn) HandleResponse(resp service.Response) {
+type serviceRoute struct {
+	*mux.Route
+	active bool
+}
+
+func (sr *serviceRoute) setActive(active bool) {
+	if sr.active == active {
+		return
+	}
+	if active {
+		ptr := reflect.
+			ValueOf(sr.Route).
+			Elem().
+			FieldByName("buildOnly").
+			Addr().
+			Pointer()
+		*(*bool)(unsafe.Pointer(ptr)) = false
+	} else {
+		sr.BuildOnly()
+	}
+	sr.active = active
+}
+
+func (sc *serviceConn) HandleResponse(resp *service.Response) {
 	sc.mapLock.Lock()
 	ch := sc.respMap[resp.ID]
 	sc.mapLock.Unlock()
 	if ch == nil {
 		return
 	}
-	ch <- &resp
+	ch <- resp
 }
 
 func (sc *serviceConn) HandleRoutes(routes service.Routes) {
@@ -66,17 +98,23 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 	cvrt := sc.routeConfigToRequestConverter(route)
 	h := func(w http.ResponseWriter, r *http.Request) {
 		req := cvrt(r)
+		if req == nil {
+			return
+		}
 		ch := make(chan *service.Response)
 		sc.mapLock.Lock()
 		sc.respMap[req.ID] = ch
 		sc.mapLock.Unlock()
 
-		err := sc.Sender.Send(*req)
+		err := sc.Sender.Send(req)
 		lerr.Panic(err)
 		select {
 		case resp := <-ch:
+			if resp.Status > 0 {
+				w.WriteHeader(resp.Status)
+			}
 			w.Write(resp.Body)
-		case <-time.After(time.Second * 5):
+		case <-time.After(TimeoutDuration):
 			w.WriteHeader(http.StatusRequestTimeout)
 		}
 
@@ -85,8 +123,9 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 		sc.mapLock.Unlock()
 	}
 
-	r := sc.s.serviceRoutes[route.ID]
-	if r == nil {
+	sr := sc.s.serviceRoutes[route.ID]
+	if sr == nil {
+		var r *mux.Route
 		if route.PathPrefix {
 			r = sc.s.Router.PathPrefix(route.Path)
 		} else {
@@ -95,13 +134,37 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 		if route.Method != "" {
 			r = r.Methods(route.Methods()...)
 		}
-		sc.s.serviceRoutes[route.ID] = r
+		if route.Host != "" {
+			r = r.Host(route.Host)
+		}
+		sr = &serviceRoute{
+			Route:  r,
+			active: true,
+		}
+		sc.s.serviceRoutes[route.ID] = sr
+	} else {
+		sr.setActive(true)
 	}
-	r.HandlerFunc(h)
+	sc.routes[route.ID] = true
+	sr.HandlerFunc(h)
 }
 
 func (sc *serviceConn) routeConfigToRequestConverter(cfg service.RouteConfig) func(r *http.Request) *service.Request {
+	var groups []string
+	if cfg.Require.Group != "" {
+		groups = strings.Split(cfg.Require.Group, ",")
+	}
+
 	return func(r *http.Request) *service.Request {
+		var u *lusers.User
+		if len(groups) > 0 || cfg.User {
+			u, _ = sc.s.Users.User(r)
+		}
+
+		if !u.OneRequired(groups) {
+			return nil
+		}
+
 		out := &service.Request{
 			Path:        r.URL.Path,
 			RouteConfig: cfg.ID,
@@ -134,7 +197,6 @@ func (sc *serviceConn) routeConfigToRequestConverter(cfg service.RouteConfig) fu
 		}
 
 		if cfg.User {
-			u, _ := sc.s.Users.User(r)
 			out.User = u
 		}
 

@@ -35,6 +35,10 @@ func TestGroups(t *testing.T) {
 	assert.Equal(t, g, g2)
 	g2 = us.HasGroup("not-a-group")
 	assert.Nil(t, g2)
+
+	assert.True(t, u.In("admin"))
+	g.RemoveUser(u)
+	assert.False(t, u.In("admin"))
 }
 
 func TestInGroup(t *testing.T) {
@@ -47,4 +51,14 @@ func TestInGroup(t *testing.T) {
 	assert.True(t, u.In("bar"))
 	assert.True(t, u.In("glorp"))
 	assert.False(t, u.In("baz"))
+	assert.False(t, u.In("aaa"))
+	assert.False(t, u.In("zzz"))
+
+	assert.True(t, u.OneRequired([]string{"foo", "baz"}))
+	assert.False(t, u.OneRequired([]string{"foot", "baz"}))
+
+	u = nil
+	assert.True(t, u.OneRequired(nil))
+	assert.False(t, u.OneRequired([]string{"foo"}))
+	assert.False(t, u.In("foo"))
 }

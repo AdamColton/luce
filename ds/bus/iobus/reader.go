@@ -26,6 +26,7 @@ func (cfg Config) Reader(r io.Reader, ch chan<- []byte, errCh chan<- error) {
 	for {
 		n, err := r.Read(buf)
 		send, exit := cfg.check(n, err, errCh)
+		sum := 0
 
 		if send && n > 0 && cfg.PrefixMessageLength {
 			var ln int
@@ -34,12 +35,16 @@ func (cfg Config) Reader(r io.Reader, ch chan<- []byte, errCh chan<- error) {
 				ln += int(buf[i])
 			}
 			buf = make([]byte, ln)
-			n, err = r.Read(buf)
-			send, exit = cfg.check(n, err, errCh)
+
+			for sum < ln && !exit {
+				n, err = r.Read(buf[sum:])
+				sum += n
+				send, exit = cfg.check(n, err, errCh)
+			}
 		}
 
 		if send && n > 0 {
-			ch <- buf[:n]
+			ch <- buf[:sum]
 			buf = make([]byte, bufSize)
 		}
 

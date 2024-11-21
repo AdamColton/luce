@@ -134,10 +134,11 @@ func TestReadDirNames(t *testing.T) {
 	names, err := readDirNames(".")
 	assert.NoError(t, err)
 	expected := []string{
-		"doc.go", "exts.go", "exts_test.go", "handlers.go", "handlers_test.go",
-		"iterator.go", "match.go", "match_test.go", "multiglob.go",
-		"multiglob_test.go", "path.go", "path_test.go", "paths.go",
-		"paths_test.go", "search.go", "search_test.go",
+		"dir.go", "dir_test.go", "doc.go", "exts.go", "exts_test.go",
+		"handlers.go", "handlers_test.go", "iterator.go", "lfilemock",
+		"match.go", "match_test.go", "multiglob.go", "multiglob_test.go",
+		"path.go", "path_test.go", "paths.go", "paths_test.go", "repository.go",
+		"search.go", "search_test.go",
 	}
 	assert.Equal(t, expected, names)
 }

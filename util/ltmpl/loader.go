@@ -3,7 +3,7 @@ package ltmpl
 import (
 	"html/template"
 
-	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/util/filter"
 	"github.com/adamcolton/luce/util/lfile"
 )
 
@@ -19,6 +19,8 @@ type HTMLLoader struct {
 	lfile.IteratorSource
 	Trimmer
 }
+
+var notNilErr = filter.EQ[error](nil).Not()
 
 // Load the templates
 func (l *HTMLLoader) Load() (*template.Template, error) {
@@ -40,7 +42,7 @@ func (l *HTMLLoader) Load() (*template.Template, error) {
 		}
 		_, err = addTemplate(tmplname).Parse(string(i.Data()))
 	}
-	err = lerr.Any(i.Err(), err)
+	err, _ = notNilErr.First(i.Err(), err)
 	if err != nil {
 		return nil, err
 	}
