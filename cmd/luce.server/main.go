@@ -50,6 +50,7 @@ func (c Config) SessionBytes() [][]byte {
 			out[i] = []byte(s)
 		}
 	}
+
 	return out
 }
 

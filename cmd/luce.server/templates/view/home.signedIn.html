@@ -1,6 +1,7 @@
 {{template "layout/header.html" "Home"}}
 <div>Hello, {{.Name}}!</div>
 <a href="/user/signout">Sign Out</a>
+<a href="/services">Services</a>
 {{if .In "admin"}}
     <a href="/admin/users">Users</a>
 {{end}}
