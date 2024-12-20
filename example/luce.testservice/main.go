@@ -12,31 +12,49 @@ import (
 func main() {
 	conn := lerr.Must(service.NewClient("/tmp/luceserver.service"))
 
-	g := service.RouteConfigGen{
-		Base: "/testsrv",
-	}
+	srv := conn.Service
+	srv.Base = "/testsrv"
+	srv.Name = "Test Service"
 
-	conn.Add(
-		SayHi,
-		g.Get("sayHi/{name}").WithUser(),
-	)
+	// Need to update hosts file for this to work
+	//conn.Service.Host = "somehost.{domain:.*}"
 
-	conn.Add(
-		Query,
-		g.GetQuery("query").WithPrefix(),
-	)
+	// ??? https://somehost.adamcolton.local:6060/testsrv/sayHi/adam
+	// /testsrv/sayHi/{name}
+	// "somehost.{domain:.*}"
 
-	conn.Add(
-		Admin,
-		g.GetQuery("admin").RequireGroup("admin"),
-	)
+	service.NewServiceRoute("home").
+		Handle(conn, Home)
+	conn.Service.AddLink("Home", "", "home")
 
-	conn.Add(
-		Host,
-		g.Get("").SetHost("somehost.{domain:.*}"),
-	)
+	service.NewServiceRoute("sayHi/{name}").
+		WithUser().
+		Handle(conn, SayHi)
+	conn.Service.AddLink("Hi, Adam", "", "sayHi/Adam")
 
-	conn.Run()
+	service.NewServiceRoute("query").
+		WithQuery().
+		Handle(conn, Query)
+	conn.Service.AddLink("Query", "", "query?foo=bar")
+
+	service.NewServiceRoute("admin").
+		WithQuery().
+		RequireGroup("admin").
+		Handle(conn, Admin)
+	conn.Service.AddLink("Admin Only", "", "admin")
+
+	conn.RunService()
+}
+
+var home = `<!DOCTYPE html>
+<html>
+	<head><title>Example Test Service</title></head>
+	<body>This is the example test service</body>
+</html>
+`
+
+func Home(req *service.Request) *service.Response {
+	return req.ResponseString(home)
 }
 
 var hiTmpl = template.Must(template.New("sayHi").Parse(`<!DOCTYPE html>
