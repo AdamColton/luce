@@ -91,6 +91,9 @@ func (c *cliHandlers) Handlers(rnr *cli.Runner) []any {
 		func(r *RoutesResp) {
 			fmt.Fprint(rnr, string(*r))
 		},
+		func(r ListServicesResp) {
+			fmt.Fprintf(rnr, "  %s", strings.Join(r, "\n  "))
+		},
 		rnr.ExitRespHandler,
 		rnr.CloseRespHandler,
 		rnr.HelpRespHandler,
@@ -298,5 +301,21 @@ func (*cliHandlers) RoutesUsage() *handler.CommandDetails {
 	return &handler.CommandDetails{
 		Usage: "Show Routes",
 		Alias: "sr",
+	}
+}
+
+type ListServicesReq struct {
+}
+
+type ListServicesResp []string
+
+func (c *cliHandlers) ListServicesHandler(req *ListServicesReq) ListServicesResp {
+	return ListServicesResp(c.Server.services.Keys(nil))
+}
+
+func (*cliHandlers) ListServicesUsage() *handler.CommandDetails {
+	return &handler.CommandDetails{
+		Usage: "List Services",
+		Alias: "ls",
 	}
 }
