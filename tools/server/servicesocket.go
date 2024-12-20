@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
-	"sync"
 	"time"
 	"unsafe"
 
 	"github.com/adamcolton/luce/ds/bus"
 	"github.com/adamcolton/luce/ds/bus/serialbus"
+	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/ds/lset"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/tools/server/service"
@@ -29,10 +29,10 @@ func (s *Server) RunServiceSocket() error {
 }
 
 type serviceConn struct {
-	s *Server
+	service *service.Service
+	s       *Server
 	*serialbus.Sender
-	respMap map[uint32]chan<- *service.Response
-	mapLock sync.Mutex
+	respMap lmap.Wrapper[uint32, chan<- *service.Response]
 	routes  *lset.Set[string]
 }
 
@@ -45,7 +45,7 @@ func (s *Server) handleServiceSocket(netConn net.Conn) {
 	sc := &serviceConn{
 		s:       s,
 		Sender:  conn.Sender,
-		respMap: make(map[uint32]chan<- *service.Response),
+		respMap: lmap.NewSafe[uint32, chan<- *service.Response](nil),
 		routes:  lset.New[string](),
 	}
 	err = bus.DefaultRegistrar.Register(conn.Listener, sc)
@@ -56,6 +56,10 @@ func (s *Server) handleServiceSocket(netConn net.Conn) {
 	sc.routes.Each(func(id string, done *bool) {
 		s.serviceRoutes[id].setActive(false)
 	})
+
+	if sc.service != nil {
+		s.services.Delete(sc.service.Name)
+	}
 }
 
 type serviceRoute struct {
@@ -82,9 +86,7 @@ func (sr *serviceRoute) setActive(active bool) {
 }
 
 func (sc *serviceConn) ResponseHandler(resp *service.Response) {
-	sc.mapLock.Lock()
-	ch := sc.respMap[resp.ID]
-	sc.mapLock.Unlock()
+	ch := sc.respMap.GetVal(resp.ID)
 	if ch == nil {
 		return
 	}
@@ -133,10 +135,7 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 			return
 		}
 		ch := make(chan *service.Response)
-		sc.mapLock.Lock()
-		sc.respMap[req.ID] = ch
-		sc.mapLock.Unlock()
-
+		sc.respMap.Set(req.ID, ch)
 		err := sc.Sender.Send(req)
 		lerr.Panic(err)
 		select {
@@ -165,9 +164,7 @@ func (sc *serviceConn) registerServiceRoute(route service.RouteConfig) {
 			w.WriteHeader(http.StatusRequestTimeout)
 		}
 
-		sc.mapLock.Lock()
-		delete(sc.respMap, req.ID)
-		sc.mapLock.Unlock()
+		sc.respMap.Delete(req.ID)
 	}
 
 	sr := sc.s.getServiceRoute(route)

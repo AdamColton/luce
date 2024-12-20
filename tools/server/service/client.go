@@ -48,3 +48,19 @@ func (c *Client) Add(h RequestResponder, r *RouteConfig) {
 	}
 	c.Mux.Add(fn, r)
 }
+
+func (c *Client) RunService() {
+	c.Sender.Send(c.Mux.Service)
+	c.Listener.Run()
+}
+
+func (c *Client) AddServiceRoute(h RequestResponder, route *ServiceRoute) {
+	lerr.Panic(route.Validate())
+	c.Service.Routes = append(c.Service.Routes, *route)
+	fn := func(r *Request) {
+		err := c.Sender.Send(h(r))
+		// TODO: handle error
+		lerr.Panic(err)
+	}
+	c.Mux.Handlers[route.ID] = fn
+}

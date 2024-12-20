@@ -33,6 +33,7 @@ func init() {
 		SocketOpened{},
 		SocketClose{},
 		SocketMessage{},
+		(*Service)(nil),
 	)
 }
 

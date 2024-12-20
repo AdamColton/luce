@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"time"
 
+	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/store"
 	"github.com/adamcolton/luce/tools/server/core"
@@ -34,7 +35,9 @@ type Server struct {
 	Templates     *template.Template
 	ServiceSocket string
 	TemplateNames
+	// TODO: make this safe map
 	serviceRoutes map[string]*serviceRoute
+	services      lmap.Wrapper[string, *serviceConn]
 	lerr.ErrHandler
 }
 
@@ -59,6 +62,7 @@ func (c *Config) New() (*Server, error) {
 		ServiceSocket: c.ServiceSocket,
 		TemplateNames: c.TemplateNames,
 		serviceRoutes: make(map[string]*serviceRoute),
+		services:      lmap.NewSafe[string, *serviceConn](nil),
 		ErrHandler: func(err error) {
 			fmt.Println(err)
 		},

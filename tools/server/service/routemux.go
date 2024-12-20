@@ -10,12 +10,14 @@ type RequestResponder func(r *Request) *Response
 type Mux struct {
 	Handlers map[string]RequestHandler
 	Routes   Routes
+	Service  *Service
 }
 
 // NewMux creates a Mux.
 func NewMux() *Mux {
 	return &Mux{
 		Handlers: make(map[string]RequestHandler),
+		Service:  &Service{},
 	}
 }
 
