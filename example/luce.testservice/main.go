@@ -23,27 +23,27 @@ func main() {
 	// /testsrv/sayHi/{name}
 	// "somehost.{domain:.*}"
 
-	service.NewServiceRoute("home").
+	service.NewRoute("home").
 		Handle(conn, Home)
 	conn.Service.AddLink("Home", "", "home")
 
-	service.NewServiceRoute("sayHi/{name}").
+	service.NewRoute("sayHi/{name}").
 		WithUser().
 		Handle(conn, SayHi)
 	conn.Service.AddLink("Hi, Adam", "", "sayHi/Adam")
 
-	service.NewServiceRoute("query").
+	service.NewRoute("query").
 		WithQuery().
 		Handle(conn, Query)
 	conn.Service.AddLink("Query", "", "query?foo=bar")
 
-	service.NewServiceRoute("admin").
+	service.NewRoute("admin").
 		WithQuery().
 		RequireGroup("admin").
 		Handle(conn, Admin)
 	conn.Service.AddLink("Admin Only", "", "admin")
 
-	conn.RunService()
+	conn.Run()
 }
 
 var home = `<!DOCTYPE html>
