@@ -21,8 +21,8 @@ type testMessage struct {
 func (testMessage) TypeID32() uint32 {
 	return 3141592653
 }
-func TestRoundTrip(t *testing.T) {
 
+func TestRoundTrip(t *testing.T) {
 	expected := "this is a test"
 	handleServiceSocket := func(netConn net.Conn) {
 		conn := lerr.Must(service.NewConn(netConn))

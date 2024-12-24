@@ -26,7 +26,7 @@ func (sc *serviceConn) ServiceHandler(srv *service.Service) {
 
 func (sc *serviceConn) registerService(idx int) {
 	cfg := sc.service.Routes[idx]
-	cvrt := sc.serviceRouteConfigToRequestConverter(cfg)
+	cvrt := sc.routeToRequestConverter(cfg)
 	h := func(w http.ResponseWriter, r *http.Request) {
 		//fmt.Println("Route Request: ", route.PathPrefix, route.Path)
 		req := cvrt(r)
@@ -75,7 +75,7 @@ func (sc *serviceConn) registerService(idx int) {
 	sr.HandlerFunc(h)
 }
 
-func (sc *serviceConn) serviceRouteConfigToRequestConverter(cfg service.ServiceRoute) func(r *http.Request) *service.Request {
+func (sc *serviceConn) routeToRequestConverter(cfg service.Route) func(r *http.Request) *service.Request {
 	var groups []string
 	if cfg.Require.Group != "" {
 		groups = strings.Split(cfg.Require.Group, ",")

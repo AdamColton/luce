@@ -27,7 +27,6 @@ func Register(zeroValues ...type32.TypeIDer32) {
 
 func init() {
 	Register(
-		(Routes)(nil),
 		(*Request)(nil),
 		(*Response)(nil),
 		SocketOpened{},

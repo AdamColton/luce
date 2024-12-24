@@ -35,26 +35,11 @@ func NewClient(addr string) (*Client, error) {
 }
 
 func (c *Client) Run() {
-	c.Sender.Send(c.Mux.Routes)
-	c.Listener.Run()
-}
-
-func (c *Client) Add(h RequestResponder, r *RouteConfig) {
-	lerr.Panic(r.Validate())
-	fn := func(r *Request) {
-		err := c.Sender.Send(h(r))
-		// TODO: handle error
-		lerr.Panic(err)
-	}
-	c.Mux.Add(fn, r)
-}
-
-func (c *Client) RunService() {
 	c.Sender.Send(c.Mux.Service)
 	c.Listener.Run()
 }
 
-func (c *Client) AddServiceRoute(h RequestResponder, route *ServiceRoute) {
+func (c *Client) Add(h RequestResponder, route *Route) {
 	lerr.Panic(route.Validate())
 	c.Service.Routes = append(c.Service.Routes, *route)
 	fn := func(r *Request) {

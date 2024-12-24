@@ -23,7 +23,7 @@ func TestServiceRoutePointer(t *testing.T) {
 	c.Mux = &service.Mux{}
 	c.Service = &service.Service{}
 	c.Mux.Handlers = make(map[string]service.RequestHandler)
-	r := service.NewServiceRoute("foo")
+	r := service.NewRoute("foo")
 	assert.Equal(t, "/foo", r.Path)
 	h := func(r *service.Request) *service.Response {
 		return nil
