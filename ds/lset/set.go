@@ -36,6 +36,16 @@ func (s *Set[T]) Contains(elem T) bool {
 	return c
 }
 
+// Checksert returns a bool indicating if the element was present in the set.
+// If it was not, it is added.
+func (s *Set[T]) Checksert(elem T) bool {
+	_, contains := s.m.Get(elem)
+	if !contains {
+		s.m.Set(elem, flag{})
+	}
+	return contains
+}
+
 // Add given elements to the set
 func (s *Set[T]) Add(elements ...T) *Set[T] {
 	for _, t := range elements {
