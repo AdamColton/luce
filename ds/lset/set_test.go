@@ -112,3 +112,10 @@ func TestUnique(t *testing.T) {
 	l.Sort(got)
 	assert.Equal(t, expected, got)
 }
+
+func TestChecksert(t *testing.T) {
+	s := lset.New(100)
+	assert.True(t, s.Checksert(100))
+	assert.False(t, s.Checksert(200))
+	assert.True(t, s.Checksert(200))
+}
