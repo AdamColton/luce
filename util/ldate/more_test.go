@@ -2,11 +2,18 @@ package ldate_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/adamcolton/luce/util/filter"
 	"github.com/adamcolton/luce/util/ldate"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestNow(t *testing.T) {
+	today := ldate.TimeToDate(time.Now())
+	justBefore := ldate.TimeToDate(time.Now().Add(-time.Minute))
+	assert.Contains(t, []ldate.Date{today, justBefore}, ldate.Now())
+}
 
 func TestBefore(t *testing.T) {
 	d := ldate.New(2024, 6, 15)

@@ -141,3 +141,12 @@ func (d Date) Before(d2 Date) bool {
 	}
 	return false
 }
+
+// TimeToDate returns the Date of t, in t's location.
+func TimeToDate(t time.Time) Date {
+	return Date{
+		Year:  Year(t.Year()),
+		Month: Month(t.Month()),
+		Day:   t.Day(),
+	}
+}
