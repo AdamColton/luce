@@ -102,3 +102,53 @@ func (d Date) Weekday() time.Weekday {
 	}
 	return time.Weekday((y + y/4 - y/100 + y/400 + monthKey[m-1] + dd) % 7)
 }
+
+func (d Date) Before(d2 Date) bool {
+	if d.Year < d2.Year {
+		return true
+	}
+	if d.Year > d2.Year {
+		return false
+	}
+	if d.Month < d2.Month {
+		return true
+	}
+	if d.Month > d2.Month {
+		return false
+	}
+	if d.Day < d2.Day {
+		return true
+	}
+	if d.Day > d2.Day {
+		return false
+	}
+	return false
+}
+
+var now Date
+
+func Now() Date {
+	return now
+}
+
+func init() {
+	n := time.Now()
+	go updateNow(n)
+}
+
+func updateNow(n time.Time) {
+	for {
+		now = TimeToDate(n)
+		tomorrow := time.Date(n.Year(), n.Month(), n.Day()+1, 0, 0, 0, 100, n.Location())
+		<-time.NewTimer(tomorrow.Sub(n)).C
+		n = time.Now()
+	}
+}
+
+func TimeToDate(t time.Time) Date {
+	return Date{
+		Year:  Year(t.Year()),
+		Month: Month(t.Month()),
+		Day:   t.Day(),
+	}
+}
