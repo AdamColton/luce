@@ -20,7 +20,7 @@ type estore struct {
 }
 
 func (e *estore) Len() int {
-	return len(e.records)
+	return e.idx.Len()
 }
 
 func (e *estore) Put(key, value []byte) error {

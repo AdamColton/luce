@@ -40,6 +40,7 @@ func TestBasic(t *testing.T, factory store.Factory) {
 	assert.NoError(t, err)
 	assert.Equal(t, v2, s2.Get(k2).Value)
 
+	assert.Equal(t, 1, s.Len())
 }
 
 func TestBuckets(t *testing.T, factory store.Factory) {
