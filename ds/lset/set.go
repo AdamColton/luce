@@ -15,7 +15,16 @@ type Set[T comparable] struct {
 // New creates a set containing the provided values.
 func New[T comparable](elements ...T) *Set[T] {
 	s := &Set[T]{
-		m: lmap.New[T, flag](nil),
+		m: lmap.Empty[T, flag](len(elements)),
+	}
+	s.Add(elements...)
+	return s
+}
+
+// Safe creates a threadsafe set
+func Safe[T comparable](elements ...T) *Set[T] {
+	s := &Set[T]{
+		m: lmap.EmptySafe[T, flag](len(elements)),
 	}
 	s.Add(elements...)
 	return s
@@ -58,7 +67,7 @@ func (s *Set[T]) Len() int {
 // Copy the set
 func (s *Set[T]) Copy() *Set[T] {
 	out := &Set[T]{
-		m: lmap.Empty[T, flag](s.m.Len()),
+		m: s.m.WrapNew(),
 	}
 	out.AddAll(s)
 	return out
