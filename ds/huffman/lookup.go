@@ -30,8 +30,8 @@ type mapLookup[T comparable] map[T]*rye.Bits
 
 // NewLookup creates a lookup on a Tree with a comparable type. If T on the Tree
 // is not comparable, use NewTranslateLookup.
-func NewLookup[T comparable](t Tree[T]) Lookup[T] {
-	n := t.(tree[T]).huffNode
+func NewLookup[T comparable](t *Tree[T]) Lookup[T] {
+	n := t.huffNode
 	l := make(mapLookup[T])
 	l.insert(n, &rye.Bits{})
 	return l
@@ -71,8 +71,8 @@ func (l *translateLookup[K, T]) All() []T {
 
 // NewTranslateLookup creates a lookup when T is not comparable. A translator
 // function must be provided.
-func NewTranslateLookup[K comparable, T any](t Tree[T], translator func(T) K) Lookup[T] {
-	n := t.(tree[T]).huffNode
+func NewTranslateLookup[K comparable, T any](t *Tree[T], translator func(T) K) Lookup[T] {
+	n := t.huffNode
 	l := &translateLookup[K, T]{
 		table:    make(map[K]*rye.Bits),
 		keyMaker: translator,

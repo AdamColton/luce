@@ -7,26 +7,16 @@ import (
 	"github.com/adamcolton/luce/serial/rye"
 )
 
-// Tree represents a Huffman Coding.
-type Tree[T any] interface {
-	Read(b *rye.Bits) T
-	Iter(b *rye.Bits) HuffIter[T]
-	// All visits every value in the Tree can calls the given func on each value
-	All(fn func(T))
-	Len() int
-	private()
-}
-
-type tree[T any] struct {
+type Tree[T any] struct {
 	ln int
 	*huffNode[T]
 }
 
-func (tr tree[T]) Len() int {
+func (tr *Tree[T]) Len() int {
 	return tr.ln
 }
 
-func (tr tree[T]) Iter(b *rye.Bits) HuffIter[T] {
+func (tr *Tree[T]) Iter(b *rye.Bits) HuffIter[T] {
 	i := &huffiter[T]{
 		node: tr.huffNode,
 		b:    b,
@@ -36,8 +26,6 @@ func (tr tree[T]) Iter(b *rye.Bits) HuffIter[T] {
 	return i
 }
 
-func (tr tree[T]) private() {}
-
 // Frequency is used for constructing a Huffman Coding.
 type Frequency[T any] struct {
 	Val   T
@@ -45,28 +33,28 @@ type Frequency[T any] struct {
 }
 
 // New Huffman Coding Tree contructed from Frequency data.
-func New[T any](data []Frequency[T]) Tree[T] {
+func New[T any](data []Frequency[T]) *Tree[T] {
 	h := newHeap[T](len(data))
 	for _, d := range data {
 		h.Data = append(h.Data, d.root())
 	}
 	sort.Slice(h.Data, h.Less)
 
-	return tree[T]{
+	return &Tree[T]{
 		huffNode: makeHeapTree(h),
 		ln:       len(data),
 	}
 }
 
 // New Huffman Coding Tree contructed from a frequency map.
-func MapNew[T comparable](data map[T]int) Tree[T] {
+func MapNew[T comparable](data map[T]int) *Tree[T] {
 	h := newHeap[T](len(data))
 	for v, c := range data {
 		h.Data = append(h.Data, newLeaf(v, c))
 	}
 	sort.Slice(h.Data, h.Less)
 
-	return tree[T]{
+	return &Tree[T]{
 		huffNode: makeHeapTree(h),
 		ln:       len(data),
 	}

@@ -11,7 +11,7 @@ import (
 
 // Slice encoded using Huffman compression
 type Slice[T comparable] struct {
-	huffman.Tree[T]
+	*huffman.Tree[T]
 	Encoded *rye.Bits
 	// Values that occure a single time are replaced wit SingleToken and stored
 	// speratly from the Tree.
