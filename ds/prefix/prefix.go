@@ -6,19 +6,23 @@ package prefix
 
 import (
 	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/entity"
 	"github.com/adamcolton/luce/util/navigator"
 )
 
 // Prefix is the root of a prefix tree
 type Prefix struct {
+	key    entity.Key
 	root   *node
 	starts map[rune]slice.Slice[*node]
 	purge  map[rune]bool
+	save   bool
 }
 
 // New Prefix tree.
 func New() *Prefix {
 	return &Prefix{
+		key:    entity.Rand(),
 		root:   newNode(),
 		starts: make(map[rune]slice.Slice[*node]),
 		purge:  make(map[rune]bool),
@@ -45,10 +49,12 @@ func (p *Prefix) Upsert(word string) (n Node, insert bool) {
 	nd, _ := p.seeker(word).Seek(true, p)
 	if !nd.isWord {
 		insert = true
-		nd.isWord = true
-		for p := nd.parent; p != nil; p = p.parent {
-			p.childrenCount++
+		if nd.setIsWord(true) {
 		}
+		for prnt := nd.parent; prnt != nil; prnt = prnt.parent {
+			prnt.setChildrenCount(prnt.childrenCount + 1)
+		}
+		p.saveIf()
 	}
 	n = nd
 	return
@@ -109,18 +115,18 @@ func (p *Prefix) Remove(word string) {
 	if s.Cur == nil || !s.Cur.isWord {
 		return
 	}
-	s.Cur.isWord = false
+	s.Cur.setIsWord(false)
 	for n, ok := s.Pop(); ok; n, ok = s.Pop() {
 		if n.children.Len() > 0 || n.isWord {
 			break
 		}
-		n.parent.children.Delete(s.Keys[s.Idx])
+		n.parent.deleteChild(s.Keys[s.Idx])
 		n.parent = nil
 	}
 	for _, r := range s.Keys {
 		p.purge[r] = true
 	}
-
+	p.saveIf()
 }
 
 func (p *Prefix) Purge() {
