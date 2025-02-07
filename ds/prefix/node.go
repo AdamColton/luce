@@ -53,8 +53,30 @@ type node struct {
 
 func newNode() *node {
 	return &node{
-		children: lmap.New[rune, *node](nil),
+		children: lmap.NewSafe[rune, *node](nil),
 	}
+}
+
+func (n *node) setIsWord(isWord bool) (changed bool) {
+	if n.isWord != isWord {
+		n.isWord = isWord
+		return true
+	}
+	return false
+}
+
+func (n *node) setChildrenCount(childrenCount int) {
+	if n.childrenCount != childrenCount {
+		n.childrenCount = childrenCount
+	}
+}
+
+func (n *node) setChild(key rune, child *node) {
+	n.children.Set(key, child)
+}
+
+func (n *node) deleteChild(key rune) {
+	n.children.Delete(key)
 }
 
 func (n *node) Next(r rune, create bool, p *Prefix) (*node, bool) {
@@ -66,8 +88,9 @@ func (n *node) Next(r rune, create bool, p *Prefix) (*node, bool) {
 			children: lmap.New[rune, *node](nil),
 		}
 		p.starts[r] = append(p.starts[r], next)
-		n.children.Set(r, next)
+		n.setChild(r, next)
 		ok = true
+		p.saveIf() // TODO: probably overkill
 	}
 	return next, ok
 }
