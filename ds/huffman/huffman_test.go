@@ -168,3 +168,43 @@ func ExampleEncode_roundTrip() {
 	// Length: 5
 	// THISISATEST
 }
+
+// func TestGob(t *testing.T) {
+// 	data := letters
+// 	ht := MapNew(data.Map())
+// 	assert.NotNil(t, ht)
+// 	GobRegister[rune]()
+
+// 	buf := bytes.NewBuffer(nil)
+// 	var a any = ht
+// 	err := gob.NewEncoder(buf).Encode(a)
+// 	assert.NoError(t, err)
+
+// 	ht = &Tree[rune]{}
+// 	bs := buf.Bytes()
+// 	buf = bytes.NewBuffer(bs)
+// 	err = gob.NewDecoder(buf).Decode(ht)
+// 	assert.NoError(t, err)
+// 	assert.NotNil(t, ht)
+
+// 	expected := slice.Slice[rune]("THISISATEST")
+// 	l := NewLookup(ht)
+// 	enc := Encode(list.Slice(expected), l)
+// 	got := slice.FromIter(ht.Iter(enc), nil)
+// 	assert.Equal(t, expected, got)
+// }
+
+func TestBale(t *testing.T) {
+	data := letters
+	ht := MapNew(data.Map())
+	assert.NotNil(t, ht)
+
+	tb := ht.Bale()
+	ht2 := tb.Unbale()
+
+	expected := slice.Slice[rune]("THISISATEST")
+	l := NewLookup(ht2)
+	enc := Encode(list.Slice(expected), l)
+	got := slice.FromIter(ht.Iter(enc), nil)
+	assert.Equal(t, expected, got)
+}

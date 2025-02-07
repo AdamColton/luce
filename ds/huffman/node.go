@@ -1,6 +1,8 @@
 package huffman
 
-import "github.com/adamcolton/luce/serial/rye"
+import (
+	"github.com/adamcolton/luce/serial/rye"
+)
 
 type huffNode[T any] struct {
 	branch [2]*huffNode[T]
@@ -50,3 +52,51 @@ func (n *huffNode[T]) All(fn func(T)) {
 		n.branch[1].All(fn)
 	}
 }
+
+// func (n *huffNode[T]) gobEncode(enc *gob.Encoder) error {
+// 	err := enc.Encode(&(n.v))
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if n.branch[0] == nil {
+// 		if n.branch[1] != nil {
+// 			panic("FAIL (this is a check)")
+// 		}
+// 		enc.Encode(byte(0))
+// 		return nil
+// 	}
+// 	enc.Encode(byte(1))
+// 	err = n.branch[0].gobEncode(enc)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	err = n.branch[1].gobEncode(enc)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
+
+// func decodeHuffNode[T any](dec *gob.Decoder) (*huffNode[T], error) {
+// 	n := &huffNode[T]{}
+// 	err := dec.Decode(&(n.v))
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	var b byte
+// 	err = dec.Decode(&b)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	if b == 1 {
+// 		n.branch[0], err = decodeHuffNode[T](dec)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		n.branch[1], err = decodeHuffNode[T](dec)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 	}
+// 	return n, nil
+// }
