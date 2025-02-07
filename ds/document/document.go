@@ -4,6 +4,7 @@ import (
 	"github.com/adamcolton/luce/ds/huffman/huffslice"
 	"github.com/adamcolton/luce/ds/lset"
 	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/entity"
 )
 
 // Encoder supplies the necessary encoding information to translate strings
@@ -36,16 +37,26 @@ type DocumentDecoder[WordID, VariantID comparable] struct {
 	VarSingleToken  VariantID
 }
 
+type ID uint32
+
+// ID fullfils DocIDer
+func (id ID) DocID() ID {
+	return id
+}
+
 // Document is a string encoded as the root words. This makes identifying
 // which words are in a document fast. Start is the text before the first word,
 // ByteLen the length of the string in bytes and WordLen the number of words.
 type Document[WordID, VariantID comparable] struct {
+	ID
+	entity.Key
 	Start            string
 	ByteLen, WordLen int
 	// Words holds the root words present in the document. This slice can
 	// be reordered without effecting the encoding.
 	Words    []Locations[WordID]
 	Variants *huffslice.Slice[VariantID]
+	save     bool
 }
 
 // Locations holds an ID and the indexes of the words where that ID occurs.
@@ -65,9 +76,17 @@ func (doc *Document[WordID, VariantID]) WordIDs() []WordID {
 	return out
 }
 
+func (doc *Document[WordID, VariantID]) Save() (*entity.Ref[Document[WordID, VariantID], *Document[WordID, VariantID]], error) {
+	doc.save = true
+	er, err := entity.Save(doc)
+	return er, err
+}
+
 // Build takes a string and encodes it to a Document.
 func (enc DocumentEncoder[WordID, VariantID]) Build(str string) *Document[WordID, VariantID] {
-	doc := &Document[WordID, VariantID]{}
+	doc := &Document[WordID, VariantID]{
+		Key: entity.Rand(),
+	}
 	enc.build(doc, str)
 	return doc
 }
@@ -113,7 +132,6 @@ func (dec DocumentDecoder[WordID, VariantID]) Decode(doc *Document[WordID, Varia
 		for _, idx := range wl.Idxs {
 			words[idx] = w
 		}
-
 	}
 
 	vi := doc.Variants.Iter()
@@ -142,5 +160,8 @@ func (enc DocumentEncoder[WordID, VariantID]) Update(doc *Document[WordID, Varia
 		}
 	}
 	cs.Removed = wordsBefore.Slice(nil)
+	if doc.save {
+		doc.Save()
+	}
 	return cs
 }
