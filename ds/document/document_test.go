@@ -5,6 +5,10 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/entity"
+	"github.com/adamcolton/luce/entity/enttest"
+	"github.com/adamcolton/luce/math/ints"
+	"github.com/adamcolton/luce/serial/wrap/gob"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -130,4 +134,83 @@ And the mome raths outgrabe.`
 		}
 		assert.Equal(t, expected, cs)
 	}
+}
+
+func TestEntity(t *testing.T) {
+	enttest.Setup()
+
+	str := `
+	'Twas brillig, and the slithy toves
+	Did gyre and gimble in the wabe:
+	All mimsy were the borogoves,
+	And the mome raths outgrabe.
+	
+	“Beware the Jabberwock, my son!
+	The jaws that bite, the claws that catch!
+	Beware the Jubjub bird, and shun
+	The frumious Bandersnatch!”
+	
+	He took his vorpal sword in hand;
+	Long time the manxome foe he sought—
+	So rested he by the Tumtum tree
+	And stood awhile in thought.
+	
+	And, as in uffish thought he stood,
+	The Jabberwock, with eyes of flame,
+	Came whiffling through the tulgey wood,
+	And burbled as it came!
+	
+	One, two! One, two! And through and through
+	The vorpal blade went snicker-snack!
+	He left it dead, and with its head
+	He went galumphing back.
+	
+	“And hast thou slain the Jabberwock?
+	Come to my arms, my beamish boy!
+	O frabjous day! Callooh! Callay!”
+	He chortled in his joy.
+	
+	'Twas brillig, and the slithy toves
+	Did gyre and gimble in the wabe:
+	All mimsy were the borogoves,
+	And the mome raths outgrabe.`
+	med := &mockEncDec{
+		word2id: map[string]wordID{},
+		var2id:  map[string]varID{},
+	}
+
+	enc := &DocumentEncoder[wordID, varID]{
+		Encoder:         med,
+		Splitter:        Parse,
+		RootVariant:     RootVariant,
+		WordSingleToken: wordID(ints.MaxU32),
+		VarSingleToken:  varID(ints.MaxU32),
+	}
+	enc.AddTypeID(3774587912)
+
+	gob.Register((*DocumentBale[wordID, varID])(nil))
+
+	doc := enc.Build(str)
+	ref, err := doc.Save()
+	assert.NoError(t, err)
+
+	k := ref.EntKey()
+	ref.Clear(true)
+	entity.ClearCache()
+	assert.NotNil(t, k)
+	// r2 := entity.KeyRef[document.Document[wordID, varID], *document.Document[wordID, varID]](k)
+
+	dec := &DocumentDecoder[wordID, varID]{
+		Decoder:         med,
+		WordSingleToken: enc.WordSingleToken,
+		VarSingleToken:  enc.VarSingleToken,
+	}
+	doc2 := ref.GetPtr()
+	assert.NotNil(t, doc2)
+	assert.Equal(t, doc, doc2)
+	got := dec.Decode(doc2)
+	assert.Equal(t, str, got)
+
+	// rec := entity.Store.Get(ref.EntKey())
+	// fmt.Println(len(rec.Value), len(str))
 }

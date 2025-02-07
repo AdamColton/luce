@@ -88,7 +88,7 @@ func TestCorpus(t *testing.T) {
 	assert.Equal(t, str, d.String())
 	assert.Equal(t, d, c.GetDoc(d.DocID))
 
-	assert.Equal(t, d.DocID, corpus.DocIDer(d).ID())
+	assert.Equal(t, d.DocID, corpus.DocIDer(d.DocID).ID())
 }
 
 func TestCorpusSearch(t *testing.T) {
@@ -110,14 +110,14 @@ func TestCorpusSearch(t *testing.T) {
 	the := c.Find("the")
 	if assert.Equal(t, 6, the.Len()) {
 		for _, idx := range []int{0, 2, 3, 5, 6, 7} {
-			assert.True(t, the.Contains(docs[idx].ID()))
+			assert.True(t, the.Contains(docs[idx].DocID.ID()))
 		}
 	}
 
 	shining := c.Find("shining")
 	if assert.Equal(t, 3, shining.Len()) {
 		for _, idx := range []int{0, 1, 6} {
-			assert.True(t, shining.Contains(docs[idx].ID()))
+			assert.True(t, shining.Contains(docs[idx].DocID.ID()))
 		}
 	}
 
