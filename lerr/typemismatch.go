@@ -36,3 +36,23 @@ func NewTypeMismatch(expected, actual interface{}) error {
 		Actual:   ta,
 	}
 }
+
+// TypeChecker returns a func that will check the type of actual against the
+// Expected type. If actual is not of type Expected an ErrTypeMismatch is
+// returned.
+func TypeChecker[Expected any]() func(actual any) error {
+	te := reflect.TypeOf([0]Expected{}).Elem()
+	return func(actual any) error {
+		ta, ok := actual.(reflect.Type)
+		if !ok {
+			ta = reflect.TypeOf(actual)
+		}
+		if te == ta {
+			return nil
+		}
+		return ErrTypeMismatch{
+			Expected: te,
+			Actual:   ta,
+		}
+	}
+}
