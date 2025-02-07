@@ -14,7 +14,7 @@ import (
 // in Singles and replaced by SingleToken in the encoded bits. Create one with an
 // Encoder and read it back with Iter.
 type Slice[T comparable] struct {
-	huffman.Tree[T]
+	*huffman.Tree[T]
 	// Encoded holds the Huffman encoded values.
 	Encoded *rye.Bits
 	// Singles holds the values that occur a single time, in order. They are
