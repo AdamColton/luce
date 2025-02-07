@@ -18,7 +18,18 @@ type Set[T comparable] struct {
 // in the set once.
 func New[T comparable](elements ...T) *Set[T] {
 	s := &Set[T]{
-		m: lmap.New[T, flag](nil),
+		m: lmap.Empty[T, flag](len(elements)),
+	}
+	s.Add(elements...)
+	return s
+}
+
+// Safe creates a threadsafe set containing the provided values. Each, All and
+// SortedEach hold a read lock while the func runs, so the func must not add to
+// or remove from the set.
+func Safe[T comparable](elements ...T) *Set[T] {
+	s := &Set[T]{
+		m: lmap.EmptySafe[T, flag](len(elements)),
 	}
 	s.Add(elements...)
 	return s
@@ -67,7 +78,7 @@ func (s *Set[T]) Len() int {
 // It panics if the Set is nil.
 func (s *Set[T]) Copy() *Set[T] {
 	out := &Set[T]{
-		m: lmap.Empty[T, flag](s.m.Len()),
+		m: s.m.WrapNew(),
 	}
 	out.AddAll(s)
 	return out
