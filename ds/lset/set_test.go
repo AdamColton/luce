@@ -9,42 +9,47 @@ import (
 )
 
 func TestSet(t *testing.T) {
-	lt := slice.LT[int]()
-	s := lset.New[int]()
-	s.Add(3, 1, 4, 1, 5, 9)
+	test := func(factory func(...int) *lset.Set[int]) {
+		lt := slice.LT[int]()
+		s := factory()
+		s.Add(3, 1, 4, 1, 5, 9)
 
-	assert.True(t, s.Contains(1))
-	assert.False(t, s.Contains(2))
+		assert.True(t, s.Contains(1))
+		assert.False(t, s.Contains(2))
 
-	s.Remove(1)
-	assert.False(t, s.Contains(1))
+		s.Remove(1)
+		assert.False(t, s.Contains(1))
 
-	expect := func(expected ...int) {
-		assert.Equal(t, expected, lt.Sort(s.Slice(nil)))
+		expect := func(expected ...int) {
+			assert.Equal(t, expected, lt.Sort(s.Slice(nil)))
+		}
+		expect(3, 4, 5, 9)
+
+		assert.Equal(t, s.Len(), 4)
+
+		s2 := factory(6, 7)
+		s.AddAll(s2)
+		expect(3, 4, 5, 6, 7, 9)
+
+		s2 = s.Copy()
+		assert.Equal(t, s, s2)
+
+		got := make([]int, 0, s.Len())
+		s.Each(func(i int, done *bool) {
+			got = append(got, i)
+		})
+		assert.Equal(t, []int{3, 4, 5, 6, 7, 9}, slice.LT[int]().Sort(got))
+
+		got = got[:0]
+		s.Each(func(i int, done *bool) {
+			got = append(got, i)
+			*done = len(got) >= 3
+		})
+		assert.Len(t, got, 3)
 	}
-	expect(3, 4, 5, 9)
 
-	assert.Equal(t, s.Len(), 4)
-
-	s2 := lset.New(6, 7)
-	s.AddAll(s2)
-	expect(3, 4, 5, 6, 7, 9)
-
-	s2 = s.Copy()
-	assert.Equal(t, s, s2)
-
-	got := make([]int, 0, s.Len())
-	s.Each(func(i int, done *bool) {
-		got = append(got, i)
-	})
-	assert.Equal(t, []int{3, 4, 5, 6, 7, 9}, slice.LT[int]().Sort(got))
-
-	got = got[:0]
-	s.Each(func(i int, done *bool) {
-		got = append(got, i)
-		*done = len(got) >= 3
-	})
-	assert.Len(t, got, 3)
+	test(lset.New[int])
+	test(lset.Safe[int])
 }
 
 func TestEachNoNilPanic(t *testing.T) {
