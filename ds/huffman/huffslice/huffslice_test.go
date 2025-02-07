@@ -29,3 +29,48 @@ func TestHuffSlice(t *testing.T) {
 		})
 	}
 }
+
+// func TestGob(t *testing.T) {
+// 	tc := []uint32{3, 1, 4, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9, 3, 2, 3, 8, 4, 6, 2, 6, 4,
+// 		3, 3, 8, 3, 2, 7, 9, 5, 0}
+// 	ue := NewEncoder(len(tc), uint32(1000))
+// 	ue.Slice = append(ue.Slice, tc...)
+// 	u := ue.Encode()
+
+// 	buf := bytes.NewBuffer(nil)
+// 	enc := gob.NewEncoder(buf)
+// 	enc.Encode(u)
+
+// 	u = &Slice[uint32]{}
+// 	buf = bytes.NewBuffer(buf.Bytes())
+// 	dec := gob.NewDecoder(buf)
+// 	err := dec.Decode(u)
+// 	assert.NoError(t, err)
+
+// 	got := slice.FromIter(u.Iter(), nil)
+// 	assert.Equal(t, slice.New(tc), got)
+// }
+
+func TestBale(t *testing.T) {
+	tc := []uint32{3, 1, 4, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9, 3, 2, 3, 8, 4, 6, 2, 6, 4,
+		3, 3, 8, 3, 2, 7, 9, 5, 0}
+	enc := NewEncoder(len(tc), uint32(1000))
+	enc.Slice = append(enc.Slice, tc...)
+	s := enc.Encode()
+
+	bale := s.Bale()
+	s2 := bale.Unbale()
+	assert.Equal(t, s, s2)
+
+	got := slice.FromIter(s2.Iter(), nil)
+	assert.Equal(t, slice.New(tc), got)
+
+	// u = &Slice[uint32]{}
+	// buf = bytes.NewBuffer(buf.Bytes())
+	// dec := gob.NewDecoder(buf)
+	// err := dec.Decode(u)
+	// assert.NoError(t, err)
+
+	// got := slice.FromIter(u.Iter(), nil)
+	// assert.Equal(t, slice.New(tc), got)
+}
