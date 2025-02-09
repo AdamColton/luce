@@ -2,6 +2,30 @@ package lmap
 
 import "github.com/adamcolton/luce/ds/slice"
 
+// ForAll is a helper function. The output will generally be fed into either
+// TransformVal or TransformKey.
+func ForAll[In, Out any](fn func(In) Out) func(In) (Out, bool) {
+	return func(in In) (Out, bool) {
+		return fn(in), true
+	}
+}
+
+// TransformVal is a helper that applies the given function to the value.
+func TransformVal[Key comparable, VIn any, VOut any](fn func(v VIn) (VOut, bool)) TransformFunc[Key, VIn, Key, VOut] {
+	return func(k Key, v VIn) (Key, VOut, bool) {
+		vo, ok := fn(v)
+		return k, vo, ok
+	}
+}
+
+// TransformKey is a helper that applies the given function to the key.
+func TransformKey[V any, KIn, KOut comparable](fn func(k KIn) (KOut, bool)) TransformFunc[KIn, V, KOut, V] {
+	return func(k KIn, v V) (KOut, V, bool) {
+		ko, ok := fn(k)
+		return ko, v, ok
+	}
+}
+
 // TransformFunc converts the key and value types. Only key/values pairs for
 // which include is true are used.
 type TransformFunc[KIn comparable, VIn any, KOut comparable, VOut any] func(k KIn, v VIn) (kOut KOut, vOut VOut, include bool)
