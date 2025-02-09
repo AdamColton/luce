@@ -2,10 +2,12 @@ package lmap_test
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/lerr"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -76,4 +78,33 @@ func TestSliceTransform(t *testing.T) {
 
 	got = lmap.SliceTransform(lmap.New(m), nil, tf).Sort(slice.LT[string]())
 	assert.Equal(t, expected, got)
+}
+
+func TestTransformHelpers(t *testing.T) {
+	m := map[int]string{
+		1:  "1",
+		2:  "2",
+		3:  "3",
+		4:  "4",
+		5:  "5",
+		6:  "6",
+		7:  "7",
+		8:  "8",
+		9:  "9",
+		10: "10",
+	}
+
+	k := lmap.TransformKey[string](lmap.ForAll(strconv.Itoa))
+	v := lmap.TransformVal[int](lmap.ForAll(lerr.MustFn(strconv.Atoi)))
+
+	km := k.Map(m)
+	assert.Equal(t, 10, km.Len())
+	km.Each(func(key, val string, done *bool) {
+		assert.Equal(t, key, val)
+	})
+	vm := v.Map(m)
+	assert.Equal(t, 10, km.Len())
+	vm.Each(func(key, val int, done *bool) {
+		assert.Equal(t, key, val)
+	})
 }
