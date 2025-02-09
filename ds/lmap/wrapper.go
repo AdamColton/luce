@@ -84,6 +84,15 @@ func (w Wrapper[K, V]) DeleteMany(keys []K) {
 	}
 }
 
+// Copy the underlying map
+func (w Wrapper[K, V]) Copy() map[K]V {
+	out := make(map[K]V, w.Len())
+	w.Each(func(key K, val V, done *bool) {
+		out[key] = val
+	})
+	return out
+}
+
 // SortKeys is a convenience function that returns the sorted keys. This is
 // equivalent to calling m.Keys(nil).Sort(slice.LT[K]()). It assumes slice.LT
 // for sorting and a nil buffer. If either of those assumtions are not true, use

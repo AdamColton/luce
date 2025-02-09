@@ -87,3 +87,22 @@ func TestWrapNew(t *testing.T) {
 	_, ok = s.WrapNew().Mapper.(*lmap.Safe[int, string])
 	assert.True(t, ok)
 }
+
+func TestCopy(t *testing.T) {
+	base := map[rune]string{
+		'a': "apple",
+		'b': "banana",
+		'c': "cantaloupe",
+	}
+	m := lmap.New(base)
+	cp := m.Copy()
+	notCp := m.Map()
+	assert.Equal(t, base, cp)
+	assert.Equal(t, base, notCp)
+
+	base['d'] = "date"
+	cp['e'] = "elderberry"
+	assert.Equal(t, base, notCp)
+	assert.Equal(t, "date", m.GetVal('d'))
+	assert.NotEqual(t, base, cp)
+}
