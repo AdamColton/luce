@@ -1,9 +1,11 @@
 package lmap_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/adamcolton/luce/ds/lmap"
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,5 +46,34 @@ func TestTransform(t *testing.T) {
 	})
 	expected["100"] = 100
 	got = lmap.Transform(lmap.New(m), buf, tf).Map()
+	assert.Equal(t, expected, got)
+}
+
+func TestSliceTransform(t *testing.T) {
+	tf := lmap.NewSliceTransformFunc(func(i int, s string) (string, bool) {
+		return fmt.Sprintf("%d %s", i, s), s != ""
+	})
+
+	m := map[int]string{
+		1:  "A",
+		2:  "B",
+		3:  "",
+		4:  "D",
+		5:  "E",
+		6:  "F",
+		7:  "",
+		8:  "H",
+		9:  "I",
+		10: "J",
+	}
+
+	got := tf.TransformMap(m).Sort(slice.LT[string]())
+	expected := slice.New([]string{"1 A", "10 J", "2 B", "4 D", "5 E", "6 F", "8 H", "9 I"})
+	assert.Equal(t, expected, got)
+
+	got = lmap.SliceTransformMap(m, tf).Sort(slice.LT[string]())
+	assert.Equal(t, expected, got)
+
+	got = lmap.SliceTransform(lmap.New(m), nil, tf).Sort(slice.LT[string]())
 	assert.Equal(t, expected, got)
 }
