@@ -42,6 +42,7 @@ func Get[T any, E EntPtr[T]](key Key) (out *Ref[T, E], found bool) {
 	//TODO: add typecheck here
 	if found && cr.ref != nil {
 		out, found = cr.ref.(*Ref[T, E])
+		DeferStrategy.DeferCacheClear(out)
 	}
 	return
 }
@@ -52,6 +53,7 @@ func NewRef[T any, E EntPtr[T]](ent E) *Ref[T, E] {
 		ent: entPtr[T, E]{p: ent},
 	}
 	r.addToAllRefs()
+	DeferStrategy.DeferCacheClear(r)
 	return r
 }
 
@@ -104,6 +106,7 @@ func Put[T any, E EntPtr[T]](ent E) *Ref[T, E] {
 		er.ent = entPtr[T, E]{p: ent}
 		er.addToAllRefs()
 	}
+	DeferStrategy.DeferCacheClear(er)
 
 	return er
 }
