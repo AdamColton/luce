@@ -1,5 +1,9 @@
 package entity
 
+type Refser interface {
+	EntRefs() []Key
+}
+
 type Entity interface {
 	EntKey() Key
 	EntVal(buf []byte) ([]byte, error)
