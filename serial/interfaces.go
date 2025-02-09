@@ -44,6 +44,10 @@ type TypeRegistrar interface {
 	RegisterType(zeroValue interface{}) error
 }
 
+func RegisterPtr[T any](tr TypeRegistrar) error {
+	return tr.RegisterType((*T)(nil))
+}
+
 // RegisterTypes is a helper to register multiple types in one call.
 func RegisterTypes(typeRegistrar TypeRegistrar, zeroValues ...interface{}) error {
 	for _, z := range zeroValues {
