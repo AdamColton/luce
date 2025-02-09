@@ -87,6 +87,7 @@ func (er *Ref[T, E]) save(now bool) error {
 		data := lerr.Must(e.EntVal(nil))
 		lerr.Panic(Store.Put(er.key, data))
 	} else {
+		DeferStrategy.DeferSave(er, er.saveNow)
 	}
 
 	return nil

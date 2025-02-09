@@ -83,6 +83,7 @@ func (er *Ref[T, E]) Get() (e E, ok bool) {
 			er.load()
 		}
 	}
+	DeferStrategy.DeferCacheClear(er)
 	return er.WeakGet()
 }
 
