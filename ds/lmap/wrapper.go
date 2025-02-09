@@ -103,6 +103,12 @@ func (w Wrapper[K, V]) Keys(buf slice.Slice[K]) slice.Slice[K] {
 	return out
 }
 
+// WrapNew returns a Wrapper from the underlying Mapper.New method. The
+// Mapper must not be nil.
+func (w Wrapper[K, V]) WrapNew() Wrapper[K, V] {
+	return Wrap(w.Mapper.New())
+}
+
 // DeleteMany deletes multiple keys.
 func (w Wrapper[K, V]) DeleteMany(keys []K) {
 	if w.Mapper == nil {

@@ -133,3 +133,13 @@ func TestSortKeys(t *testing.T) {
 	ks = w.SortKeys(cmp.Less[rune], nil)
 	assert.Equal(t, expected, ks)
 }
+
+func TestWrapNew(t *testing.T) {
+	m := lmap.Empty[int, string](0)
+	_, ok := m.WrapNew().Mapper.(lmap.Map[int, string])
+	assert.True(t, ok)
+
+	s := lmap.EmptySafe[int, string](0)
+	_, ok = s.WrapNew().Mapper.(*lmap.Safe[int, string])
+	assert.True(t, ok)
+}
