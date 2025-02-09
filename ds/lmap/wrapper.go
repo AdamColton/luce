@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/math/cmpr"
 	"github.com/adamcolton/luce/util/liter"
 )
 
@@ -113,7 +114,15 @@ func (w Wrapper[K, V]) DeleteMany(keys []K) {
 	}
 }
 
-type Less[T any] = slice.Less[T]
+// Copy the underlying map. The capacity can be set with cp.
+func (w Wrapper[K, V]) Copy(cp int) map[K]V {
+	cp = cmpr.Max(w.Len(), cp)
+	out := make(map[K]V, cp)
+	w.Each(func(key K, val V, done *bool) {
+		out[key] = val
+	})
+	return out
+}
 
 // SortKeys is a convenience function that returns the sorted keys. This is
 // equivalent to calling m.Keys(nil).Sort(slice.LT[K]()). It assumes slice.LT
@@ -122,6 +131,8 @@ type Less[T any] = slice.Less[T]
 func SortKeys[K cmp.Ordered, V any](m map[K]V) slice.Slice[K] {
 	return New(m).Keys(nil).Sort(cmp.Less[K])
 }
+
+type Less[T any] = slice.Less[T]
 
 // SortKeys creates a sorted slice of the keys.
 func (w Wrapper[K, V]) SortKeys(less Less[K], buf []K) slice.Slice[K] {
