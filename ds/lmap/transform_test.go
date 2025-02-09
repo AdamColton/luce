@@ -14,20 +14,6 @@ package lmap_test
 // 	got := lmap.TransformMap(m, tf).Map()
 // 	assert.Equal(t, expected, got)
 
-// 	expected := map[string]int{
-// 		"1":  1,
-// 		"2":  2,
-// 		"4":  4,
-// 		"5":  5,
-// 		"6":  6,
-// 		"8":  8,
-// 		"9":  9,
-// 		"10": 10,
-// 	}
-
-// 	got := lmap.TransformMap(m, tf).Map()
-// 	assert.Equal(t, expected, got)
-
 // 	buf := lmap.New(map[string]int{
 // 		"100": 100,
 // 	})
@@ -61,6 +47,48 @@ package lmap_test
 // 	got = lmap.SliceTransformMap(m, tf).Sort(slice.LT[string]())
 // 	assert.Equal(t, expected, got)
 
+// 	got := tf.TransformMap(m).Sort(slice.LT[string]())
+// 	expected := slice.New([]string{"1 A", "10 J", "2 B", "4 D", "5 E", "6 F", "8 H", "9 I"})
+// 	assert.Equal(t, expected, got)
+
+// 	got = lmap.SliceTransformMap(m, tf).Sort(slice.LT[string]())
+// 	assert.Equal(t, expected, got)
+
 // 	got = lmap.SliceTransform(lmap.New(m), nil, tf).Sort(slice.LT[string]())
 // 	assert.Equal(t, expected, got)
+// }
+
+// func forAll[In, Out any](fn func(In) Out) func(In) (Out, bool) {
+// 	return func(in In) (Out, bool) {
+// 		return fn(in), true
+// 	}
+// }
+
+// func TestTransformHelpers(t *testing.T) {
+// 	m := map[int]string{
+// 		1:  "1",
+// 		2:  "2",
+// 		3:  "3",
+// 		4:  "4",
+// 		5:  "5",
+// 		6:  "6",
+// 		7:  "7",
+// 		8:  "8",
+// 		9:  "9",
+// 		10: "10",
+// 	}
+
+// 	k := lmap.TransformKey[string](forAll(strconv.Itoa))
+// 	v := lmap.TransformVal[int](forAll(lerr.MustFn(strconv.Atoi)))
+
+// 	km := k.Map(m)
+// 	assert.Equal(t, 10, km.Len())
+// 	km.Each(func(key, val string, done *bool) {
+// 		assert.Equal(t, key, val)
+// 	})
+// 	vm := v.Map(m)
+// 	assert.Equal(t, 10, km.Len())
+// 	vm.Each(func(key, val int, done *bool) {
+// 		assert.Equal(t, key, val)
+// 	})
 // }
