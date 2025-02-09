@@ -66,6 +66,26 @@ func (er *Ref[T, E]) WeakGet() (e E, ok bool) {
 	return
 }
 
+func (er *Ref[T, E]) GetPtr() (e E) {
+	e, _ = er.Get()
+	return
+}
+
+func (er *Ref[T, E]) Get() (e E, ok bool) {
+	if er == nil {
+		return
+	}
+	if er.ent.p == nil {
+		ce, found := Get[T, E](er.key)
+		if found {
+			er.ent = ce.ent
+		} else {
+			er.load()
+		}
+	}
+	return er.WeakGet()
+}
+
 // Clear sets the underlying pointer to nil allowing the Entity to be
 // garbage collected. This should only be temorary for testing.
 func (er *Ref[T, E]) Clear(cacheRm bool) {
@@ -74,4 +94,9 @@ func (er *Ref[T, E]) Clear(cacheRm bool) {
 	if cacheRm {
 		cache.Delete(er.key.Hash64())
 	}
+}
+
+func (er *Ref[T, E]) GetEnt() (e Entity, ok bool) {
+	e, ok = er.Get()
+	return
 }
