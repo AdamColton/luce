@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/math/cmpr"
 	"golang.org/x/exp/constraints"
 )
 
@@ -86,6 +87,16 @@ func (w Wrapper[K, V]) DeleteMany(keys []K) {
 	for _, k := range keys {
 		w.Mapper.Delete(k)
 	}
+}
+
+// Copy the underlying map. The capacity can be set with cp.
+func (w Wrapper[K, V]) Copy(cp int) map[K]V {
+	cp = cmpr.Max(w.Len(), cp)
+	out := make(map[K]V, cp)
+	w.Each(func(key K, val V, done *bool) {
+		out[key] = val
+	})
+	return out
 }
 
 // SortKeys is a convenience function that returns the sorted keys. This is
