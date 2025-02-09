@@ -17,6 +17,14 @@ type IterHandler interface {
 	HandleIter(Iterator)
 }
 
+// IterHandlerFn is a function that fulfills IterHandler.
+type IterHandlerFn func(Iterator)
+
+// HandleIter fulfills IterHandler by calling fn.
+func (fn IterHandlerFn) HandleIter(iter Iterator) {
+	fn(iter)
+}
+
 // RunHandlerSource gets an Iterator from ii and calls HandleIter on ih for each
 // value in it. It returns the error that ended the iteration, if there was one.
 func RunHandlerSource(ii IteratorSource, ih IterHandler) error {
