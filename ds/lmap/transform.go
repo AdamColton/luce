@@ -1,5 +1,7 @@
 package lmap
 
+import "github.com/adamcolton/luce/ds/slice"
+
 // TransformFunc converts the key and value types. Only key/values pairs for
 // which include is true are used.
 type TransformFunc[KIn comparable, VIn any, KOut comparable, VOut any] func(k KIn, v VIn) (kOut KOut, vOut VOut, include bool)
@@ -44,5 +46,45 @@ func TransformMap[KIn comparable, VIn any, KOut comparable, VOut any](m map[KIn]
 // include is true. Note that buf is not cleared, so this can perform as and
 // append. If buf is nil a lmap.Map is created sized to m.
 func Transform[KIn comparable, VIn any, KOut comparable, VOut any](m Mapper[KIn, VIn], buf Mapper[KOut, VOut], fn TransformFunc[KIn, VIn, KOut, VOut]) Wrapper[KOut, VOut] {
+	return fn.Transform(m, buf)
+}
+
+// SliceTransformFunc is used to transform the values in a map to slice.
+type SliceTransformFunc[K comparable, V any, Out any] func(k K, v V) (out Out, include bool)
+
+// NewSliceTransformFunc is just a helper for converting a function to the the
+// SliceTransformFunc type.
+func NewSliceTransformFunc[K comparable, V any, Out any](fn func(k K, v V) (out Out, include bool)) SliceTransformFunc[K, V, Out] {
+	return fn
+}
+
+// Transform uses the SliceTransformFunc to transform the map to a slice.
+func (fn SliceTransformFunc[K, V, Out]) Transform(m Mapper[K, V], buf []Out) slice.Slice[Out] {
+	if buf == nil {
+		buf = make([]Out, 0, m.Len())
+	}
+	m.Each(func(key K, val V, done *bool) {
+		v, ok := fn(key, val)
+		if ok {
+			buf = append(buf, v)
+		}
+	})
+	return buf
+}
+
+// TransformMap uses the SliceTransformFunc to transform the map to a slice.
+func (fn SliceTransformFunc[K, V, Out]) TransformMap(m map[K]V) slice.Slice[Out] {
+	return fn.Transform(New(m), nil)
+}
+
+// SliceTransformMap takes a function for producing a single value from a given
+// key and value produces a map.
+func SliceTransformMap[K comparable, V any, Out any](m map[K]V, fn SliceTransformFunc[K, V, Out]) slice.Slice[Out] {
+	return fn.Transform(New(m), nil)
+}
+
+// SliceTransform takes a function for producing a single value from a given key
+// and value produces a map.
+func SliceTransform[K comparable, V any, Out any](m Mapper[K, V], buf []Out, fn SliceTransformFunc[K, V, Out]) slice.Slice[Out] {
 	return fn.Transform(m, buf)
 }
