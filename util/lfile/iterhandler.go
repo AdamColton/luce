@@ -16,6 +16,12 @@ type IterHandler interface {
 	HandleIter(Iterator)
 }
 
+type IterHandlerFn func(Iterator)
+
+func (fn IterHandlerFn) HandleIter(iter Iterator) {
+	fn(iter)
+}
+
 // RunHandler will create an Iter from Iterator and call the HandleIter method
 // on the IterHandler for each value in the iterator.
 func RunHandlerSource(ii IteratorSource, ih IterHandler) error {
