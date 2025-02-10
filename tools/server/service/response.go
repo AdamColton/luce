@@ -35,3 +35,11 @@ func (r *Response) SetHeader(key, val string) *Response {
 	r.Header.Set(key, val)
 	return r
 }
+
+// ContentType is the header name SetContentType sets.
+const ContentType = "Content-Type"
+
+// ContentType sets the response's Content-Type header.
+func (r *Response) ContentType(val string) *Response {
+	return r.SetHeader(ContentType, val)
+}
