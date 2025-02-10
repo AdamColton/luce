@@ -18,3 +18,14 @@ func TestResponseContentType(t *testing.T) {
 	resp.ContentType("text/plain")
 	assert.Equal(t, "text/plain", resp.Header.Get(service.ContentType))
 }
+
+func TestResponseWrite(t *testing.T) {
+	resp := &service.Response{}
+	n, err := resp.Write([]byte("hello "))
+	assert.NoError(t, err)
+	assert.Equal(t, 6, n)
+	n, err = resp.Write([]byte("world"))
+	assert.NoError(t, err)
+	assert.Equal(t, 5, n)
+	assert.Equal(t, []byte("hello world"), resp.Body)
+}
