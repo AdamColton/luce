@@ -96,3 +96,11 @@ func (r *Request) ResponseTemplate(name string, t luceio.TemplateExecutor, data 
 
 	return out
 }
+
+const HttpRedirect = 302
+
+func (r *Request) Redirect(url string) *Response {
+	resp := r.ResponseString(url)
+	resp.Status = HttpRedirect
+	return resp
+}
