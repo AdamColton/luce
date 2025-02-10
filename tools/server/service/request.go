@@ -1,6 +1,7 @@
 package service
 
 import (
+	"net/http"
 	"net/url"
 
 	"github.com/adamcolton/luce/util/lusers"
@@ -25,4 +26,13 @@ const RequestTypeID32 uint32 = 161709784
 // TypeID32 fulfill TypeIDer32. The ID was choosen at random.
 func (*Request) TypeID32() uint32 {
 	return RequestTypeID32
+}
+
+// Response to the Request.
+func (r *Request) Response(body []byte) *Response {
+	return &Response{
+		ID:     r.ID,
+		Body:   body,
+		Status: http.StatusOK,
+	}
 }

@@ -21,5 +21,6 @@ func Register(zeroValues ...type32.TypeIDer32) {
 func init() {
 	Register(
 		(*Request)(nil),
+		(*Response)(nil),
 	)
 }
