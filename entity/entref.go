@@ -32,6 +32,15 @@ func (er *Ref[T, E]) EntKey() Key {
 	return er.key
 }
 
+func (er *Ref[T, E]) GobEncode() ([]byte, error) {
+	return er.key, nil
+}
+
+func (er *Ref[T, E]) GobDecode(key []byte) error {
+	er.key = key
+	return nil
+}
+
 func (er *Ref[T, E]) isEntRef() {}
 
 func (er *Ref[T, E]) setIdx(idx int) {
