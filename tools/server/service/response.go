@@ -33,3 +33,9 @@ func (r *Response) SetHeader(key, val string) *Response {
 	r.Header.Set(key, val)
 	return r
 }
+
+const ContentType = "Content-Type"
+
+func (r *Response) ContentType(val string) *Response {
+	return r.SetHeader(ContentType, val)
+}
