@@ -1,0 +1,28 @@
+package service
+
+import (
+	"net/url"
+
+	"github.com/adamcolton/luce/util/lusers"
+)
+
+// Request represents a user request that the luce Server is relaying to the
+// service.
+type Request struct {
+	ID          uint32
+	RouteConfig string
+	Path        string
+	Method      string
+	PathVars    map[string]string
+	Query       map[string]string
+	Form        url.Values
+	Body        []byte
+	User        *lusers.User
+}
+
+const RequestTypeID32 uint32 = 161709784
+
+// TypeID32 fulfill TypeIDer32. The ID was choosen at random.
+func (*Request) TypeID32() uint32 {
+	return RequestTypeID32
+}
