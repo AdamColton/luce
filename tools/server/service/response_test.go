@@ -42,3 +42,40 @@ func TestResponseErr(t *testing.T) {
 	assert.Equal(t, []byte(body), resp.Body)
 	assert.Equal(t, req.ID, resp.ID)
 }
+
+type statusErrWrapper struct {
+	err    error
+	status int
+}
+
+func (ser statusErrWrapper) Error() string {
+	return ser.err.Error()
+}
+
+func (ser statusErrWrapper) Status() int {
+	return ser.status
+}
+
+func TestErrCheck(t *testing.T) {
+	req := &service.Request{
+		ID: 31415,
+	}
+	body := "test error"
+	var err error = lerr.Str(body)
+	resp := req.ErrCheck(err)
+	assert.Equal(t, []byte(body), resp.Body)
+	assert.Equal(t, req.ID, resp.ID)
+	assert.Equal(t, 500, resp.Status)
+
+	err = statusErrWrapper{
+		err:    err,
+		status: 501,
+	}
+	resp = req.ErrCheck(err)
+	assert.Equal(t, []byte(body), resp.Body)
+	assert.Equal(t, req.ID, resp.ID)
+	assert.Equal(t, 501, resp.Status)
+
+	resp = req.ErrCheck(nil)
+	assert.Nil(t, resp)
+}

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/adamcolton/luce/lhttp"
 	"github.com/adamcolton/luce/util/lusers"
 )
 
@@ -47,4 +48,15 @@ func (r *Request) ResponseErr(err error, status int) *Response {
 	resp := r.ResponseString(err.Error())
 	resp.Status = status
 	return resp
+}
+
+// ResponseErr sets the response body to the error and sets the status.
+func (r *Request) ErrCheck(err error) *Response {
+	s := lhttp.ErrStatus(err)
+	if s == 0 {
+		return nil
+	}
+	return r.
+		ResponseString(err.Error()).
+		SetStatus(s)
 }
