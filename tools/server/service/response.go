@@ -1,0 +1,20 @@
+package service
+
+import "net/http"
+
+// Response to a request. The ID is the same as the ID is taken from the
+// request.
+type Response struct {
+	ID     uint32
+	Body   []byte
+	Status int
+	Header http.Header
+}
+
+// ResponseTypeID32 is Response's type32 ID.
+const ResponseTypeID32 uint32 = 370114636
+
+// TypeID32 fulfill TypeIDer32. The ID was choosen at random.
+func (*Response) TypeID32() uint32 {
+	return ResponseTypeID32
+}
