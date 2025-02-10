@@ -17,3 +17,9 @@ const ResponseTypeID32 uint32 = 370114636
 func (*Response) TypeID32() uint32 {
 	return ResponseTypeID32
 }
+
+// Set Response HTTP Status Code
+func (r *Response) SetStatus(status int) *Response {
+	r.Status = status
+	return r
+}
