@@ -23,5 +23,6 @@ func init() {
 		(*Request)(nil),
 		(*Response)(nil),
 		SocketOpened{},
+		SocketClose{},
 	)
 }
