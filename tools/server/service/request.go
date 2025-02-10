@@ -104,3 +104,12 @@ func (r *Request) Redirect(url string) *Response {
 	resp.Status = HttpRedirect
 	return resp
 }
+
+func (r *Request) ServeFile(path string) (resp *Response) {
+	file, err := OS.ReadFile(path)
+	resp = r.ErrCheck(err)
+	if resp == nil {
+		resp = r.Response(file)
+	}
+	return
+}
