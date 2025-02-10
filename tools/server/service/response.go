@@ -1,6 +1,8 @@
 package service
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // Response to a request. The ID is the same as the ID is taken from the
 // request.
