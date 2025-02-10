@@ -129,3 +129,14 @@ func TestResponseTemplate(t *testing.T) {
 	expected = `Named.Name: Adam Named.Age: 40`
 	assert.Equal(t, []byte(expected), resp.Body)
 }
+
+func TestResponseRedirect(t *testing.T) {
+	req := &service.Request{
+		ID: 31415,
+	}
+	url := "test-url"
+	resp := req.Redirect(url)
+	assert.Equal(t, req.ID, resp.ID)
+	assert.Equal(t, service.HttpRedirect, resp.Status)
+	assert.Equal(t, []byte(url), resp.Body)
+}
