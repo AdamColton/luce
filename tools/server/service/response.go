@@ -26,3 +26,12 @@ func (r *Response) SetStatus(status int) *Response {
 	r.Status = status
 	return r
 }
+
+// SetHeader sets a header on the response.
+func (r *Response) SetHeader(key, val string) *Response {
+	if r.Header == nil {
+		r.Header = make(http.Header)
+	}
+	r.Header.Set(key, val)
+	return r
+}
