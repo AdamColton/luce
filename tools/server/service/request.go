@@ -5,6 +5,7 @@ import (
 	"net/url"
 
 	"github.com/adamcolton/luce/lhttp"
+	"github.com/adamcolton/luce/serial"
 	"github.com/adamcolton/luce/util/lusers"
 )
 
@@ -59,4 +60,14 @@ func (r *Request) ErrCheck(err error) *Response {
 	return r.
 		ResponseString(err.Error()).
 		SetStatus(s)
+}
+
+// SerializeResponse uses the provided Serializer and data to create a Response
+// to the Request.
+func (r *Request) SerializeResponse(s serial.Serializer, data any, buf []byte) (*Response, error) {
+	body, err := s.Serialize(data, buf)
+	if errResp := r.ErrCheck(err); errResp != nil {
+		return errResp, err
+	}
+	return r.Response(body), nil
 }

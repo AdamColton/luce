@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/serial/wrap/json"
 	"github.com/adamcolton/luce/tools/server/service"
 	"github.com/stretchr/testify/assert"
 )
@@ -78,4 +79,27 @@ func TestErrCheck(t *testing.T) {
 
 	resp = req.ErrCheck(nil)
 	assert.Nil(t, resp)
+}
+
+func TestSerializeResponse(t *testing.T) {
+	req := &service.Request{
+		ID: 31415,
+	}
+
+	person := struct {
+		Name string
+		Age  int
+	}{
+		Name: "Adam",
+		Age:  40,
+	}
+	s := json.Serializer{}
+
+	resp, err := req.SerializeResponse(s, person, nil)
+	assert.NoError(t, err)
+
+	expected, err := s.Serialize(person, nil)
+	assert.NoError(t, err)
+
+	assert.Equal(t, expected, resp.Body)
 }
