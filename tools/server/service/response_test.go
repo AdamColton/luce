@@ -13,10 +13,12 @@ func TestResponse(t *testing.T) {
 		ID: 31415,
 	}
 	body := []byte("test body")
-	resp := req.Response(body)
+	resp := req.Response(body).
+		SetStatus(205)
 	assert.Equal(t, body, resp.Body)
 	assert.Equal(t, req.ID, resp.ID)
 	assert.Equal(t, service.ResponseTypeID32, resp.TypeID32())
+	assert.Equal(t, 205, resp.Status)
 }
 
 func TestResponseString(t *testing.T) {
