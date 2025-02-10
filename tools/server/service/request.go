@@ -37,3 +37,8 @@ func (r *Request) Response(body []byte) *Response {
 		Status: http.StatusOK,
 	}
 }
+
+// ResponseString to the Request.
+func (r *Request) ResponseString(body string) *Response {
+	return r.Response([]byte(body))
+}
