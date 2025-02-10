@@ -97,3 +97,13 @@ func (r *Request) ResponseTemplate(name string, t luceio.TemplateExecutor, data 
 
 	return out
 }
+
+// HttpRedirect is the HTTP status Redirect responds with.
+const HttpRedirect = 302
+
+// Redirect responds with a redirect to url.
+func (r *Request) Redirect(url string) *Response {
+	resp := r.ResponseString(url)
+	resp.Status = HttpRedirect
+	return resp
+}
