@@ -12,3 +12,9 @@ func TestResponseSetHeader(t *testing.T) {
 	resp.SetHeader("X-Test", "1")
 	assert.Equal(t, "1", resp.Header.Get("X-Test"))
 }
+
+func TestResponseContentType(t *testing.T) {
+	resp := &service.Response{}
+	resp.ContentType("text/plain")
+	assert.Equal(t, "text/plain", resp.Header.Get(service.ContentType))
+}
