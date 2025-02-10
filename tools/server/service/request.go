@@ -1,11 +1,13 @@
 package service
 
 import (
+	"bytes"
 	"net/http"
 	"net/url"
 
 	"github.com/adamcolton/luce/lhttp"
 	"github.com/adamcolton/luce/serial"
+	"github.com/adamcolton/luce/util/luceio"
 	"github.com/adamcolton/luce/util/lusers"
 )
 
@@ -72,4 +74,25 @@ func (r *Request) SerializeResponse(s serial.Serializer, data any, buf []byte) (
 		return errResp, err
 	}
 	return r.Response(body), nil
+}
+
+// ResponseTemplate populates the body of the response using the provided
+// template and data. If there is a template error, that will populate the
+// body.
+func (r *Request) ResponseTemplate(name string, t luceio.TemplateExecutor, data any) *Response {
+	buf := bytes.NewBuffer(nil)
+	var err error
+
+	if name == "" {
+		err = t.Execute(buf, data)
+	} else {
+		err = t.ExecuteTemplate(buf, name, data)
+	}
+
+	out := r.ErrCheck(err)
+	if out == nil {
+		out = r.Response(buf.Bytes())
+	}
+
+	return out
 }

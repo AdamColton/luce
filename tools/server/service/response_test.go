@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"html/template"
 	"testing"
 
 	"github.com/adamcolton/luce/lerr"
@@ -81,15 +82,17 @@ func TestErrCheck(t *testing.T) {
 	assert.Nil(t, resp)
 }
 
+type Person struct {
+	Name string
+	Age  int
+}
+
 func TestSerializeResponse(t *testing.T) {
 	req := &service.Request{
 		ID: 31415,
 	}
 
-	person := struct {
-		Name string
-		Age  int
-	}{
+	person := Person{
 		Name: "Adam",
 		Age:  40,
 	}
@@ -102,4 +105,27 @@ func TestSerializeResponse(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, expected, resp.Body)
+}
+
+func TestResponseTemplate(t *testing.T) {
+	req := &service.Request{
+		ID: 31415,
+	}
+
+	person := Person{
+		Name: "Adam",
+		Age:  40,
+	}
+
+	tmpl := template.New("root")
+	_, err := tmpl.Parse(`Name: {{.Name}} Age: {{.Age}}{{define "named"}}Named.Name: {{.Name}} Named.Age: {{.Age}}{{end}}`)
+	assert.NoError(t, err)
+
+	resp := req.ResponseTemplate("", tmpl, person)
+	expected := `Name: Adam Age: 40`
+	assert.Equal(t, []byte(expected), resp.Body)
+
+	resp = req.ResponseTemplate("named", tmpl, person)
+	expected = `Named.Name: Adam Named.Age: 40`
+	assert.Equal(t, []byte(expected), resp.Body)
 }
