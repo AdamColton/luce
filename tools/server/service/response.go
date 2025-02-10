@@ -39,3 +39,13 @@ const ContentType = "Content-Type"
 func (r *Response) ContentType(val string) *Response {
 	return r.SetHeader(ContentType, val)
 }
+
+// Write p to the body. Fulfills io.Writer.
+func (r *Response) Write(p []byte) (n int, err error) {
+	if r.Body == nil {
+		r.Body = p
+	} else {
+		r.Body = append(r.Body, p...)
+	}
+	return len(p), nil
+}
