@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/adamcolton/luce/lhttp"
 	"github.com/adamcolton/luce/util/lusers"
 )
 
@@ -47,4 +48,17 @@ func (r *Request) ResponseErr(err error, status int) *Response {
 	resp := r.ResponseString(err.Error())
 	resp.Status = status
 	return resp
+}
+
+// ErrCheck returns an error Response if err is not nil, and a nil value if err
+// is nil. If err is not nil and fulfills StatusErr, that will be used to set
+// the status in the error Reponse.
+func (r *Request) ErrCheck(err error) *Response {
+	s := lhttp.ErrStatus(err)
+	if s == 0 {
+		return nil
+	}
+	return r.
+		ResponseString(err.Error()).
+		SetStatus(s)
 }
