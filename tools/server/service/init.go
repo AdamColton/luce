@@ -22,5 +22,6 @@ func init() {
 	Register(
 		(*Request)(nil),
 		(*Response)(nil),
+		SocketOpened{},
 	)
 }
