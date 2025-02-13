@@ -19,9 +19,10 @@ import (
 // This follows the builder pattern instead of using a function that would
 // take many arguments.
 type Config struct {
-	SessionStore  sessions.Store
-	Templates     *template.Template
-	UserStore     store.NestedFactory
+	SessionStore sessions.Store
+	Templates    *template.Template
+	UserStore    store.NestedFactory
+	TemplateNames
 	ServiceSocket string
 	core.Config
 }
@@ -34,6 +35,7 @@ type Server struct {
 	Users         *lusess.Store
 	Templates     *template.Template
 	ServiceSocket string
+	TemplateNames
 	// TODO: make this safe map
 	serviceRoutes lmap.Wrapper[string, *serviceRoute]
 	services      lmap.Wrapper[string, *serviceConn]
@@ -57,6 +59,7 @@ func (c *Config) New() (*Server, error) {
 		},
 		Templates:     c.Templates,
 		ServiceSocket: c.ServiceSocket,
+		TemplateNames: c.TemplateNames,
 		serviceRoutes: lmap.NewSafe[string, *serviceRoute](nil),
 		services:      lmap.NewSafe[string, *serviceConn](nil),
 		ErrHandler: func(err error) {
@@ -64,6 +67,7 @@ func (c *Config) New() (*Server, error) {
 		},
 	}
 
+	srv.setRoutes(c.Host)
 	return srv, nil
 }
 

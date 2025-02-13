@@ -16,6 +16,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// So I need to remember how this works because there's some magic involved.
+// But somehow this method ends up getting called.
 func (sc *serviceConn) ServiceHandler(srv *service.Service) {
 	sc.service = srv
 	sc.s.services.Set(srv.Name, sc)
