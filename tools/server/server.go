@@ -27,15 +27,11 @@ type Config struct {
 	core.Config
 }
 
-// TimeoutDuration bounds how long RunServiceSocket waits for a registered
-// service to respond to a proxied request before replying 408 Request
-// Timeout.
-var TimeoutDuration = time.Second * 5
-
 // Server runs a webserver.
 type Server struct {
 	coreserver    *core.Server
 	Users         *lusess.Store
+	Settings      Settings
 	Templates     *template.Template
 	ServiceSocket string
 	TemplateNames
@@ -43,6 +39,11 @@ type Server struct {
 	services      lmap.Wrapper[string, *serviceConn]
 	lerr.ErrHandler
 }
+
+// TimeoutDuration bounds how long RunServiceSocket waits for a registered
+// service to respond to a proxied request before replying 408 Request
+// Timeout.
+var TimeoutDuration = time.Second * 5
 
 // New Server using the values from the Config.
 func (c *Config) New() (*Server, error) {
@@ -68,6 +69,7 @@ func (c *Config) New() (*Server, error) {
 			fmt.Println(err)
 		},
 	}
+	srv.coreserver.CliHandler = srv.coreCommander
 
 	srv.setRoutes(c.Host)
 	return srv, nil
