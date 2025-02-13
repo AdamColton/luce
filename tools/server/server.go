@@ -3,7 +3,9 @@ package server
 import (
 	"fmt"
 	"html/template"
+	"time"
 
+	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/store"
 	"github.com/adamcolton/luce/tools/server/core"
@@ -17,17 +19,24 @@ import (
 // This follows the builder pattern instead of using a function that would
 // take many arguments.
 type Config struct {
-	SessionStore sessions.Store
-	Templates    *template.Template
-	UserStore    store.NestedFactory
+	SessionStore  sessions.Store
+	Templates     *template.Template
+	UserStore     store.NestedFactory
+	ServiceSocket string
 	core.Config
 }
 
+var TimeoutDuration = time.Second * 5
+
 // Server runs a webserver.
 type Server struct {
-	coreserver *core.Server
-	Users      *lusess.Store
-	Templates  *template.Template
+	coreserver    *core.Server
+	Users         *lusess.Store
+	Templates     *template.Template
+	ServiceSocket string
+	// TODO: make this safe map
+	serviceRoutes lmap.Wrapper[string, *serviceRoute]
+	services      lmap.Wrapper[string, *serviceConn]
 	lerr.ErrHandler
 }
 
@@ -46,7 +55,10 @@ func (c *Config) New() (*Server, error) {
 			Decoder:   schema.NewDecoder(),
 			FieldName: "Session",
 		},
-		Templates: c.Templates,
+		Templates:     c.Templates,
+		ServiceSocket: c.ServiceSocket,
+		serviceRoutes: lmap.NewSafe[string, *serviceRoute](nil),
+		services:      lmap.NewSafe[string, *serviceConn](nil),
 		ErrHandler: func(err error) {
 			fmt.Println(err)
 		},
@@ -62,5 +74,11 @@ func (s *Server) Close() error {
 // Run the server. If Socket or ServiceSocket is defined, they will be run as
 // well.
 func (s *Server) Run() {
+	if s.ServiceSocket != "" {
+		go func() {
+			lerr.Panic(s.RunServiceSocket())
+		}()
+	}
+
 	s.coreserver.Run()
 }
