@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"encoding/gob"
 	"io"
+
+	"github.com/adamcolton/luce/lerr"
 )
 
 // Register wraps gob.Register, so a caller that already imports this package does
@@ -56,4 +58,16 @@ type Deserializer struct{}
 // Deserialize decodes data into v using gob.
 func (Deserializer) Deserialize(v any, data []byte) error {
 	return Decoder(data).Decode(v)
+}
+
+// Enc encodes v to a []byte using gob. It will panic if there is an error.
+func Enc(v any) []byte {
+	enc, buf := Encoder(nil)
+	lerr.Panic(enc.Encode(v))
+	return buf.Bytes()
+}
+
+// Dec decodes data into v using gob. It will panic if there is an error.
+func Dec(data []byte, v any) {
+	lerr.Panic(Decoder(data).Decode(v))
 }

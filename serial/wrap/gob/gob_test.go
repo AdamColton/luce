@@ -47,3 +47,18 @@ func TestSerializerErrors(t *testing.T) {
 	var i int
 	assert.Error(t, gob.Deserializer{}.Deserialize(&i, []byte("not gob")))
 }
+
+func TestEncDec(t *testing.T) {
+	testutil.EncDec(t, gob.Enc, gob.Dec)
+}
+
+func TestEncDecPanic(t *testing.T) {
+	assert.Panics(t, func() {
+		gob.Enc(func() {})
+	})
+
+	var i int
+	assert.Panics(t, func() {
+		gob.Dec([]byte("not gob"), &i)
+	})
+}
