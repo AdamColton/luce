@@ -15,3 +15,7 @@ func TestAll(t *testing.T) {
 func TestInterfaces(t *testing.T) {
 	testutil.SerialInterfacesRoundTrip(t, gob.Serializer{}, gob.Deserializer{})
 }
+
+func TestEncDec(t *testing.T) {
+	testutil.EncDec(t, gob.Enc, gob.Dec)
+}
