@@ -1,8 +1,9 @@
 package lstr
 
 import (
-	"github.com/adamcolton/luce/ds/slice"
 	"strings"
+
+	"github.com/adamcolton/luce/ds/slice"
 )
 
 // Seperator is used for string operations with a seperator
@@ -81,4 +82,17 @@ func (s Seperator) Index(str string) int {
 // Split is a wrapper around strings.Split
 func (s Seperator) Split(str string) slice.Slice[string] {
 	return strings.Split(str, string(s))
+}
+
+const (
+	// NewLine seperator
+	NewLine Seperator = "\n"
+	// Space seperator
+	Space Seperator = " "
+)
+
+// Strings applies the Seperator to split str and returns an instance of
+// Strings.
+func (s Seperator) Strings(str string) *Strings {
+	return NewStrings(strings.Split(str, string(s)))
 }

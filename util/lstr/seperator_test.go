@@ -67,3 +67,9 @@ func TestSeperatorSplit(t *testing.T) {
 
 	assert.Equal(t, 0, s.JoinLen(nil))
 }
+
+func TestSeperatorStrings(t *testing.T) {
+	str := "this\nis\na\ntest"
+	strs := lstr.NewLine.Strings(str)
+	assert.Equal(t, strs.Strings, []string{"this", "is", "a", "test"})
+}
