@@ -45,3 +45,15 @@ func Glue(strs ...string) string {
 	}
 	return string(out)
 }
+
+// BytesToString can be useful when constructing Transformers such as for
+// lists, slices or maps. Otherwise, just use the native cast.
+func BytesToString(b []byte) string {
+	return string(b)
+}
+
+// StringToBytes can be useful when constructing Transformers such as for
+// lists, slices or maps. Otherwise, just use the native cast.
+func StringToBytes(str string) []byte {
+	return []byte(str)
+}
