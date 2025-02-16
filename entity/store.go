@@ -56,6 +56,7 @@ const (
 type Referer interface {
 	save(now bool) error
 	EntKey() Key
+	Clear(cacheRm bool)
 }
 
 const ErrNilPtr = lerr.Str("entity reference has nil pointer")
