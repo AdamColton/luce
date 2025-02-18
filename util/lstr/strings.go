@@ -181,3 +181,8 @@ func (s *Strings) Regex(re *regexp.Regexp, skipEmpty bool) []string {
 	}
 	return out
 }
+
+// RegMap is shorthand for rs.MatchIter(s).
+func (s *Strings) RegMap(rs RegexpSlice) (string, []string) {
+	return rs.MatchIter(s)
+}
