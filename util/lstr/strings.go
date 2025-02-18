@@ -165,3 +165,7 @@ func (s *Strings) Regex(re *regexp.Regexp, skipEmpty bool) []string {
 	}
 	return out
 }
+
+func (s *Strings) RegMap(rs RegexpSlice) (string, []string) {
+	return rs.MatchIter(s)
+}
