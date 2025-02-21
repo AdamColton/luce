@@ -232,3 +232,28 @@ func StdIO(rnr CLIRunner) {
 	ctx := NewContext(StdOut, rdr.Out, nil)
 	rnr.Cli(ctx, nil)
 }
+
+// CommanderFactory creates the Commander for a service, given the ExitClose
+// that the Runner will use.
+type CommanderFactory interface {
+	NewCommander(*ExitClose) Commander
+}
+
+// SetupRunner creates a Runner for srv, which makes the Commander. If srv is an
+// io.Closer, closing is closing srv. The onExit func is called when the Runner
+// exits, and startMsg is written when it starts.
+func SetupRunner(startMsg string, srv CommanderFactory, ctx Context, onExit func()) *Runner {
+	var onClose func()
+	if closer, ok := upgrade.To[io.Closer](srv); ok {
+		onClose = func() {
+			closer.Close()
+		}
+	}
+
+	ec := NewExitClose(onExit, onClose)
+	c := srv.NewCommander(ec)
+
+	r := NewRunner(c, ctx)
+	r.StartMessage = startMsg
+	return r
+}
