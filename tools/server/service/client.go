@@ -13,6 +13,26 @@ type Client struct {
 	*Conn
 }
 
+// Name   string
+// 	Host   string
+// 	Base   string
+
+// NewService connects to addr and sets up the Client's Service name, host
+// and base path.
+func NewService(name, host, base, addr string) (*Client, error) {
+	c, err := NewClient(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	c.Service.Name = name
+	c.Service.Base = base
+	if host != "" {
+		c.Service.Host = host + ".{domain:.*}"
+	}
+	return c, nil
+}
+
 // NewClient connects to the server's service socket at addr.
 func NewClient(addr string) (*Client, error) {
 	netConn, err := net.Dial("unix", addr)
