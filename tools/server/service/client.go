@@ -11,6 +11,24 @@ type Client struct {
 	*Conn
 }
 
+// Name   string
+// 	Host   string
+// 	Base   string
+
+func NewService(name, host, base, addr string) (*Client, error) {
+	c, err := NewClient(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	c.Service.Name = name
+	c.Service.Base = base
+	if host != "" {
+		c.Service.Host = host + ".{domain:.*}"
+	}
+	return c, nil
+}
+
 func NewClient(addr string) (*Client, error) {
 	netConn, err := net.Dial("unix", addr)
 	if err != nil {
