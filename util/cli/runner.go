@@ -168,3 +168,23 @@ func StdIO(rnr CLIRunner) {
 	ctx := NewContext(StdOut, rdr.Out, nil)
 	rnr.Cli(ctx, nil)
 }
+
+type CommanderFactory interface {
+	NewCommander(*ExitClose) Commander
+}
+
+func SetupRunner(startMsg string, srv CommanderFactory, ctx Context, onExit func()) *Runner {
+	var onClose func()
+	if closer, ok := srv.(io.Closer); ok {
+		onClose = func() {
+			closer.Close()
+		}
+	}
+
+	ec := NewExitClose(onExit, onClose)
+	c := srv.NewCommander(ec)
+
+	r := NewRunner(c, ctx)
+	r.StartMessage = startMsg
+	return r
+}
