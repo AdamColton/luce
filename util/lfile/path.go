@@ -1,5 +1,7 @@
 package lfile
 
+import "github.com/adamcolton/luce/util/lstr"
+
 // Name returns the last portion of a path as its name.
 //   - "/foo/bar.txt" => "/foo/","bar.txt"
 //   - "/foo/bar/" => "/foo/","bar"
@@ -21,4 +23,11 @@ func Name(path string) (string, string) {
 	}
 	start++
 	return path[:start], path[start : end+1]
+}
+
+// Slash makes sure path ends with a slash if trail is true and does not if it
+// is false. Only one slash is added or removed, and an empty path stays empty.
+// It is lstr.Seperator("/").Trailing.
+func Slash(path string, trail bool) string {
+	return lstr.Seperator("/").Trailing(path, trail)
 }
