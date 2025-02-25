@@ -96,6 +96,16 @@ func (f Filter[T]) SliceInPlace(vals []T) (passing, failing slice.Slice[T]) {
 	return vals[:start], vals[start:]
 }
 
+func (f Filter[T]) SliceBuf(vals, buf []T) slice.Slice[T] {
+	buf = buf[:0]
+	for _, v := range vals {
+		if f(v) {
+			buf = append(buf, v)
+		}
+	}
+	return buf
+}
+
 // Chan runs a go routine listening on ch and any int that passes the Int is
 // passed to the channel that is returned.
 func (f Filter[T]) Chan(pipe channel.Pipe[T]) channel.Pipe[T] {
