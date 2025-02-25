@@ -22,3 +22,15 @@ func Name(path string) (string, string) {
 	start++
 	return path[:start], path[start : end+1]
 }
+
+func Slash(path string, trail bool) string {
+	end := len(path) - 1
+	hasSlash := path[end] == '/'
+	if trail && !hasSlash {
+		return path + "/"
+	}
+	if !trail && hasSlash {
+		return path[:end]
+	}
+	return path
+}
