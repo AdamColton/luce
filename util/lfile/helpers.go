@@ -57,3 +57,36 @@ func ReadDirNames(r FSOpener, dirname string) ([]string, error) {
 	sort.Strings(names)
 	return names, nil
 }
+
+func FilesByExt(root string, cfs CoreFS, exts ...string) (slice.Slice[string], error) {
+	re := Exts(false, exts...)
+	return FilesByRegex(root, cfs, re)
+}
+
+func FilesByRegex(root string, cfs CoreFS, re string) (slice.Slice[string], error) {
+	m, err := RegexMatch(re, "", "")
+	if err != nil {
+		return nil, err
+	}
+	return RootGetFiles(root, cfs, m)
+}
+
+func RootGetFiles(root string, cfs CoreFS, m Match) (slice.Slice[string], error) {
+	mr := m.Root(root)
+	if cfs != nil {
+		mr.CoreFS = cfs
+	}
+	root = Slash(root, true)
+	files := GetFiles(root, nil)
+	err := RunHandlerSource(mr, files)
+	return files.Matches, err
+}
+
+func MatchExt(recursive bool, exts ...string) Match {
+	re := Exts(false, exts...)
+	dirRe := ""
+	if !recursive {
+		dirRe = ".*"
+	}
+	return lerr.Must(RegexMatch(re, "", dirRe))
+}
