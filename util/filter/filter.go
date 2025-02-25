@@ -99,6 +99,21 @@ func (f Filter[T]) SliceInPlace(vals []T) (passing, failing slice.Slice[T]) {
 	return vals[:start], vals[start:]
 }
 
+// Slice copies all the values from vals that pass the filter into buf, from
+// the start of buf, and returns that. Because this is done in order it's fine
+// to do vals = f.Slice(vals, vals). If buf does not have sufficient capacity a
+// new slice is allocated, and if buf is nil and nothing passes the result is
+// nil.
+func (f Filter[T]) Slice(vals, buf []T) slice.Slice[T] {
+	buf = buf[:0]
+	for _, v := range vals {
+		if f(v) {
+			buf = append(buf, v)
+		}
+	}
+	return buf
+}
+
 // Chan runs a go routine that reads from pipe.Rcv and sends every value that
 // passes the Filter to pipe.Snd, and closes pipe.Snd when pipe.Rcv is closed. If
 // either channel in pipe is nil it is created (see channel.NewPipe) and the
