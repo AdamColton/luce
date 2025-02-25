@@ -6,6 +6,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSlash(t *testing.T) {
+	tt := map[string][2]string{
+		// path: {with a trailing slash, without}
+		"":     {"", ""},
+		"a":    {"a/", "a"},
+		"a/":   {"a/", "a"},
+		"/":    {"/", ""},
+		"a//":  {"a//", "a/"},
+		"/a/b": {"/a/b/", "/a/b"},
+	}
+	for path, want := range tt {
+		t.Run("_"+path, func(t *testing.T) {
+			assert.Equal(t, want[0], Slash(path, true))
+			assert.Equal(t, want[1], Slash(path, false))
+		})
+	}
+}
+
 func TestName(t *testing.T) {
 	tt := map[string][2]string{
 		"/foo/bar.txt": {"/foo/", "bar.txt"},
