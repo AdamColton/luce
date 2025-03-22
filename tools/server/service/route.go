@@ -85,6 +85,11 @@ func (r *Route) WithForm() *Route {
 	return r
 }
 
+func (r *Route) PostForm() *Route {
+	r.Form = true
+	return r.AddMethod("POST")
+}
+
 // WithUser is a chainable helper. It sets the User field to true.
 func (r *Route) WithUser() *Route {
 	r.User = true
