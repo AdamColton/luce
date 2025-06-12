@@ -3,6 +3,7 @@ package numiter_test
 import (
 	"testing"
 
+	"github.com/adamcolton/geom/angle"
 	"github.com/adamcolton/luce/ds/list"
 	"github.com/adamcolton/luce/math/cmpr/cmprtest"
 	"github.com/adamcolton/luce/math/numiter"
@@ -37,6 +38,14 @@ func TestRange(t *testing.T) {
 		"Float(1/3)-|Regression": {
 			expected: []float64{1.0 / 12.0, 5.0 / 12.0, 9.0 / 12.0},
 			r:        numiter.NewRange(1.0/12.0, 1, 1.0/3.0),
+		},
+		"Steps": {
+			expected: []float64{0, 0.2, 0.4, 0.6, 0.8},
+			r:        numiter.Steps(0.0, 1.0, 5, false),
+		},
+		"StepsIncludeEnd": {
+			expected: []float64{0, 0.25, 0.5, 0.75, 1.0},
+			r:        numiter.Steps(0.0, 1.0, 5, true),
 		},
 	}
 
@@ -84,4 +93,15 @@ func TestIntGrid(t *testing.T) {
 		{0, 0, 3}, {1, 0, 3}, {0, 1, 3}, {1, 1, 3}, {0, 2, 3}, {1, 2, 3},
 	}
 	cmprtest.Equal(t, numiter.IntGrid(2, 3, 4), expected)
+}
+
+func TestSteps(t *testing.T) {
+	rng := numiter.Steps(0, angle.Rot(1), 100, false)
+	assert.Equal(t, 100, rng.Len())
+	i := rng.Iter()
+	c := 0
+	for _, done := i.Cur(); !done; _, done = i.Next() {
+		c++
+	}
+	assert.Equal(t, 100, c)
 }
