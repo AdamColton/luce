@@ -1,3 +1,5 @@
+github.com/adamcolton/geom v0.0.0-20220831181609-9c88ebf2c706 h1:obY3uxx9mn4buK6wgHsws62BfQCTaNBq5BUGT3DFta0=
+github.com/adamcolton/geom v0.0.0-20220831181609-9c88ebf2c706/go.mod h1:DBA1Liga+xZB9C4fJZNKJxJLSes0NHvcj6kPnLE+dyc=
 github.com/google/btree v1.1.3 h1:CVpQJjYgC4VbzxeGVHfvZrv1ctoYCAI8vbl07Fcxlyg=
 github.com/google/btree v1.1.3/go.mod h1:qOPhT0dTNdNzV6Z/lhRX0YXUafgPLFUh+gZMl761Gm4=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=

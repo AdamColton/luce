@@ -35,6 +35,26 @@ func NewRange[T Number](start, end, step T) *Range[T] {
 	}
 }
 
+// Steps creates a range between start and end with a defined number of steps.
+// If includeEnd is true, the last value will be end, If it is false, the
+// range will stop one step before end. The step is (end-start)/steps, which
+// truncates for an integer type. steps must be at least 1, or at least 2 when
+// includeEnd is true, otherwise the step is infinite or the division is by zero.
+func Steps[T Number](start, end T, steps uint, includeEnd bool) *Range[T] {
+	if includeEnd {
+		steps--
+	}
+	step := (end - start) / T(steps)
+	if includeEnd {
+		end += step
+	}
+	return &Range[T]{
+		Start: start,
+		End:   end,
+		Step:  step,
+	}
+}
+
 // Include creates a new range that reaches end: the last value is the first step
 // at or past end, so it is end when step divides the distance evenly and
 // beyond end when it does not (Include(0, 10, 3) ends at 12).
