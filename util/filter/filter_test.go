@@ -1,6 +1,7 @@
 package filter_test
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/adamcolton/luce/ds/channel"
@@ -131,4 +132,23 @@ func TestFirst(t *testing.T) {
 	got, idx = filter.GT(9).First(input...)
 	assert.Equal(t, -1, idx)
 	assert.Equal(t, 0, got)
+}
+
+func TestInRange(t *testing.T) {
+	tt := map[int]bool{
+		-1: false,
+		1:  false,
+		2:  false,
+		3:  true,
+		4:  true,
+		5:  false,
+		10: false,
+	}
+
+	f := filter.InRange(3, 5)
+	for n, tc := range tt {
+		t.Run(strconv.Itoa(n), func(t *testing.T) {
+			assert.Equal(t, tc, f(n))
+		})
+	}
 }
