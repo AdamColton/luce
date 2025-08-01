@@ -10,7 +10,7 @@ import (
 )
 
 func TestURL(t *testing.T) {
-	u := midware.URL("foo", "TestField")
+	u := midware.URL("foo", "TestField2")
 	m := midware.New(u)
 
 	restoreVars := midware.Vars
@@ -26,9 +26,9 @@ func TestURL(t *testing.T) {
 	r := httptest.NewRequest("Get", "/", nil)
 	w := httptest.NewRecorder()
 	fn := m.Handle(func(w http.ResponseWriter, r *http.Request, data *struct {
-		TestField string
+		TestField2 string
 	}) {
-		w.Write([]byte(data.TestField))
+		w.Write([]byte(data.TestField2))
 	})
 	fn(w, r)
 

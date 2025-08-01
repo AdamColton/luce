@@ -28,5 +28,5 @@ func URL(segment, fieldName string) linject.Field {
 	fn := func(w http.ResponseWriter, r *http.Request) (string, func([]reflect.Value), error) {
 		return Vars(r)[segment], nil, nil
 	}
-	return linject.NewFieldSetter(fn, "TestField", filter.AnyType(), isString)
+	return linject.NewFieldSetter(fn, fieldName, filter.AnyType(), isString)
 }
