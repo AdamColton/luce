@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/linject"
 )
 
@@ -21,6 +22,9 @@ type wrappedInitilizer struct {
 
 func (wi wrappedInitilizer) Initilize(fn linject.FuncType) linject.Injector {
 	di := wi.Initilizer.Initilize(fn.Target())
+	if di == nil {
+		return nil
+	}
 	return wrappedInjector{di}
 }
 
@@ -32,5 +36,8 @@ func (wdi wrappedInjector) Inject(args []reflect.Value) (callback func([]reflect
 	w := args[0].Interface().(http.ResponseWriter)
 	r := args[1].Interface().(*http.Request)
 	d := args[2]
+	if wdi.Injector == nil {
+		return nil, lerr.Str("nil injector")
+	}
 	return wdi.Injector.Inject(w, r, d)
 }
