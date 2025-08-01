@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/adamcolton/luce/ds/list"
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/math/ints"
 	"github.com/adamcolton/luce/util/liter"
@@ -28,6 +29,15 @@ func NewRange[T Number](start, end, step T) *Range[T] {
 		Start: start,
 		End:   end,
 		Step:  step,
+	}
+}
+
+// Index creates a Range instance from a slice.Index.
+func Index(idx slice.Index) *Range[int] {
+	return &Range[int]{
+		Start: idx[0],
+		End:   idx[1],
+		Step:  1,
 	}
 }
 

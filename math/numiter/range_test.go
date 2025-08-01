@@ -5,6 +5,7 @@ import (
 
 	"github.com/adamcolton/geom/angle"
 	"github.com/adamcolton/luce/ds/list"
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/math/cmpr/cmprtest"
 	"github.com/adamcolton/luce/math/numiter"
 	"github.com/stretchr/testify/assert"
@@ -104,4 +105,15 @@ func TestSteps(t *testing.T) {
 		c++
 	}
 	assert.Equal(t, 100, c)
+}
+
+func TestIndex(t *testing.T) {
+	i := slice.NewIndex(5, 3)
+	r := numiter.Index(i)
+	expected := &numiter.Range[int]{
+		Start: 5,
+		End:   8,
+		Step:  1,
+	}
+	assert.Equal(t, expected, r)
 }
