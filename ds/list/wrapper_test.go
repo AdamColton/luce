@@ -47,3 +47,8 @@ func TestAssertEqual(t *testing.T) {
 		})
 	}
 }
+
+func TestLast(t *testing.T) {
+	w := list.Slice([]int{3, 1, 4, 1, 5})
+	assert.Equal(t, 5, w.Last())
+}

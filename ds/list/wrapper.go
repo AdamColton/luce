@@ -66,6 +66,12 @@ func (w Wrapper[T]) Slice(buf []T) []T {
 	return slice.FromIter(w.Iter(), buf)
 }
 
+// Last is syntactic sugar to return the last value in the list by Len. The
+// result for an empty List is up to the List's AtIdx; a slice panics.
+func (w Wrapper[T]) Last() T {
+	return w.AtIdx(w.Len() - 1)
+}
+
 // AssertEqual fulfills cmpr.AssertEqualizer. It compares each value in the List
 // to the value at the same index in to, which can be a List[T] or a []T. It
 // returns an error if to is any other type, if the lengths differ or if any
