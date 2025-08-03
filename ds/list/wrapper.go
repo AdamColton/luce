@@ -64,6 +64,11 @@ func (w Wrapper[T]) Slice(buf []T) []T {
 	return slice.FromIter(w.Iter(), buf)
 }
 
+// Last is synactic sugar to return the last value in the list by Len.
+func (w Wrapper[T]) Last() T {
+	return w.AtIdx(w.Len() - 1)
+}
+
 func (w Wrapper[T]) AssertEqual(to interface{}, t cmpr.Tolerance) error {
 	toList, ok := to.(List[T])
 	if !ok {
