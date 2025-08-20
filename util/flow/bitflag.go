@@ -28,3 +28,23 @@ func (bf BitFlag[T]) Set(f *T) {
 func (bf BitFlag[T]) Clear(f *T) {
 	*f = (*f) & (^bf.Flag)
 }
+
+// OrBitFlag is a set of flags where any one of them is enough. A flag with
+// several bits needs all of its bits.
+type OrBitFlag[T constraints.Integer] []T
+
+// NewOrFlag creates an OrBitFlag from flags.
+func NewOrFlag[T constraints.Integer](flags ...T) OrBitFlag[T] {
+	return flags
+}
+
+// Check returns true if any of the flags is set on f. It is false for an empty
+// OrBitFlag, and always true if one of the flags is 0.
+func (obf OrBitFlag[T]) Check(f T) bool {
+	for _, bf := range obf {
+		if bf&f == bf {
+			return true
+		}
+	}
+	return false
+}
