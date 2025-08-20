@@ -26,3 +26,18 @@ func (bf BitFlag[T]) Set(f *T) {
 func (bf BitFlag[T]) Clear(f *T) {
 	*f = (*f) & (^bf.Flag)
 }
+
+type OrBitFlag[T constraints.Integer] []T
+
+func NewOrFlag[T constraints.Integer](flags ...T) OrBitFlag[T] {
+	return flags
+}
+
+func (obf OrBitFlag[T]) Check(f T) bool {
+	for _, bf := range obf {
+		if bf&f == bf {
+			return true
+		}
+	}
+	return false
+}
