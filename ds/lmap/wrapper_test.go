@@ -43,3 +43,20 @@ func TestPop(t *testing.T) {
 	m.MustPop('a')
 	t.Error("should not reach")
 }
+
+func TestAll(t *testing.T) {
+	m := map[string]int{
+		"1": 1,
+		"2": 2,
+		"3": 3,
+		"4": 4,
+		"5": 5,
+	}
+	lm := lmap.New(m)
+	got := map[string]int{}
+	lm.All(func(k string, v int) {
+		got[k] = v
+	})
+
+	assert.Equal(t, m, got)
+}

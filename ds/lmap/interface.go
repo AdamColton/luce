@@ -7,6 +7,12 @@ package lmap
 // up most of the instances of IterFuncs.
 type IterFunc[K comparable, V any] func(key K, val V, done *bool)
 
+func All[K comparable, V any](fn func(K, V)) IterFunc[K, V] {
+	return func(key K, val V, done *bool) {
+		fn(key, val)
+	}
+}
+
 // Mapper represents the operations a Map can perform.
 type Mapper[K comparable, V any] interface {
 	Get(K) (V, bool)
