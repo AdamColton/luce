@@ -11,6 +11,12 @@ type Eacher[K comparable, V any] interface {
 	Each(EachFunc[K, V])
 }
 
+func All[K comparable, V any](fn func(K, V)) EachFunc[K, V] {
+	return func(key K, val V, done *bool) {
+		fn(key, val)
+	}
+}
+
 // Mapper represents the operations a Map can perform.
 type Mapper[K comparable, V any] interface {
 	MapReader[K, V]

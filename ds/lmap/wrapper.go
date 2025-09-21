@@ -67,3 +67,7 @@ func (w Wrapper[K, V]) MustPop(key K) V {
 	}
 	return v
 }
+
+func (w Wrapper[K, V]) All(fn func(k K, v V)) {
+	w.Each(All(fn))
+}
