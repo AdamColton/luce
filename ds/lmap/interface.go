@@ -13,6 +13,14 @@ type Eacher[K comparable, V any] interface {
 	Each(EachFunc[K, V])
 }
 
+// All converts a func that takes a key and a value into an EachFunc. The
+// EachFunc never sets done, so it visits every pair.
+func All[K comparable, V any](fn func(K, V)) EachFunc[K, V] {
+	return func(key K, val V, done *bool) {
+		fn(key, val)
+	}
+}
+
 // [ ] Set(K, V) V
 //     have set return the value, better for chaining
 

@@ -67,3 +67,9 @@ func (w Wrapper[K, V]) MustPop(key K) V {
 	}
 	return v
 }
+
+// All calls fn for every key/value pair. It is Each for a function that does
+// not need done.
+func (w Wrapper[K, V]) All(fn func(k K, v V)) {
+	w.Each(All(fn))
+}
