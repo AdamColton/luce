@@ -93,7 +93,7 @@ func (ctx *MarshalContext[Ctx]) guardMarshal(v reflect.Value, fn valMarshaler[Ct
 
 func (ctx *MarshalContext[Ctx]) guardFieldMarshaler(name string, v reflect.Value, fm valFieldMarshaler[Ctx]) (string, WriteNode) {
 	ctx.initGuard(v)
-	name, wn := fm(name, v, ctx)
+	name, wn := fm.marshalField(name, v, ctx)
 	ctx.circularGuard.Remove(v)
 	return name, wn
 }
