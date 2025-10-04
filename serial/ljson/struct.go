@@ -94,7 +94,7 @@ func (tctx *TypesContext[Ctx]) attachFieldGenerators(t reflect.Type, ln int) str
 	return out
 }
 
-func (sm structMarshaler[Ctx]) valMarshal(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
+func (sm structMarshaler[Ctx]) marshalVal(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
 	out := make(StructWriter, 0, len(sm))
 	for _, fm := range sm {
 		var fw FieldWriter
@@ -121,7 +121,7 @@ func defaultFieldMarshaler[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) valF
 	var m valMarshaler[Ctx]
 	ctx.get(t, &m)
 	return func(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
-		return name, m(v, ctx)
+		return name, m.marshalVal(v, ctx)
 	}
 }
 
@@ -237,7 +237,7 @@ func (tctx *TypesContext[Ctx]) OmitEmpty(structKeys StructKeys, fieldNames ...st
 			if v.IsZero() {
 				return "", nil
 			}
-			return name, vm(v, ctx)
+			return name, vm.marshalVal(v, ctx)
 		}
 	}
 }
@@ -259,7 +259,7 @@ func GeneratedField[On, T, Ctx any](fg FieldGenerator[On, T, Ctx], ctx *TypesCon
 		}
 		on := v.Interface().(On)
 		name, t := fg(on, ctx)
-		return name, um(reflect.ValueOf(t), ctx)
+		return name, um.marshalVal(reflect.ValueOf(t), ctx)
 	}
 	fgKey := ot
 	if fgKey.Kind() == reflect.Pointer {

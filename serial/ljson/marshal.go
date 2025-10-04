@@ -30,16 +30,23 @@ func getMarshaler[T, Ctx any](ctx *TypesContext[Ctx]) (m Marshaler[T, Ctx], err 
 	ctx.get(reflector.Type[T](), &vm)
 	m = func(v T, ctx *MarshalContext[Ctx]) (wn WriteNode, err error) {
 		defer lerr.Recover(func(e error) { err = e })
-		return vm(reflect.ValueOf(v), ctx), nil
+		return vm.marshalVal(reflect.ValueOf(v), ctx), nil
 	}
 	return
 }
 
-type valMarshaler[Ctx any] func(reflect.Value, *MarshalContext[Ctx]) WriteNode
+type valMarshaler[Ctx any] interface {
+	marshalVal(reflect.Value, *MarshalContext[Ctx]) WriteNode
+}
 
 // Marshaler is a function for creating a WriteNode for a value. It can be added
 // for a type with AddMarshaler.
 type Marshaler[T, Ctx any] func(v T, ctx *MarshalContext[Ctx]) (WriteNode, error)
+
+func (m Marshaler[T, Ctx]) marshalVal(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
+	t := v.Interface().(T)
+	return lerr.Must(m(t, ctx))
+}
 
 // MarshalContext holds the context for marshaling values into WriteNodes,
 // including the underlying TypesContext. The Context field holds an arbitrary
@@ -85,7 +92,7 @@ func (ctx *MarshalContext[Ctx]) initGuard(v reflect.Value) {
 
 func (ctx *MarshalContext[Ctx]) guardMarshal(v reflect.Value, fn valMarshaler[Ctx]) WriteNode {
 	ctx.initGuard(v)
-	wn := fn(v, ctx)
+	wn := fn.marshalVal(v, ctx)
 	ctx.circularGuard.Remove(v)
 	return wn
 }
@@ -107,7 +114,7 @@ func (ctx *MarshalContext[Ctx]) Serialize(i any, buf []byte) (data []byte, err e
 	ctx.TypesContext.get(v.Type(), &um)
 
 	out := bytes.NewBuffer(buf)
-	_, err = um(v, ctx).WriteTo(out)
+	_, err = um.marshalVal(v, ctx).WriteTo(out)
 	data = out.Bytes()
 	return
 }
