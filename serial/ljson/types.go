@@ -28,46 +28,55 @@ func NewTypesContext[Ctx any]() *TypesContext[Ctx] {
 	}
 }
 
+type deferGet[Ctx any] struct {
+	self *valMarshaler[Ctx]
+	t    reflect.Type
+}
+
+func (dg deferGet[Ctx]) marshalVal(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
+	tctx := ctx.TypesContext
+	if tctx.circularGuard.Contains(dg.t) {
+		panic(lerr.Str("circular type reference"))
+	}
+	tctx.circularGuard.Add(dg.t)
+
+	m, found := tctx.marshalers[dg.t]
+	if !found {
+		m = tctx.buildValueMarshaler(dg.t)
+		tctx.marshalers[dg.t] = m
+	}
+	*(dg.self) = m
+	tctx.circularGuard.Remove(dg.t)
+
+	return (*dg.self).marshalVal(v, ctx)
+}
+
 func (tctx *TypesContext[Ctx]) get(t reflect.Type, self *valMarshaler[Ctx]) {
 	m, found := tctx.marshalers[t]
 	if found {
 		*self = m
 		return
 	}
-
-	*self = func(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
-		tctx := ctx.TypesContext
-		if tctx.circularGuard.Contains(t) {
-			panic(lerr.Str("circular type reference"))
-		}
-		tctx.circularGuard.Add(t)
-
-		m, found := tctx.marshalers[t]
-		if !found {
-			m = tctx.buildValueMarshaler(t)
-			tctx.marshalers[t] = m
-		}
-		*self = m
-		tctx.circularGuard.Remove(t)
-
-		return (*self)(v, ctx)
+	*self = deferGet[Ctx]{
+		self: self,
+		t:    t,
 	}
 }
 
 func (tctx *TypesContext[Ctx]) buildValueMarshaler(t reflect.Type) (m valMarshaler[Ctx]) {
 	switch t.Kind() {
 	case reflect.Pointer:
-		m = marshalPointer(t, tctx)
+		m = newMarshalPointer(t, tctx)
 	case reflect.String:
 		m = valMarshal(MarshalString[Ctx])
 	case reflect.Slice:
-		m = valSliceMarshal(t, tctx)
+		m = newMarshalSlice(t, tctx)
 	case reflect.Struct:
-		m = tctx.buildStructMarshal(t).valMarshal
+		m = tctx.buildStructMarshal(t)
 	case reflect.Map:
-		m = mapMarshal(t, tctx)
+		m = newMarshalMap(t, tctx)
 	case reflect.Interface:
-		m = marshalInterface
+		m = marshalInterface[Ctx]{}
 	case reflect.Int:
 		m = valMarshal(MarshalInt[int, Ctx])
 	case reflect.Int8:
@@ -101,18 +110,20 @@ func (tctx *TypesContext[Ctx]) buildValueMarshaler(t reflect.Type) (m valMarshal
 }
 
 func valMarshal[T, Ctx any](m Marshaler[T, Ctx]) valMarshaler[Ctx] {
-	return func(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
-		t := v.Interface().(T)
-		return lerr.Must(m(t, ctx))
-	}
+	return m
 }
 
-func marshalPointer[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) valMarshaler[Ctx] {
-	var em valMarshaler[Ctx]
-	ctx.get(t.Elem(), &em)
-	return func(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
-		return ctx.guardMarshal(v.Elem(), em)
-	}
+type marshalPointer[Ctx any] struct {
+	em valMarshaler[Ctx]
+}
+
+func newMarshalPointer[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) (out marshalPointer[Ctx]) {
+	ctx.get(t.Elem(), &(out.em))
+	return
+}
+
+func (mp marshalPointer[Ctx]) marshalVal(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
+	return ctx.guardMarshal(v.Elem(), mp.em)
 }
 
 type sliceWriter []WriteNode
@@ -129,61 +140,79 @@ func (s sliceWriter) writer(ctx *WriteContext) {
 	ctx.WriteRune(']')
 }
 
-func valSliceMarshal[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) valMarshaler[Ctx] {
-	et := t.Elem()
-	var em valMarshaler[Ctx]
-	ctx.get(et, &em)
-	return func(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
-		ln := v.Len()
-		out := make(sliceWriter, ln)
-		for i := 0; i < ln; i++ {
-			out[i] = ctx.guardMarshal(v.Index(i), em)
-		}
-		return out.writer
-	}
+type marshalSlice[Ctx any] struct {
+	em valMarshaler[Ctx]
 }
 
-func mapMarshal[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) (m valMarshaler[Ctx]) {
-	kt := t.Key()
-	var km valMarshaler[Ctx]
-	ctx.get(kt, &km)
+func newMarshalSlice[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) (out marshalSlice[Ctx]) {
+	et := t.Elem()
+	ctx.get(et, &(out.em))
+	return
+}
 
-	vt := t.Elem()
-	var vm valMarshaler[Ctx]
-	ctx.get(vt, &vm)
-
-	return func(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
-		out := make(StructWriter, 0, v.Len())
-		mi := v.MapRange()
-		for mi.Next() {
-			kwn := ctx.guardMarshal(mi.Key(), km)
-			vwn := ctx.guardMarshal(mi.Value(), vm)
-			out = append(out, FieldWriter{
-				Key:   kwn,
-				Value: vwn,
-			})
-		}
-
-		if ctx.Sort {
-			out.sort()
-		}
-		return out.WriteNode
+func (ms marshalSlice[Ctx]) marshalVal(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
+	ln := v.Len()
+	out := make(sliceWriter, ln)
+	for i := 0; i < ln; i++ {
+		out[i] = ctx.guardMarshal(v.Index(i), ms.em)
 	}
+	return out.writer
+}
+
+type marshalMap[Ctx any] struct {
+	km, vm valMarshaler[Ctx]
+}
+
+func newMarshalMap[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) (out marshalMap[Ctx]) {
+	kt := t.Key()
+	ctx.get(kt, &(out.km))
+	vt := t.Elem()
+	ctx.get(vt, &(out.vm))
+	return
+}
+
+func (mm marshalMap[Ctx]) marshalVal(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
+	out := make(StructWriter, 0, v.Len())
+	mi := v.MapRange()
+	for mi.Next() {
+		kwn := ctx.guardMarshal(mi.Key(), mm.km)
+		vwn := ctx.guardMarshal(mi.Value(), mm.vm)
+		out = append(out, FieldWriter{
+			Key:   kwn,
+			Value: vwn,
+		})
+	}
+
+	if ctx.Sort {
+		out.sort()
+	}
+	return out.WriteNode
+}
+
+type marshalConvert[From, To, Ctx any] struct {
+	vmTo valMarshaler[Ctx]
+	fn   func(from From, ctx *MarshalContext[Ctx]) To
+}
+
+func (mc marshalConvert[From, To, Ctx]) marshalVal(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
+	from := v.Interface().(From)
+	to := mc.fn(from, ctx)
+	return mc.vmTo.marshalVal(reflect.ValueOf(to), ctx)
 }
 
 // Convert a type before it is marshaled.
 func Convert[From, To, Ctx any](fn func(from From, ctx *MarshalContext[Ctx]) To, ctx *TypesContext[Ctx]) {
-	var vmTo valMarshaler[Ctx]
-	ctx.get(reflector.Type[To](), &vmTo)
-	vmFrom := func(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
-		from := v.Interface().(From)
-		to := fn(from, ctx)
-		return vmTo(reflect.ValueOf(to), ctx)
+	c := marshalConvert[From, To, Ctx]{
+		fn: fn,
 	}
-	ctx.marshalers[reflector.Type[From]()] = vmFrom
+	ctx.get(reflector.Type[To](), &(c.vmTo))
+
+	ctx.marshalers[reflector.Type[From]()] = c
 }
 
-func marshalInterface[Ctx any](v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
+type marshalInterface[Ctx any] struct{}
+
+func (marshalInterface[Ctx]) marshalVal(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
 	t := v.Type()
 	if t.Kind() == reflect.Interface {
 		v = v.Elem()
