@@ -25,14 +25,6 @@ type valFieldMarshaler[Ctx any] interface {
 	marshalField(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode)
 }
 
-type wrapValFieldMarshaler[Ctx any] struct {
-	fn func(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode)
-}
-
-func (fm wrapValFieldMarshaler[Ctx]) marshalField(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
-	return fm.fn(name, v, ctx)
-}
-
 type fieldMarshal[Ctx any] struct {
 	idx  int
 	name string
@@ -41,6 +33,28 @@ type fieldMarshal[Ctx any] struct {
 }
 
 type structMarshaler[Ctx any] []fieldMarshal[Ctx]
+
+type deferGetFieldMarshal[Ctx any] struct {
+	f    reflect.StructField
+	t    reflect.Type
+	self *valFieldMarshaler[Ctx]
+}
+
+func (dg deferGetFieldMarshal[Ctx]) marshalField(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
+	tctx := ctx.TypesContext
+	key := FieldKey{
+		Type: dg.t,
+		Name: dg.f.Name,
+	}
+	fm, found := tctx.fieldMarshalers[key]
+	if !found {
+		fm = defaultFieldMarshaler(dg.f.Type, tctx)
+		tctx.fieldMarshalers[key] = fm
+	}
+
+	*(dg.self) = fm
+	return (*dg.self).marshalField(name, v, ctx)
+}
 
 func (tctx *TypesContext[Ctx]) fieldMarshal(t reflect.Type, f reflect.StructField, self *valFieldMarshaler[Ctx]) {
 	key := FieldKey{
@@ -52,17 +66,10 @@ func (tctx *TypesContext[Ctx]) fieldMarshal(t reflect.Type, f reflect.StructFiel
 		*self = fm
 		return
 	}
-	*self = wrapValFieldMarshaler[Ctx]{
-		fn: func(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
-			fm, found := tctx.fieldMarshalers[key]
-			if !found {
-				fm = defaultFieldMarshaler(f.Type, tctx)
-				tctx.fieldMarshalers[key] = fm
-			}
-
-			*self = fm
-			return (*self).marshalField(name, v, ctx)
-		},
+	*self = deferGetFieldMarshal[Ctx]{
+		f:    f,
+		t:    t,
+		self: self,
 	}
 
 }
@@ -129,14 +136,17 @@ func (sm structMarshaler[Ctx]) marshalVal(v reflect.Value, ctx *MarshalContext[C
 	return out.WriteNode
 }
 
-func defaultFieldMarshaler[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) valFieldMarshaler[Ctx] {
-	var m valMarshaler[Ctx]
-	ctx.get(t, &m)
-	return wrapValFieldMarshaler[Ctx]{
-		fn: func(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
-			return name, m.marshalVal(v, ctx)
-		},
-	}
+type marshalValToField[Ctx any] struct {
+	valMarshaler[Ctx]
+}
+
+func (vtf marshalValToField[Ctx]) marshalField(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
+	return name, vtf.marshalVal(v, ctx)
+}
+
+func defaultFieldMarshaler[Ctx any](t reflect.Type, ctx *TypesContext[Ctx]) (out marshalValToField[Ctx]) {
+	ctx.get(t, &(out.valMarshaler))
+	return
 }
 
 // FieldWriter writes the key and value of a single field in a json object.
@@ -203,6 +213,16 @@ func GetFieldKeys[T any]() StructKeys {
 // document.
 type FieldMarshal[T, Ctx any] func(name string, v T, ctx *MarshalContext[Ctx]) (string, WriteNode, error)
 
+func (fm FieldMarshal[T, Ctx]) marshalField(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
+	t := v.Interface().(T)
+	if fm == nil {
+		return "", nil
+	}
+	name, wn, err := fm(name, t, ctx)
+	lerr.Panic(err)
+	return name, wn
+}
+
 // AddFieldMarshal for the given key.
 func AddFieldMarshal[T, Ctx any](key FieldKey, fm FieldMarshal[T, Ctx], ctx *TypesContext[Ctx]) {
 	sf, found := key.Field()
@@ -212,18 +232,7 @@ func AddFieldMarshal[T, Ctx any](key FieldKey, fm FieldMarshal[T, Ctx], ctx *Typ
 	if sf.Type != reflector.Type[T]() {
 		panic("types do not match")
 	}
-	ctx.fieldMarshalers[key] = wrapValFieldMarshaler[Ctx]{
-		fn: func(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
-			t := v.Interface().(T)
-			if fm == nil {
-				return "", nil
-			}
-			name, wn, err := fm(name, t, ctx)
-			lerr.Panic(err)
-			return name, wn
-		},
-	}
-
+	ctx.fieldMarshalers[key] = fm
 }
 
 // OmitFields from a struct.
@@ -236,6 +245,17 @@ func (tctx *TypesContext[Ctx]) OmitFields(structKeys StructKeys, fieldNames ...s
 	}
 }
 
+type omitEmpty[Ctx any] struct {
+	vm valMarshaler[Ctx]
+}
+
+func (oe omitEmpty[Ctx]) marshalField(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
+	if v.IsZero() {
+		return "", nil
+	}
+	return name, oe.vm.marshalVal(v, ctx)
+}
+
 // OmitEmpty for specified fields.
 func (tctx *TypesContext[Ctx]) OmitEmpty(structKeys StructKeys, fieldNames ...string) {
 	for _, name := range fieldNames {
@@ -245,46 +265,45 @@ func (tctx *TypesContext[Ctx]) OmitEmpty(structKeys StructKeys, fieldNames ...st
 			panic(fmt.Errorf("could not find %s on type %s", key.Name, key.Type.String()))
 		}
 
-		var vm valMarshaler[Ctx]
-		tctx.get(st.Type, &vm)
+		oe := omitEmpty[Ctx]{}
+		tctx.get(st.Type, &(oe.vm))
 
-		tctx.fieldMarshalers[key] = wrapValFieldMarshaler[Ctx]{
-			fn: func(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
-				if v.IsZero() {
-					return "", nil
-				}
-				return name, vm.marshalVal(v, ctx)
-			},
-		}
+		tctx.fieldMarshalers[key] = oe
 	}
 }
 
 // FieldGenerator adds a field to On when marshaling.
 type FieldGenerator[On, T, Ctx any] func(on On, ctx *MarshalContext[Ctx]) (string, T)
 
+type marshalFieldGenerator[On, T, Ctx any] struct {
+	um valMarshaler[Ctx]
+	fg FieldGenerator[On, T, Ctx]
+	ot reflect.Type
+}
+
+func (mfg marshalFieldGenerator[On, T, Ctx]) marshalField(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
+	if mfg.ot.Kind() == reflect.Pointer {
+		v = reflector.EnsurePointer(v)
+	}
+	on := v.Interface().(On)
+	name, t := mfg.fg(on, ctx)
+	return name, mfg.um.marshalVal(reflect.ValueOf(t), ctx)
+}
+
 // GeneratedField adds the FieldGenerator to the TypesContext.
 func GeneratedField[On, T, Ctx any](fg FieldGenerator[On, T, Ctx], ctx *TypesContext[Ctx]) {
-	t := reflector.Type[T]()
-	ot := reflector.Type[On]()
-
-	var um valMarshaler[Ctx]
-	ctx.get(t, &um)
-	out := wrapValFieldMarshaler[Ctx]{
-		fn: func(_ string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
-			if ot.Kind() == reflect.Pointer {
-				v = reflector.EnsurePointer(v)
-			}
-			on := v.Interface().(On)
-			name, t := fg(on, ctx)
-			return name, um.marshalVal(reflect.ValueOf(t), ctx)
-		},
+	mfg := marshalFieldGenerator[On, T, Ctx]{
+		fg: fg,
+		ot: reflector.Type[On](),
 	}
+	t := reflector.Type[T]()
+	ctx.get(t, &(mfg.um))
 
-	fgKey := ot
+	fgKey := mfg.ot
 	if fgKey.Kind() == reflect.Pointer {
 		fgKey = fgKey.Elem()
 	}
-	ctx.fieldGenerators[fgKey] = append(ctx.fieldGenerators[fgKey], out)
+	ctx.fieldGenerators[fgKey] = append(ctx.fieldGenerators[fgKey], mfg)
 }
 
 // ConditionalFunc uses a MarshalContext to generate a boolean.
@@ -295,7 +314,7 @@ type conditionalField[Ctx any] struct {
 	fm  valFieldMarshaler[Ctx]
 }
 
-func (cf conditionalField[Ctx]) valFieldMarshaler(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
+func (cf conditionalField[Ctx]) marshalField(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
 	if cf.cfn(ctx) {
 		return cf.fm.marshalField(name, v, ctx)
 	}
@@ -318,11 +337,9 @@ func (tctx *TypesContext[Ctx]) ConditionalFields(cfn ConditionalFunc[Ctx], field
 		if !found {
 			fm = defaultFieldMarshaler(sf.Type, tctx)
 		}
-		tctx.fieldMarshalers[k] = wrapValFieldMarshaler[Ctx]{
-			fn: conditionalField[Ctx]{
-				cfn: cfn,
-				fm:  fm,
-			}.valFieldMarshaler,
+		tctx.fieldMarshalers[k] = conditionalField[Ctx]{
+			cfn: cfn,
+			fm:  fm,
 		}
 	}
 }
