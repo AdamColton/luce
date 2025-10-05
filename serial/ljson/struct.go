@@ -273,12 +273,13 @@ func (tctx *TypesContext[Ctx]) OmitEmpty(structKeys StructKeys, fieldNames ...st
 }
 
 // FieldGenerator adds a field to On when marshaling.
-type FieldGenerator[On, T, Ctx any] func(on On, ctx *MarshalContext[Ctx]) (string, T)
+type FieldGenerator[On, T, Ctx any] func(on On, ctx *MarshalContext[Ctx]) T
 
 type marshalFieldGenerator[On, T, Ctx any] struct {
-	um valMarshaler[Ctx]
-	fg FieldGenerator[On, T, Ctx]
-	ot reflect.Type
+	um   valMarshaler[Ctx]
+	fg   FieldGenerator[On, T, Ctx]
+	ot   reflect.Type
+	name string
 }
 
 func (mfg marshalFieldGenerator[On, T, Ctx]) marshalField(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
@@ -286,15 +287,16 @@ func (mfg marshalFieldGenerator[On, T, Ctx]) marshalField(name string, v reflect
 		v = reflector.EnsurePointer(v)
 	}
 	on := v.Interface().(On)
-	name, t := mfg.fg(on, ctx)
-	return name, mfg.um.marshalVal(reflect.ValueOf(t), ctx)
+	t := mfg.fg(on, ctx)
+	return mfg.name, mfg.um.marshalVal(reflect.ValueOf(t), ctx)
 }
 
 // GeneratedField adds the FieldGenerator to the TypesContext.
-func GeneratedField[On, T, Ctx any](fg FieldGenerator[On, T, Ctx], ctx *TypesContext[Ctx]) {
+func GeneratedField[On, T, Ctx any](name string, fg FieldGenerator[On, T, Ctx], ctx *TypesContext[Ctx]) {
 	mfg := marshalFieldGenerator[On, T, Ctx]{
-		fg: fg,
-		ot: reflector.Type[On](),
+		fg:   fg,
+		ot:   reflector.Type[On](),
+		name: name,
 	}
 	t := reflector.Type[T]()
 	ctx.get(t, &(mfg.um))
