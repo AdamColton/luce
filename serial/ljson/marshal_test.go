@@ -1,10 +1,12 @@
 package ljson_test
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/serial/ljson"
+	"github.com/adamcolton/luce/util/reflector"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -189,7 +191,7 @@ func TestFieldOptions(t *testing.T) {
 		wn, err := ljson.Marshal(v, ctx)
 		return name, wn, err
 	}
-	ljson.AddFieldMarshal[int](keys["Age"], fm, ctx.TypesContext)
+	ljson.AddFieldMarshal(keys["Age"], fm, ctx.TypesContext)
 	ctx.TypesContext.OmitFields(keys, "ID")
 	str, err := ljson.Stringify(p, ctx)
 	assert.NoError(t, err)
@@ -361,4 +363,45 @@ func TestSerialize(t *testing.T) {
 	expected := `{1:{"ID":1,"Name":"Adam","Role":"admin"},2:{"ID":2,"Name":"Fletcher","Role":"user"}}`
 	assert.Equal(t, expected, string(got))
 	assert.Equal(t, expected, string(buf[:len(expected)]))
+}
+
+func TestExport(t *testing.T) {
+	type Person struct {
+		ID        uint32
+		Name      string
+		Role      string
+		AdminOnly []string
+	}
+
+	ctx := ljson.NewMarshalContext("admin")
+	ctx.Sort = true
+	fg := func(on Person, ctx *ljson.MarshalContext[string]) string {
+		return "Bar"
+	}
+	ljson.GeneratedField("Foo", fg, ctx.TypesContext)
+
+	keys := ljson.GetFieldKeys[Person]()
+	ctx.TypesContext.OmitFields(keys, "ID")
+
+	cfn := func(ctx *ljson.MarshalContext[string]) bool {
+		return ctx.Context == "admin"
+	}
+	ctx.TypesContext.ConditionalFields(cfn, keys, "AdminOnly")
+
+	got, err := ljson.Export[Person](ctx)
+	assert.NoError(t, err)
+
+	expected := map[string]reflect.Type{
+		"Name":      reflector.Type[string](),
+		"Role":      reflector.Type[string](),
+		"Foo":       reflector.Type[string](),
+		"AdminOnly": reflector.Type[[]string](),
+	}
+	assert.Equal(t, expected, got)
+
+	ctx = ctx.TypesContext.NewMarshalContext("user")
+	delete(expected, "AdminOnly")
+	got, err = ljson.Export[Person](ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, got)
 }

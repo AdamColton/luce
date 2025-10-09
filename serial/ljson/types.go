@@ -34,21 +34,24 @@ type deferGet[Ctx any] struct {
 }
 
 func (dg deferGet[Ctx]) marshalVal(v reflect.Value, ctx *MarshalContext[Ctx]) WriteNode {
-	tctx := ctx.TypesContext
-	if tctx.circularGuard.Contains(dg.t) {
-		panic(lerr.Str("circular type reference"))
-	}
-	tctx.circularGuard.Add(dg.t)
-
-	m, found := tctx.marshalers[dg.t]
-	if !found {
-		m = tctx.buildValueMarshaler(dg.t)
-		tctx.marshalers[dg.t] = m
-	}
-	*(dg.self) = m
-	tctx.circularGuard.Remove(dg.t)
+	dg.get(ctx.TypesContext)
 
 	return (*dg.self).marshalVal(v, ctx)
+}
+
+func (dg deferGet[Ctx]) get(ctx *TypesContext[Ctx]) {
+	if ctx.circularGuard.Contains(dg.t) {
+		panic(lerr.Str("circular type reference"))
+	}
+	ctx.circularGuard.Add(dg.t)
+
+	m, found := ctx.marshalers[dg.t]
+	if !found {
+		m = ctx.buildValueMarshaler(dg.t)
+		ctx.marshalers[dg.t] = m
+	}
+	*(dg.self) = m
+	ctx.circularGuard.Remove(dg.t)
 }
 
 func (tctx *TypesContext[Ctx]) get(t reflect.Type, self *valMarshaler[Ctx]) {
