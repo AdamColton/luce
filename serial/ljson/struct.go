@@ -31,17 +31,26 @@ func (fk FieldKey) nameType() (string, reflect.Type) {
 
 type valFieldMarshaler[Ctx any] interface {
 	marshalField(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode)
-	nameType() (string, reflect.Type)
+	nameType(ctx *MarshalContext[Ctx]) (string, reflect.Type)
 }
 
 type fieldMarshal[Ctx any] struct {
-	idx  int
-	name string
-	//t    reflect.Type
+	idx int
 	valFieldMarshaler[Ctx]
 }
 
 type structMarshaler[Ctx any] []fieldMarshal[Ctx]
+
+func (sm structMarshaler[Ctx]) export(ctx *MarshalContext[Ctx]) map[string]reflect.Type {
+	out := make(map[string]reflect.Type, len(sm))
+	for _, fm := range sm {
+		n, t := fm.nameType(ctx)
+		if n != "" {
+			out[n] = t
+		}
+	}
+	return out
+}
 
 type deferGetFieldMarshal[Ctx any] struct {
 	f    reflect.StructField
@@ -65,7 +74,7 @@ func (dg deferGetFieldMarshal[Ctx]) marshalField(name string, v reflect.Value, c
 	return (*dg.self).marshalField(name, v, ctx)
 }
 
-func (dg deferGetFieldMarshal[Ctx]) nameType() (string, reflect.Type) {
+func (dg deferGetFieldMarshal[Ctx]) nameType(ctx *MarshalContext[Ctx]) (string, reflect.Type) {
 	return dg.f.Name, dg.f.Type
 }
 
@@ -107,7 +116,6 @@ func (tctx *TypesContext[Ctx]) buildStructMarshalRecurse(t reflect.Type, i, n, l
 	sm := tctx.buildStructMarshalRecurse(t, i+1, n, ln+1)
 	sm[ln] = fieldMarshal[Ctx]{
 		idx:               i,
-		name:              f.Name,
 		valFieldMarshaler: fm,
 	}
 	return sm
@@ -133,7 +141,8 @@ func (sm structMarshaler[Ctx]) marshalVal(v reflect.Value, ctx *MarshalContext[C
 
 		var name string
 		if fm.idx >= 0 {
-			name, fw.Value = ctx.guardFieldMarshaler(fm.name, v.Field(fm.idx), fm.valFieldMarshaler)
+			name, _ = fm.valFieldMarshaler.nameType(ctx)
+			name, fw.Value = ctx.guardFieldMarshaler(name, v.Field(fm.idx), fm.valFieldMarshaler)
 		} else {
 			name, fw.Value = fm.valFieldMarshaler.marshalField("", v, ctx)
 		}
@@ -159,7 +168,7 @@ func (vtf marshalValToField[Ctx]) marshalField(name string, v reflect.Value, ctx
 	return name, vtf.marshalVal(v, ctx)
 }
 
-func (vtf marshalValToField[Ctx]) nameType() (string, reflect.Type) {
+func (vtf marshalValToField[Ctx]) nameType(ctx *MarshalContext[Ctx]) (string, reflect.Type) {
 	return vtf.name, vtf.t
 }
 
@@ -193,14 +202,19 @@ func (s StructWriter) sort() {
 // WriteNode method to actually fulfill WriteNode on StructWriter.
 func (s StructWriter) WriteNode(ctx *WriteContext) {
 	ctx.WriteRune('{')
+	indent := ctx.indent
+	ctx.indent += ctx.Tab
 	for i, fw := range s {
 		if i > 0 {
 			ctx.WriteRune(',')
 		}
+		ctx.WriteStrings(ctx.Nl, ctx.indent)
 		fw.Key(ctx)
 		ctx.WriteStrings(":")
 		fw.Value(ctx)
 	}
+	ctx.indent = indent
+	ctx.WriteStrings(ctx.Nl, ctx.indent)
 	ctx.WriteRune('}')
 }
 
@@ -247,6 +261,10 @@ type fieldMarshalWrapper[T, Ctx any] struct {
 	FieldKey
 }
 
+func (fmw fieldMarshalWrapper[T, Ctx]) nameType(ctx *MarshalContext[Ctx]) (string, reflect.Type) {
+	return fmw.FieldKey.nameType()
+}
+
 // AddFieldMarshal for the given key.
 func AddFieldMarshal[T, Ctx any](key FieldKey, fm FieldMarshal[T, Ctx], ctx *TypesContext[Ctx]) {
 	sf, found := key.Field()
@@ -275,6 +293,10 @@ func (tctx *TypesContext[Ctx]) OmitFields(structKeys StructKeys, fieldNames ...s
 type omitEmpty[Ctx any] struct {
 	vm valMarshaler[Ctx]
 	FieldKey
+}
+
+func (oe omitEmpty[Ctx]) nameType(ctx *MarshalContext[Ctx]) (string, reflect.Type) {
+	return oe.FieldKey.nameType()
 }
 
 func (oe omitEmpty[Ctx]) marshalField(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
@@ -321,7 +343,7 @@ func (mfg marshalFieldGenerator[On, T, Ctx]) marshalField(name string, v reflect
 	return mfg.name, mfg.um.marshalVal(reflect.ValueOf(t), ctx)
 }
 
-func (mfg marshalFieldGenerator[On, T, Ctx]) nameType() (string, reflect.Type) {
+func (mfg marshalFieldGenerator[On, T, Ctx]) nameType(ctx *MarshalContext[Ctx]) (string, reflect.Type) {
 	return mfg.name, reflector.Type[T]()
 }
 
@@ -353,6 +375,13 @@ type conditionalField[Ctx any] struct {
 func (cf conditionalField[Ctx]) marshalField(name string, v reflect.Value, ctx *MarshalContext[Ctx]) (string, WriteNode) {
 	if cf.cfn(ctx) {
 		return cf.fm.marshalField(name, v, ctx)
+	}
+	return "", nil
+}
+
+func (cf conditionalField[Ctx]) nameType(ctx *MarshalContext[Ctx]) (string, reflect.Type) {
+	if cf.cfn(ctx) {
+		return cf.FieldKey.nameType()
 	}
 	return "", nil
 }
