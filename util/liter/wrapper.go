@@ -22,8 +22,9 @@ func (w Wrapper[T]) Wrapped() any {
 	return w.Iter
 }
 
-// Seek calls fn sequentially for each value Iter returns until Done is true.
-// This does not reset the iterator.
+// Seek calls fn sequentially for each value Iter returns it returns true. This
+// does not reset the iterator. If fn never returns true, the returned Iter is
+// nil.
 func (w Wrapper[T]) Seek(fn func(t T) bool) Iter[T] {
 	t, done := w.Cur()
 	return seek(w.Iter, t, done, fn)
