@@ -16,8 +16,8 @@ import (
 type WriteContext struct {
 	EscapeHtml bool
 	*luceio.SumWriter
-	Nl, Tab string
-	indent  string
+	Prefix, Indent string
+	indent         string
 }
 
 // WriteNode writes a node of the json document
@@ -32,11 +32,18 @@ func (wn WriteNode) String() string {
 
 // WriteTo fulfills io.WriterTo and writes the WriteNode to the Writer.
 func (wn WriteNode) WriteTo(w io.Writer) (int64, error) {
-	wctx := &WriteContext{
-		SumWriter: luceio.NewSumWriter(w),
+	return wn.FormatWriteTo(w, "", "", false)
+}
+
+func (wn WriteNode) FormatWriteTo(w io.Writer, prefix, indent string, escapeHTML bool) (int64, error) {
+	wCtx := &WriteContext{
+		EscapeHtml: true,
+		SumWriter:  luceio.NewSumWriter(w),
+		Prefix:     "\n",
+		Indent:     "\t",
 	}
-	wn(wctx)
-	return wctx.Rets()
+	wn(wCtx)
+	return wCtx.Rets()
 }
 
 // Stringify marshals the value given and returns a json string.
@@ -48,12 +55,12 @@ func Stringify[T, Ctx any](v T, ctx *MarshalContext[Ctx]) (string, error) {
 	return wn.String(), nil
 }
 
-func Export[T, Ctx any](ctx *MarshalContext[Ctx]) (map[string]reflect.Type, error) {
+func Export[T, Ctx any](ctx *MarshalContext[Ctx]) (reflector.TypeMap, error) {
 	t := reflector.Type[T]()
 	return ExportType(t, ctx)
 }
 
-func ExportType[Ctx any](t reflect.Type, ctx *MarshalContext[Ctx]) (map[string]reflect.Type, error) {
+func ExportType[Ctx any](t reflect.Type, ctx *MarshalContext[Ctx]) (reflector.TypeMap, error) {
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
@@ -93,13 +100,13 @@ func (fe floodExport[Ctx]) floodProc(t reflect.Type, add func(reflect.Type)) {
 	}
 }
 
-func ExportAll[T, Ctx any](ctx *MarshalContext[Ctx]) (map[reflect.Type]map[string]reflect.Type, error) {
+func ExportAll[T, Ctx any](ctx *MarshalContext[Ctx]) (reflector.TypeCollection, error) {
 	s := lset.New(reflector.Type[T]())
 	fe := floodExport[Ctx]{ctx}
 	s.Flood(fe.floodProc)
 
 	structs, _ := filter.IsKind(reflect.Struct).SliceInPlace(s.Slice(nil))
-	out := make(map[reflect.Type]map[string]reflect.Type, len(structs))
+	out := make(reflector.TypeCollection, len(structs))
 	for _, t := range structs {
 		ex, err := ExportType(t, ctx)
 		if err != nil {

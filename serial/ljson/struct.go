@@ -41,8 +41,8 @@ type fieldMarshal[Ctx any] struct {
 
 type structMarshaler[Ctx any] []fieldMarshal[Ctx]
 
-func (sm structMarshaler[Ctx]) export(ctx *MarshalContext[Ctx]) map[string]reflect.Type {
-	out := make(map[string]reflect.Type, len(sm))
+func (sm structMarshaler[Ctx]) export(ctx *MarshalContext[Ctx]) reflector.TypeMap {
+	out := make(reflector.TypeMap, len(sm))
 	for _, fm := range sm {
 		n, t := fm.nameType(ctx)
 		if n != "" {
@@ -203,18 +203,20 @@ func (s StructWriter) sort() {
 func (s StructWriter) WriteNode(ctx *WriteContext) {
 	ctx.WriteRune('{')
 	indent := ctx.indent
-	ctx.indent += ctx.Tab
+	ctx.indent += ctx.Indent
 	for i, fw := range s {
 		if i > 0 {
 			ctx.WriteRune(',')
 		}
-		ctx.WriteStrings(ctx.Nl, ctx.indent)
+		ctx.WriteStrings(ctx.Prefix, ctx.indent)
 		fw.Key(ctx)
 		ctx.WriteStrings(":")
 		fw.Value(ctx)
 	}
 	ctx.indent = indent
-	ctx.WriteStrings(ctx.Nl, ctx.indent)
+	if len(s) > 0 {
+		ctx.WriteStrings(ctx.Prefix, ctx.indent)
+	}
 	ctx.WriteRune('}')
 }
 
