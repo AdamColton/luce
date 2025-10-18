@@ -17,8 +17,8 @@ import (
 type WriteContext struct {
 	EscapeHtml bool
 	*luceio.SumWriter
-	Nl, Tab string
-	indent  string
+	Prefix, Indent string
+	indent         string
 }
 
 // WriteNode writes a node of the json document. A WriteNode reports an error by
@@ -34,11 +34,23 @@ func (wn WriteNode) String() string {
 
 // WriteTo fulfills io.WriterTo and writes the WriteNode to the Writer.
 func (wn WriteNode) WriteTo(w io.Writer) (int64, error) {
-	wctx := &WriteContext{
-		SumWriter: luceio.NewSumWriter(w),
+	return wn.FormatWriteTo(w, "", "", false)
+}
+
+// FormatWriteTo writes the WriteNode to w as indented json. Every entry of an
+// object starts with prefix followed by indent once for each level of nesting,
+// so prefix is usually "\n". If both are empty the json is written compactly,
+// as WriteTo does. The escapeHTML argument is not used yet: <, > and & are always
+// escaped.
+func (wn WriteNode) FormatWriteTo(w io.Writer, prefix, indent string, escapeHTML bool) (int64, error) {
+	wCtx := &WriteContext{
+		EscapeHtml: true,
+		SumWriter:  luceio.NewSumWriter(w),
+		Prefix:     prefix,
+		Indent:     indent,
 	}
-	wn(wctx)
-	return wctx.Rets()
+	wn(wCtx)
+	return wCtx.Rets()
 }
 
 // Stringify marshals the value given and returns a json string. It returns the
@@ -54,14 +66,14 @@ func Stringify[T, Ctx any](v T, ctx *MarshalContext[Ctx]) (string, error) {
 // Export returns the names and types of the fields of the struct T that ctx
 // writes: omitted fields are left out, generated fields are added and
 // conditional fields are included only when their condition holds for ctx.
-func Export[T, Ctx any](ctx *MarshalContext[Ctx]) (map[string]reflect.Type, error) {
+func Export[T, Ctx any](ctx *MarshalContext[Ctx]) (reflector.TypeMap, error) {
 	t := reflector.Type[T]()
 	return ExportType(t, ctx)
 }
 
 // ExportType is Export for a reflect.Type, which can be a struct or a pointer to
 // a struct. It returns an error for any other type.
-func ExportType[Ctx any](t reflect.Type, ctx *MarshalContext[Ctx]) (map[string]reflect.Type, error) {
+func ExportType[Ctx any](t reflect.Type, ctx *MarshalContext[Ctx]) (reflector.TypeMap, error) {
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
@@ -104,13 +116,13 @@ func (fe floodExport[Ctx]) floodProc(t reflect.Type, add func(reflect.Type)) {
 // ExportAll returns the exported fields of T and of every struct that can be
 // reached from it through fields, pointers, slices, arrays and the keys and
 // values of maps.
-func ExportAll[T, Ctx any](ctx *MarshalContext[Ctx]) (map[reflect.Type]map[string]reflect.Type, error) {
+func ExportAll[T, Ctx any](ctx *MarshalContext[Ctx]) (reflector.TypeCollection, error) {
 	s := lset.New(reflector.Type[T]())
 	fe := floodExport[Ctx]{ctx}
 	s.Flood(fe.floodProc)
 
 	structs, _ := filter.IsKind(reflect.Struct).SliceInPlace(s.Slice(nil))
-	out := make(map[reflect.Type]map[string]reflect.Type, len(structs))
+	out := make(reflector.TypeCollection, len(structs))
 	for _, t := range structs {
 		out[t] = lerr.Must(ExportType(t, ctx))
 	}
