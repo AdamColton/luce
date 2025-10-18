@@ -27,6 +27,10 @@ func (fn TransformFunc[In, Out]) New(l List[In]) Wrapper[Out] {
 	}.Wrap()
 }
 
+func NewTransformAny[In, Out any](l List[In], fn func(In) Out) Wrapper[Out] {
+	return TransformAny(fn).New(l)
+}
+
 // NewTransformer creates Transformer using TransformFunc fn and list l.
 func NewTransformer[In, Out any](l List[In], fn TransformFunc[In, Out]) Wrapper[Out] {
 	return fn.New(l)
