@@ -391,12 +391,12 @@ func TestExport(t *testing.T) {
 	got, err := ljson.Export[Person](ctx)
 	assert.NoError(t, err)
 
-	expected := map[string]reflect.Type{
+	expected := reflector.TypeMap(map[string]reflect.Type{
 		"Name":      reflector.Type[string](),
 		"Role":      reflector.Type[string](),
 		"Foo":       reflector.Type[string](),
 		"AdminOnly": reflector.Type[[]string](),
-	}
+	})
 	assert.Equal(t, expected, got)
 
 	ctx = ctx.TypesContext.NewMarshalContext("user")
