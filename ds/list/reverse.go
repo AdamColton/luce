@@ -14,6 +14,11 @@ func NewReverse[T any](l List[T]) Wrapper[T] {
 	return Wrapper[T]{&Reverse[T]{l}}
 }
 
+// ReverseSlice creates a Wrapper for the reverse of the slice s.
+func ReverseSlice[T any](s []T) Wrapper[T] {
+	return NewReverse(slice.New(s))
+}
+
 // Note that Reverse should not have an Upgrade because it is modifying the
 // underlying List. For instance, if it was to be upgraded to Stringer and the
 // underlying List fulfilled Stringer, it would do so without reversing the
