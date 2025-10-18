@@ -127,6 +127,14 @@ func Grid[T Number](args ...T) list.Wrapper[[]T] {
 	return list.SliceCombinator(ints.Cross[int], rs...)
 }
 
+func NGrid[T Number](rng *Range[T], n uint) list.Wrapper[[]T] {
+	rs := make([]list.List[T], n)
+	for i := range n {
+		rs[i] = rng
+	}
+	return list.SliceCombinator(ints.Cross[int], rs...)
+}
+
 func IntGrid[T Number](args ...T) list.Wrapper[[]T] {
 	rs := make([]list.List[T], len(args))
 	for i, end := range args {
