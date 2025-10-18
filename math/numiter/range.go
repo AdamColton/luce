@@ -149,6 +149,17 @@ func Grid[T Number](args ...T) list.Wrapper[[]T] {
 	return list.SliceCombinator(ints.Cross[int], rs...)
 }
 
+// NGrid is Grid with the same Range used n times: it returns every combination
+// of n values of rng, as slices of length n. The first position changes
+// fastest.
+func NGrid[T Number](rng *Range[T], n uint) list.Wrapper[[]T] {
+	rs := make([]list.List[T], n)
+	for i := range n {
+		rs[i] = rng
+	}
+	return list.SliceCombinator(ints.Cross[int], rs...)
+}
+
 // IntGrid takes the end of each range, which is from 0 to end with a step of 1,
 // and returns every combination like Grid.
 func IntGrid[T Number](args ...T) list.Wrapper[[]T] {
