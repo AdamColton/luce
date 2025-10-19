@@ -7,7 +7,23 @@ import (
 
 // RunSocket starts the admin unix socket and blocks until it stops.
 func (s *Server) RunSocket() {
-	unixsocket.CLISocket(s.Socket, s).Run()
+	s.socket = unixsocket.CLISocket(s.Socket, s)
+	go func() {
+		s.socket.AwaitRunning()
+		close(s.socketRunning)
+	}()
+	s.socket.Run()
+}
+
+// AwaitSocket blocks until RunSocket's socket is accepting connections, and
+// reports whether an admin socket is configured at all.
+func (s *Server) AwaitSocket() bool {
+	if s.Socket != "" && s.CliHandler != nil {
+		<-s.socketRunning
+		s.socket.AwaitRunning()
+		return true
+	}
+	return false
 }
 
 // RunStdIO drives the admin CLI over the process's stdin/stdout.

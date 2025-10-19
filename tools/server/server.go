@@ -3,12 +3,15 @@ package server
 import (
 	"fmt"
 	"html/template"
+	"sync"
 	"time"
 
 	"github.com/adamcolton/luce/ds/lmap"
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/store"
 	"github.com/adamcolton/luce/tools/server/core"
+	"github.com/adamcolton/luce/util/lexec"
 	"github.com/adamcolton/luce/util/lusers"
 	"github.com/adamcolton/luce/util/lusers/lusess"
 	"github.com/gorilla/schema"
@@ -25,6 +28,8 @@ type Config struct {
 	TemplateNames
 	ServiceSocket string
 	core.Config
+	BashCommands []BashCmd
+	Commander    lexec.Commander
 }
 
 // Server runs a webserver.
@@ -37,7 +42,10 @@ type Server struct {
 	TemplateNames
 	serviceRoutes lmap.Wrapper[string, *serviceRoute]
 	services      lmap.Wrapper[string, *serviceConn]
+	servicesMux   sync.Mutex
 	lerr.ErrHandler
+	BashCommands slice.Slice[BashCmd]
+	Commander    lexec.Commander
 }
 
 // TimeoutDuration bounds how long RunServiceSocket waits for a registered
@@ -68,6 +76,8 @@ func (c *Config) New() (*Server, error) {
 		ErrHandler: func(err error) {
 			fmt.Println(err)
 		},
+		BashCommands: c.BashCommands,
+		Commander:    c.Commander,
 	}
 	srv.coreserver.CliHandler = srv.coreCommander
 
@@ -88,6 +98,17 @@ func (s *Server) Run() {
 			lerr.Panic(s.RunServiceSocket())
 		}()
 	}
+
+	go func() {
+		if s.coreserver.AwaitSocket() {
+			for i := range s.BashCommands {
+				bc := &(s.BashCommands[i])
+				if bc.Auto {
+					bc.Run(s.Commander.New())
+				}
+			}
+		}
+	}()
 
 	s.coreserver.Run()
 }

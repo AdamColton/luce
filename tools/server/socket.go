@@ -54,6 +54,9 @@ func (c *cliHandlers) Handlers(rnr *cli.Runner) []any {
 		func(r *SetPortResp) {
 			rnr.WriteString("Port changed, server restarted")
 		},
+		func(r *AdminLockUserCreationResp) {
+			rnr.WriteString("Admin lock setting updated")
+		},
 		func(r Settings) {
 			fmt.Fprintf(rnr, "  AdminLockUserCreation %t", r.AdminLockUserCreation)
 		},
@@ -62,6 +65,17 @@ func (c *cliHandlers) Handlers(rnr *cli.Runner) []any {
 		},
 		func(r ListServicesResp) {
 			fmt.Fprintf(rnr, "  %s", strings.Join(r, "\n  "))
+		},
+		func(r ListBashCommandsResp) {
+			for i, bc := range r {
+				fmt.Fprintf(rnr, "  %d: %s (running:%t auto:%t)\n", i, bc.Format, bc.running, bc.Auto)
+			}
+		},
+		func(r RunBashCommandResp) {
+			fmt.Fprintln(rnr, r.Msg)
+		},
+		func(r BashCommandOuputResp) {
+			fmt.Fprintln(rnr, r.Msg)
 		},
 		rnr.ExitRespHandler,
 		rnr.CloseRespHandler,
@@ -309,7 +323,90 @@ func (c *cliHandlers) ListServicesHandler(req *ListServicesReq) ListServicesResp
 
 func (*cliHandlers) ListServicesUsage() *handler.CommandDetails {
 	return &handler.CommandDetails{
-		Usage: "List Services",
+		Usage: "List services",
 		Alias: "ls",
+	}
+}
+
+// ListBashCommandsReq lists the server's configured bash commands.
+type ListBashCommandsReq struct {
+}
+
+// ListBashCommandsResp is the bash commands returned by ListBashCommandsReq.
+type ListBashCommandsResp []BashCmd
+
+func (c *cliHandlers) ListBashCommandsHandler(req *ListServicesReq) ListBashCommandsResp {
+	return ListBashCommandsResp(c.Server.BashCommands)
+}
+
+func (*cliHandlers) ListBashCommandsUsage() *handler.CommandDetails {
+	return &handler.CommandDetails{
+		Usage: "List bash commands",
+		Alias: "lbc",
+	}
+}
+
+// RunBashCommandReq runs the configured bash command at index ID.
+type RunBashCommandReq struct {
+	ID int
+}
+
+// RunBashCommandResp reports the result of RunBashCommandReq.
+type RunBashCommandResp struct {
+	Msg string
+}
+
+func (c *cliHandlers) RunBashCommandHandler(req *RunBashCommandReq) RunBashCommandResp {
+	if req.ID < 0 || req.ID >= len(c.Server.BashCommands) {
+		return RunBashCommandResp{
+			Msg: "ID out of range",
+		}
+	}
+	bc := &(c.Server.BashCommands[req.ID])
+	if bc.running {
+		return RunBashCommandResp{
+			Msg: "Already running",
+		}
+	}
+	bc.Run(c.Server.Commander.New())
+	return RunBashCommandResp{
+		Msg: "OK",
+	}
+}
+
+func (*cliHandlers) RunBashCommandUsage() *handler.CommandDetails {
+	return &handler.CommandDetails{
+		Usage: "Run bash command",
+		Alias: "rbc",
+	}
+}
+
+// BashCommandOuputReq requests the buffered output of the bash command at
+// index ID.
+type BashCommandOuputReq struct {
+	ID int
+}
+
+// BashCommandOuputResp is the output returned by BashCommandOuputReq.
+type BashCommandOuputResp struct {
+	Msg string
+}
+
+func (c *cliHandlers) BashCommandOuputHandler(req *BashCommandOuputReq) BashCommandOuputResp {
+	if req.ID < 0 || req.ID >= len(c.Server.BashCommands) {
+		return BashCommandOuputResp{
+			Msg: "err: ID out of range",
+		}
+	}
+	bc := &(c.Server.BashCommands[req.ID])
+	return BashCommandOuputResp{
+		Msg: bc.buf.String(),
+	}
+}
+
+func (*cliHandlers) BashCommandOuputUsage() *handler.CommandDetails {
+	return &handler.CommandDetails{
+		Usage: "Show output of bash command",
+		Alias: "sbc",
 	}
 }

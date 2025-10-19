@@ -118,3 +118,10 @@ func (s *syncBuffer) Reset() {
 	defer s.mu.Unlock()
 	s.buf.Reset()
 }
+
+
+func TestServerSocketNotConfigured(t *testing.T) {
+	cfg := core.Config{Addr: ":53458"}
+	srv := cfg.NewServer()
+	assert.False(t, srv.AwaitSocket())
+}
