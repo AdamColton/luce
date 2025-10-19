@@ -35,6 +35,8 @@ func (s *Server) setRoutes(host string) {
 	r.HandleFunc("/user/signout", m.Handle(s.getSignOut)).Methods("GET")
 	r.HandleFunc("/admin/users", m.Handle(s.adminUsers)).Methods("GET")
 	r.HandleFunc("/services", m.Handle(s.listServices)).Methods("GET")
+	r.HandleFunc("/admin/listBashCmds", m.Handle(s.listBashCmds)).Methods("GET")
+
 }
 
 func setCookie(w http.ResponseWriter, r *http.Request) {

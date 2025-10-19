@@ -5,6 +5,7 @@ import (
 
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/cli"
+	"github.com/adamcolton/luce/util/unixsocket"
 	"github.com/gorilla/mux"
 )
 
@@ -22,9 +23,10 @@ type Config struct {
 
 func (c Config) NewServer() *Server {
 	return &Server{
-		Config:     c,
-		Router:     mux.NewRouter(),
-		httpserver: &http.Server{},
+		Config:        c,
+		Router:        mux.NewRouter(),
+		httpserver:    &http.Server{},
+		socketRunning: make(chan bool),
 	}
 }
 
@@ -33,7 +35,9 @@ type Server struct {
 	Config
 	CliHandler func(*cli.ExitClose) cli.Commander
 
-	httpserver *http.Server
+	httpserver    *http.Server
+	socket        *unixsocket.Socket
+	socketRunning chan bool
 }
 
 func (s *Server) ListenAndServe() error {
