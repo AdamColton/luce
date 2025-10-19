@@ -3,6 +3,7 @@
 package main
 
 import (
+	"embed"
 	"encoding/base64"
 	"fmt"
 	"runtime"
@@ -11,6 +12,7 @@ import (
 	"github.com/adamcolton/luce/store/bstore"
 	"github.com/adamcolton/luce/tools/server"
 	"github.com/adamcolton/luce/tools/server/core"
+	"github.com/adamcolton/luce/util/lexec"
 	"github.com/adamcolton/luce/util/lfile"
 	"github.com/adamcolton/luce/util/ltmpl"
 	"github.com/quasoft/memstore"
@@ -36,6 +38,7 @@ type Config struct {
 	Host          string
 	SSL           core.SSL
 	Cli           bool
+	BashCommands  []server.BashCmd
 }
 
 // SessionBytes converts Session into a format that memstore.NewMemStore can
@@ -54,6 +57,11 @@ func (c Config) SessionBytes() [][]byte {
 
 	return out
 }
+
+var (
+	//go:embed templates
+	templatesFS embed.FS
+)
 
 func main() {
 	lerr.LogTo = func(err error) {
@@ -79,11 +87,15 @@ func main() {
 		ServiceSocket: conf.ServiceSocket,
 		UserStore:     bstore.Factory(conf.BoltFile, 0777, nil),
 		SessionStore:  ss,
+		BashCommands:  conf.BashCommands,
+		Commander:     lexec.New(),
 	}
 
+	m := lerr.Must(lfile.RegexMatch(conf.Templates.Re, "", "")).Root("templates")
+	m.CoreFS = templatesFS
 	srvConf.Templates, err = (&ltmpl.HTMLLoader{
 		Trimmer:        conf.Templates.PathLength,
-		IteratorSource: lerr.Must(lfile.RegexMatch(conf.Templates.Re, "", "")).Root("templates"),
+		IteratorSource: m,
 	}).Load(nil)
 	lerr.Log(err)
 

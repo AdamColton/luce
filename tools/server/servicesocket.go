@@ -39,8 +39,10 @@ func (s *Server) handleServiceSocket(netConn net.Conn) {
 		respMap: lmap.NewSafe[uint32, chan<- *service.Response](nil),
 		routes:  lset.New[string](),
 	}
+	s.servicesMux.Lock()
 	err = bus.DefaultRegistrar.Register(conn.Listener, sc)
 	s.Handle(err)
+	s.servicesMux.Unlock()
 
 	conn.Listener.Run()
 

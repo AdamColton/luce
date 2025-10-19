@@ -6,7 +6,21 @@ import (
 )
 
 func (s *Server) RunSocket() {
-	unixsocket.CLISocket(s.Socket, s).Run()
+	s.socket = unixsocket.CLISocket(s.Socket, s)
+	go func() {
+		s.socket.AwaitRunning()
+		close(s.socketRunning)
+	}()
+	s.socket.Run()
+}
+
+func (s *Server) AwaitSocket() bool {
+	if s.Socket != "" && s.CliHandler != nil {
+		<-s.socketRunning
+		s.socket.AwaitRunning()
+		return true
+	}
+	return false
 }
 
 func (s *Server) RunStdIO() {
