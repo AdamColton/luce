@@ -15,10 +15,14 @@ func All[K comparable, V any](fn func(K, V)) IterFunc[K, V] {
 
 // Mapper represents the operations a Map can perform.
 type Mapper[K comparable, V any] interface {
-	Get(K) (V, bool)
+	MapReader[K, V]
 	Set(K, V)
-	Len() int
 	Delete(K)
+}
+
+type MapReader[K comparable, V any] interface {
+	Get(K) (V, bool)
+	Len() int
 	Each(IterFunc[K, V])
 	Map() map[K]V
 	// New creates a new Mapper with the same underlying structure.
