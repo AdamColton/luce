@@ -162,3 +162,75 @@ func TestSocketNilHandler(t *testing.T) {
 	s.Close()
 	assert.NoError(t, <-errCh)
 }
+
+// AwaitRunning waits for the Socket to listen, whether it is called before or
+// after Run, so a client can connect without retrying.
+func TestSocketAwaitRunning(t *testing.T) {
+	addr := sockAddr(t)
+	s := unixsocket.New(addr, upper)
+
+	// called before Run, it waits
+	waiting := make(chan error, 1)
+	go func() { waiting <- s.AwaitRunning() }()
+	select {
+	case err := <-waiting:
+		t.Fatalf("returned before Run: %v", err)
+	case <-time.After(20 * time.Millisecond):
+	}
+
+	errCh := run(s)
+	assert.NoError(t, timeout.After(2000, func() {
+		assert.NoError(t, <-waiting)
+		// once it is listening, the first connection works
+		conn, err := net.Dial("unix", addr)
+		assert.NoError(t, err)
+		conn.Close()
+		assert.NoError(t, s.AwaitRunning())
+	}))
+
+	s.Close()
+	assert.NoError(t, <-errCh)
+
+	// after Close it waits for the next Run
+	go func() { waiting <- s.AwaitRunning() }()
+	select {
+	case err := <-waiting:
+		t.Fatalf("returned after Close: %v", err)
+	case <-time.After(20 * time.Millisecond):
+	}
+	errCh = run(s)
+	assert.NoError(t, timeout.After(2000, func() {
+		assert.NoError(t, <-waiting)
+	}))
+	s.Close()
+	assert.NoError(t, <-errCh)
+}
+
+// If Run can not start, AwaitRunning returns its error rather than waiting
+// for ever, until Run is called again.
+func TestSocketAwaitRunningFails(t *testing.T) {
+	addr := sockAddr(t)
+	s := unixsocket.New(addr, nil)
+
+	waiting := make(chan error, 1)
+	go func() { waiting <- s.AwaitRunning() }()
+	assert.Equal(t, unixsocket.ErrNilHandler, s.Run())
+	assert.Equal(t, unixsocket.ErrNilHandler, <-waiting)
+	assert.Equal(t, unixsocket.ErrNilHandler, s.AwaitRunning())
+
+	// the failure is forgotten when Run is called again
+	s.Handler = upper
+	errCh := run(s)
+	// until the new Run has started the old error is still there
+	assert.NoError(t, timeout.After(2000, func() {
+		for s.AwaitRunning() != nil {
+			time.Sleep(time.Millisecond)
+		}
+	}))
+
+	// running already is not a failure to start
+	assert.Equal(t, unixsocket.ErrRunning, s.Run())
+	assert.NoError(t, s.AwaitRunning())
+	s.Close()
+	assert.NoError(t, <-errCh)
+}

@@ -31,9 +31,10 @@ type Socket struct {
 	// the Socket's own when it stops. It is lfile.OSRepository by default.
 	FS FileSystem
 
-	mux  sync.Mutex
-	stop chan struct{} // closed by Close, nil unless running
-	done chan struct{} // closed when Run is finished with this run
+	mux     sync.Mutex
+	stop    chan struct{} // closed by Close, nil unless running
+	done    chan struct{} // closed when Run is finished with this run
+	startup *startup      // what AwaitRunning waits for, made when needed
 	// listen can be replaced to test Run.
 	listen func(network, addr string) (net.Listener, error)
 }
@@ -46,6 +47,40 @@ func New(addr string, handler func(conn net.Conn)) *Socket {
 		Handler: handler,
 		FS:      lfile.OSRepository{},
 	}
+}
+
+// startup is how a run tells AwaitRunning that it has started, or why it could
+// not. err is set before done is closed.
+type startup struct {
+	done chan struct{}
+	err  error
+}
+
+func (st *startup) finish(err error) {
+	st.err = err
+	close(st.done)
+}
+
+// current is the startup that AwaitRunning waits for. It is called with mux
+// held.
+func (s *Socket) current() *startup {
+	if s.startup == nil {
+		s.startup = &startup{done: make(chan struct{})}
+	}
+	return s.startup
+}
+
+// AwaitRunning waits until the Socket is listening, so that a client can
+// connect. It can be called before Run is called. It returns nil once the
+// Socket is running, and the error that Run returns if it could not start. A
+// Run that did not start leaves its error for AwaitRunning until Run is called
+// again. Once a Socket has been closed, AwaitRunning waits for the next Run.
+func (s *Socket) AwaitRunning() error {
+	s.mux.Lock()
+	st := s.current()
+	s.mux.Unlock()
+	<-st.done
+	return st.err
 }
 
 // Close stops a running Socket and waits for Run to finish: the listener is
@@ -68,12 +103,33 @@ func (s *Socket) Close() {
 	}
 }
 
-// start gets the Socket ready to accept connections. It is called with mux
-// held.
+// start gets the Socket ready to accept connections and tells AwaitRunning. It
+// is called with mux held.
 func (s *Socket) start() (net.Listener, error) {
 	if s.stop != nil {
 		return nil, ErrRunning
 	}
+	st := s.current()
+	select {
+	case <-st.done:
+		// a run that failed to start left this
+		s.startup = nil
+		st = s.current()
+	default:
+	}
+	l, err := s.open()
+	if err != nil {
+		st.finish(err)
+		return nil, err
+	}
+	s.stop = make(chan struct{})
+	s.done = make(chan struct{})
+	st.finish(nil)
+	return l, nil
+}
+
+// open removes the stale file and listens.
+func (s *Socket) open() (net.Listener, error) {
 	if s.Handler == nil {
 		return nil, ErrNilHandler
 	}
@@ -84,16 +140,11 @@ func (s *Socket) start() (net.Listener, error) {
 	if listen == nil {
 		listen = net.Listen
 	}
-	l, err := listen("unix", s.Addr)
-	if err != nil {
-		return nil, err
-	}
-	s.stop = make(chan struct{})
-	s.done = make(chan struct{})
-	return l, nil
+	return listen("unix", s.Addr)
 }
 
-// Run listens at Addr until Close is called. Before it listens it removes a file
+// Run listens at Addr until Close is called, and tells AwaitRunning when it is
+// listening. Before it listens it removes a file
 // that an earlier run left at Addr. It returns nil if it was stopped by Close,
 // ErrRunning if the Socket is already running, ErrNilHandler if there is no
 // Handler, and otherwise the error that stopped it. However it stops, the
@@ -122,6 +173,7 @@ func (s *Socket) Run() error {
 		fs.Remove(addr)
 		s.mux.Lock()
 		s.stop = nil
+		s.startup = nil
 		s.mux.Unlock()
 		close(done)
 	}()
