@@ -19,6 +19,7 @@ type Socket struct {
 	stop    chan bool
 	mux     sync.Mutex
 	FS      FileSystem
+	running chan bool
 }
 
 func New(addr string, handler func(conn net.Conn)) *Socket {
@@ -26,7 +27,12 @@ func New(addr string, handler func(conn net.Conn)) *Socket {
 		Addr:    addr,
 		Handler: handler,
 		FS:      lfile.OSRepository{},
+		running: make(chan bool),
 	}
+}
+
+func (s *Socket) AwaitRunning() {
+	<-s.running
 }
 
 // Close a running socket.
@@ -56,6 +62,7 @@ func (s *Socket) Run() error {
 	}
 
 	s.stop = make(chan bool)
+	close(s.running)
 	closed := false
 
 	go func() {
@@ -64,6 +71,7 @@ func (s *Socket) Run() error {
 		l.Close()
 		s.FS.Remove(addr)
 		close(s.stop)
+		s.running = make(chan bool)
 	}()
 
 	for {
