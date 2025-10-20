@@ -137,7 +137,7 @@ func TestSocketRunClose(t *testing.T) {
 		wg.Add(2)
 		for j := 0; j < 2; j++ {
 			go func() {
-				s.Close()
+				assert.NoError(t, s.Close())
 				wg.Done()
 			}()
 		}
@@ -146,8 +146,37 @@ func TestSocketRunClose(t *testing.T) {
 
 		_, err := os.Stat(addr)
 		assert.ErrorIs(t, err, fs.ErrNotExist)
-		s.Close()
+		assert.NoError(t, s.Close())
 	}
+}
+
+// failingRemover removes files from the OS, but once err is set it fails with
+// err instead.
+type failingRemover struct {
+	err error
+}
+
+func (r *failingRemover) Remove(name string) error {
+	if r.err != nil {
+		return r.err
+	}
+	return os.Remove(name)
+}
+
+// Close reports a socket file it could not remove. Because a Socket's Close
+// returns an error, it is an io.Closer.
+func TestSocketCloseError(t *testing.T) {
+	addr := sockAddr(t)
+	fs := &failingRemover{}
+	s := unixsocket.New(addr, upper)
+	s.FS = fs
+	errCh := run(s)
+	assert.NoError(t, s.AwaitRunning())
+
+	fs.err = lerr.Str("boom")
+	var closer io.Closer = s
+	assert.Equal(t, lerr.Str("boom"), closer.Close())
+	assert.NoError(t, <-errCh)
 }
 
 // Run needs a Handler, and says so rather than failing on the first connection.
@@ -159,6 +188,78 @@ func TestSocketNilHandler(t *testing.T) {
 	s.Handler = upper
 	errCh := run(s)
 	assert.Equal(t, "HELLO", ask(t, addr, "hello"))
+	s.Close()
+	assert.NoError(t, <-errCh)
+}
+
+// AwaitRunning waits for the Socket to listen, whether it is called before or
+// after Run, so a client can connect without retrying.
+func TestSocketAwaitRunning(t *testing.T) {
+	addr := sockAddr(t)
+	s := unixsocket.New(addr, upper)
+
+	// called before Run, it waits
+	waiting := make(chan error, 1)
+	go func() { waiting <- s.AwaitRunning() }()
+	select {
+	case err := <-waiting:
+		t.Fatalf("returned before Run: %v", err)
+	case <-time.After(20 * time.Millisecond):
+	}
+
+	errCh := run(s)
+	assert.NoError(t, timeout.After(2000, func() {
+		assert.NoError(t, <-waiting)
+		// once it is listening, the first connection works
+		conn, err := net.Dial("unix", addr)
+		assert.NoError(t, err)
+		conn.Close()
+		assert.NoError(t, s.AwaitRunning())
+	}))
+
+	s.Close()
+	assert.NoError(t, <-errCh)
+
+	// after Close it waits for the next Run
+	go func() { waiting <- s.AwaitRunning() }()
+	select {
+	case err := <-waiting:
+		t.Fatalf("returned after Close: %v", err)
+	case <-time.After(20 * time.Millisecond):
+	}
+	errCh = run(s)
+	assert.NoError(t, timeout.After(2000, func() {
+		assert.NoError(t, <-waiting)
+	}))
+	s.Close()
+	assert.NoError(t, <-errCh)
+}
+
+// If Run can not start, AwaitRunning returns its error rather than waiting
+// for ever, until Run is called again.
+func TestSocketAwaitRunningFails(t *testing.T) {
+	addr := sockAddr(t)
+	s := unixsocket.New(addr, nil)
+
+	waiting := make(chan error, 1)
+	go func() { waiting <- s.AwaitRunning() }()
+	assert.Equal(t, unixsocket.ErrNilHandler, s.Run())
+	assert.Equal(t, unixsocket.ErrNilHandler, <-waiting)
+	assert.Equal(t, unixsocket.ErrNilHandler, s.AwaitRunning())
+
+	// the failure is forgotten when Run is called again
+	s.Handler = upper
+	errCh := run(s)
+	// until the new Run has started the old error is still there
+	assert.NoError(t, timeout.After(2000, func() {
+		for s.AwaitRunning() != nil {
+			time.Sleep(time.Millisecond)
+		}
+	}))
+
+	// running already is not a failure to start
+	assert.Equal(t, unixsocket.ErrRunning, s.Run())
+	assert.NoError(t, s.AwaitRunning())
 	s.Close()
 	assert.NoError(t, <-errCh)
 }
