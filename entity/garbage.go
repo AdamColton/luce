@@ -7,6 +7,7 @@ import (
 	"github.com/adamcolton/luce/ds/channel"
 	"github.com/adamcolton/luce/ds/lset"
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/util/reflector"
 )
 
 type Refs []Key
@@ -117,7 +118,7 @@ func (gc *gcStruct) step() {
 		ks = string(k)
 
 		if req.action == fromScan {
-			next := Store.Next(k)
+			next := entstore.Next(k)
 			if next != nil {
 				ns := string(next)
 				if _, found := gc.state[ns]; !found {
@@ -134,12 +135,15 @@ func (gc *gcStruct) step() {
 	}
 
 	gc.state[ks] = gc.pass
-	rec := Store.Get(k)
+	rec := entstore.Get(k)
 	if !rec.Found {
 		return
 	}
 
-	i, err := deserializer.DeserializeType(rec.Value)
+	t, data, err := typer.GetType(rec.Value)
+	lerr.Panic(lerr.Wrap(err, "get type failed during ent gc"))
+	i := reflector.Make(t).Interface()
+	err = deserializer.Deserialize(i, data)
 	lerr.Panic(lerr.Wrap(err, "deserialization failed during ent gc"))
 
 	r, ok := i.(Refser)

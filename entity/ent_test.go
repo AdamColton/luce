@@ -63,10 +63,13 @@ func TestEntity(t *testing.T) {
 
 func TestGarbage(t *testing.T) {
 	entity.ClearCache()
-	entity.Store = lerr.Must(ephemeral.Factory(bytebtree.New, 1).FlatStore([]byte("testing")))
 	m32 := type32.NewTypeMap()
-	entity.SetSerializer(m32.Serializer(gob.Serializer{}))
-	entity.SetDeserializer(m32.Deserializer(gob.Deserializer{}))
+	entity.Setup{
+		Store:        lerr.Must(ephemeral.Factory(bytebtree.New, 1).FlatStore([]byte("testing"))),
+		Typer:        m32,
+		Serializer:   gob.Serializer{},
+		Deserializer: gob.Deserializer{},
+	}.Init()
 	err := serial.RegisterPtr[enttest.Foo](m32)
 	assert.NoError(t, err)
 
@@ -98,4 +101,33 @@ func TestGarbage(t *testing.T) {
 
 	g = entity.Garbage()
 	assert.Equal(t, g[0], missingRoot.EntKey())
+}
+
+func TestInterface(t *testing.T) {
+	enttest.Setup()
+	entity.ClearCache()
+
+	s := &enttest.String{
+		Key32: entity.Rand32(),
+		Str:   "this is a test",
+	}
+	sr := entity.Put(s)
+	err := enttest.SaveAndWait(sr, false)
+	assert.NoError(t, err)
+
+	i := &enttest.Int{
+		Key32: entity.Rand32(),
+		I:     31415,
+	}
+	ir := entity.Put(i)
+	err = enttest.SaveAndWait(ir, false)
+	assert.NoError(t, err)
+
+	e, err := entity.Load(ir.EntKey())
+	assert.NoError(t, err)
+	assert.Equal(t, i, e)
+
+	e, err = entity.Load(sr.EntKey())
+	assert.NoError(t, err)
+	assert.Equal(t, s, e)
 }

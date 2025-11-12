@@ -134,3 +134,7 @@ func (n *node) AllWords() Nodes {
 	})
 	return out
 }
+
+func (n *node) TypeID32() uint32 {
+	return 4117018735
+}

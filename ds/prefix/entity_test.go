@@ -12,6 +12,7 @@ import (
 
 func TestPrefixEntity(t *testing.T) {
 	enttest.Setup()
+	prefix.Wait()
 	p := prefix.New()
 
 	words := []string{"test", "testing", "tea", "adam"}

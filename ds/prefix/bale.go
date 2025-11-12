@@ -14,10 +14,6 @@ type NodeBale struct {
 	Children      map[rune]*NodeBale
 }
 
-func (bale *NodeBale) TypeID32() uint32 {
-	return 4117018735
-}
-
 var (
 	// set in init to avoid initilization cycle error
 	baleChildren   morph.KeyValAll[rune, *node, lmap.KeyVal[rune, *NodeBale]]
@@ -53,10 +49,6 @@ func (bale *NodeBale) unbaleTo(n *node) {
 
 type PrefixBale struct {
 	Root *NodeBale
-}
-
-func (bale *PrefixBale) TypeID32() uint32 {
-	return 1399013115
 }
 
 func (p *Prefix) saveIf() {

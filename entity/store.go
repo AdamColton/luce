@@ -4,47 +4,59 @@ import (
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/serial"
 	"github.com/adamcolton/luce/store"
+	"github.com/adamcolton/luce/util/reflector"
 )
 
-var (
-	Store        store.FlatStore
-	serializer   serial.PrefixSerializer
-	deserializer serial.PrefixDeserializer
+type Typer interface {
+	serial.Detyper
+	serial.InterfaceTypePrefixer
+}
 
-	deserializerListeners []func()
-	serializerListeners   []func()
+var (
+	entstore     store.FlatStore
+	serializer   serial.Serializer
+	deserializer serial.Deserializer
+
+	typer Typer
+
+	listeners []func()
 
 	ErrMustBeRefser = lerr.Str("must fulfill type entity.Refser")
 )
 
-func GetDeserializer() serial.PrefixDeserializer {
+type Setup struct {
+	Store        store.FlatStore
+	Serializer   serial.Serializer
+	Deserializer serial.Deserializer
+	Typer        Typer
+}
+
+func (s Setup) Init() {
+	//TODO: validate none nil
+	//validate only call once
+	entstore = s.Store
+	serializer = s.Serializer
+	deserializer = s.Deserializer
+	typer = s.Typer
+	for _, fn := range listeners {
+		fn()
+	}
+}
+
+func RegisterListener(fn func()) {
+	listeners = append(listeners, fn)
+}
+
+func GetDeserializer() serial.Deserializer {
 	return deserializer
 }
 
-func GetSerializer() serial.PrefixSerializer {
+func GetSerializer() serial.Serializer {
 	return serializer
 }
 
-func AddDeserializerListener(fn func()) {
-	deserializerListeners = append(deserializerListeners, fn)
-}
-
-func AddSerializerListener(fn func()) {
-	serializerListeners = append(serializerListeners, fn)
-}
-
-func SetSerializer(s serial.PrefixSerializer) {
-	serializer = s
-	for _, fn := range serializerListeners {
-		fn()
-	}
-}
-
-func SetDeserializer(d serial.PrefixDeserializer) {
-	deserializer = d
-	for _, fn := range deserializerListeners {
-		fn()
-	}
+func GetTyper() Typer {
+	return typer
 }
 
 const (
@@ -76,7 +88,7 @@ func (er *Ref[T, E]) saveNow() error {
 }
 
 func (er *Ref[T, E]) save(now bool) error {
-	if Store == nil {
+	if entstore == nil {
 		return ErrNilStore
 	}
 	e, ok := er.Get()
@@ -84,8 +96,9 @@ func (er *Ref[T, E]) save(now bool) error {
 		return ErrNilEntRef
 	}
 	if now {
-		data := lerr.Must(e.EntVal(nil))
-		lerr.Panic(Store.Put(er.key, data))
+		data := lerr.Must(typer.PrefixInterfaceType(e, nil))
+		data = append(data, lerr.Must(e.EntVal(nil))...)
+		lerr.Panic(entstore.Put(er.key, data))
 	} else {
 		DeferStrategy.DeferSave(er, er.saveNow)
 	}
@@ -94,10 +107,10 @@ func (er *Ref[T, E]) save(now bool) error {
 }
 
 func (er *Ref[T, E]) Delete() error {
-	if Store == nil {
+	if entstore == nil {
 		return ErrNilStore
 	}
-	err := Store.Delete(er.key)
+	err := entstore.Delete(er.key)
 	if err != nil {
 		return err
 	}
@@ -108,11 +121,11 @@ func (er *Ref[T, E]) Delete() error {
 }
 
 func (er *Ref[T, E]) load() error {
-	if Store == nil {
+	if entstore == nil {
 		return ErrNilStore
 	}
 
-	r := Store.Get(er.key)
+	r := entstore.Get(er.key)
 	if !r.Found {
 		return ErrNoRecord
 	}
@@ -129,7 +142,8 @@ func (er *Ref[T, E]) load() error {
 	}
 
 	e := E(er.ent.p)
-	err := e.EntLoad(er.key, r.Value)
+	_, data, _ := typer.GetType(r.Value)
+	err := e.EntLoad(er.key, data)
 	if err == nil {
 		Put(e)
 	}
@@ -139,4 +153,39 @@ func (er *Ref[T, E]) load() error {
 func Save[T any, E EntPtr[T]](ent E) (*Ref[T, E], error) {
 	er := Put(ent)
 	return er, er.save(false)
+}
+
+func Load(k Key) (Entity, error) {
+	ent, found := GetEnt(k)
+	if found {
+		return ent, nil
+	}
+
+	if entstore == nil {
+		return nil, ErrNilStore
+	}
+
+	r := entstore.Get(k)
+	if !r.Found {
+		return nil, ErrNoRecord
+	}
+
+	t, data, err := typer.GetType(r.Value)
+	if err != nil {
+		return nil, err
+	}
+	i := reflector.Make(t).Interface().(Entity)
+	//TODO: call addToAllRefs??
+	if ei, ok := i.(EntIniter); ok {
+		ei.EntInit()
+	}
+
+	err = i.EntLoad(k, data)
+	if err != nil {
+		return nil, err
+	}
+	return i, nil
+	// if err == nil {
+	// 	Put(i)
+	// }
 }

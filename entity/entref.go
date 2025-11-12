@@ -107,6 +107,6 @@ func (er *Ref[T, E]) Clear(cacheRm bool) {
 }
 
 func (er *Ref[T, E]) GetEnt() (e Entity, ok bool) {
-	e, ok = er.Get()
+	e, ok = er.WeakGet()
 	return
 }
