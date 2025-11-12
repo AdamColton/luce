@@ -31,15 +31,6 @@ func (enc DocumentEncoder[WordID, VariantID]) AddTypeID(id uint32) {
 	AddTypeID[WordID, VariantID](id)
 }
 
-func (bale *DocumentBale[WordID, VariantID]) TypeID32() uint32 {
-	k := docTypeKey{
-		WordID:    reflector.Type[WordID](),
-		VariantID: reflector.Type[VariantID](),
-	}
-	id, _ := typeIDs.B(k)
-	return id
-}
-
 func (bale *DocumentBale[WordID, VariantID]) EntRefs() []entity.Key {
 	return nil
 }

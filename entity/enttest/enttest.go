@@ -1,6 +1,7 @@
 package enttest
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/adamcolton/luce/ds/idx/byteid/bytebtree"
@@ -9,6 +10,7 @@ import (
 	"github.com/adamcolton/luce/serial"
 	"github.com/adamcolton/luce/serial/type32"
 	"github.com/adamcolton/luce/serial/wrap/gob"
+	"github.com/adamcolton/luce/store"
 	"github.com/adamcolton/luce/store/ephemeral"
 )
 
@@ -23,7 +25,7 @@ func (f *Foo) EntKey() entity.Key {
 }
 
 func (f *Foo) EntVal(buf []byte) ([]byte, error) {
-	return entity.GetSerializer().SerializeType(f, buf)
+	return entity.GetSerializer().Serialize(f, buf)
 }
 
 func (f *Foo) TypeID32() uint32 {
@@ -32,8 +34,11 @@ func (f *Foo) TypeID32() uint32 {
 
 func (f *Foo) EntLoad(k entity.Key, data []byte) error {
 	d := entity.GetDeserializer()
-	check := serial.DeserializeToTypeCheck[*Foo](d)
-	return check(f, data)
+	return d.Deserialize(f, data)
+
+	// TODO: bring this back
+	//check := serial.DeserializeToTypeCheck[*Foo](d)
+	//return check(f, data)
 }
 
 const ErrTimeout = lerr.Str("timeout")
@@ -47,20 +52,84 @@ func SaveAndWait[T any, E entity.EntPtr[T]](ref *entity.Ref[T, E], now bool) err
 }
 
 func Wait(key entity.Key) error {
-	for i := 0; i < 200; i++ {
+	for range 200 {
 		time.Sleep(time.Millisecond)
-		if entity.Store.Get(key).Found {
+		if EntStore.Get(key).Found {
 			return nil
 		}
 	}
 	return ErrTimeout
 }
 
+var EntStore store.FlatStore
+
 func Setup() type32.TypeMap {
-	entity.Store = lerr.Must(ephemeral.Factory(bytebtree.New, 10).FlatStore([]byte("testing")))
 	m32 := type32.NewTypeMap()
-	entity.SetSerializer(m32.Serializer(gob.Serializer{}))
-	entity.SetDeserializer(m32.Deserializer(gob.Deserializer{}))
+	EntStore = lerr.Must(ephemeral.Factory(bytebtree.New, 10).FlatStore([]byte("testing")))
+	entity.Setup{
+		Store:        EntStore,
+		Typer:        m32,
+		Serializer:   gob.Serializer{},
+		Deserializer: gob.Deserializer{},
+	}.Init()
 	lerr.Panic(serial.RegisterPtr[Foo](m32))
+	lerr.Panic(serial.RegisterPtr[String](m32))
+	lerr.Panic(serial.RegisterPtr[Int](m32))
 	return m32
+}
+
+type Stringer interface {
+	String() string
+	entity.Entity
+}
+
+type String struct {
+	entity.Key32
+	Str string
+}
+
+func (s *String) TypeID32() uint32 {
+	return 3350641450
+}
+
+func (s *String) String() string {
+	return s.Str
+}
+
+func (s *String) EntVal(buf []byte) ([]byte, error) {
+	return entity.GetSerializer().Serialize(s, buf)
+}
+
+func (s *String) EntLoad(k entity.Key, data []byte) error {
+	d := entity.GetDeserializer()
+
+	//TODO: bring this back
+	//check := serial.DeserializeToTypeCheck[*String](d)
+	return d.Deserialize(s, data)
+}
+
+type Int struct {
+	entity.Key32
+	I int
+}
+
+func (i *Int) TypeID32() uint32 {
+	return 2065445151
+}
+
+func (i *Int) String() string {
+	return strconv.Itoa(i.I)
+}
+
+func (i *Int) EntVal(buf []byte) ([]byte, error) {
+	return entity.GetSerializer().Serialize(i, buf)
+}
+
+func (i *Int) EntLoad(k entity.Key, data []byte) error {
+	d := entity.GetDeserializer()
+	return d.Deserialize(i, data)
+
+	// Todo: make this work
+	//check := serial.DeserializeToTypeCheck[*Int](d)
+	//return check(i, data)
 }
