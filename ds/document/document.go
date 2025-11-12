@@ -5,6 +5,7 @@ import (
 	"github.com/adamcolton/luce/ds/lset"
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/entity"
+	"github.com/adamcolton/luce/lerr"
 )
 
 // Encoder supplies the necessary encoding information to translate strings
@@ -77,6 +78,9 @@ func (doc *Document[WordID, VariantID]) WordIDs() []WordID {
 
 func (doc *Document[WordID, VariantID]) Save() (*entity.Ref[Document[WordID, VariantID], *Document[WordID, VariantID]], error) {
 	doc.save = true
+	if typeRegistrar != nil {
+		lerr.Panic(typeRegistrar.RegisterType((*Document[WordID, VariantID])(nil)))
+	}
 	er, err := entity.Save(doc)
 	return er, err
 }

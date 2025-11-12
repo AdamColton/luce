@@ -29,7 +29,7 @@ type CorpusBale struct {
 	Docs      map[document.ID]entity.Key
 }
 
-func (bale *CorpusBale) TypeID32() uint32 {
+func (c *Corpus) TypeID32() uint32 {
 	return 2694953506
 }
 
@@ -95,7 +95,7 @@ type RootBale struct {
 	Docs []document.ID
 }
 
-func (bale *RootBale) TypeID32() uint32 {
+func (r *root) TypeID32() uint32 {
 	return 976961939
 }
 
@@ -123,7 +123,7 @@ type DocumentBale struct {
 	Corpus  entity.Key
 }
 
-func (bale *DocumentBale) TypeID32() uint32 {
+func (d *Document) TypeID32() uint32 {
 	return 1234822691
 }
 

@@ -7,25 +7,29 @@ import (
 )
 
 var (
-	prefixDeserializer func(data []byte) (*PrefixBale, error)
-	serializer         serial.TypeSerializer
+	deserializer serial.Deserializer
+	serializer   serial.Serializer
+	initCh       = make(chan struct{})
 )
 
 func init() {
-	entity.AddDeserializerListener(func() {
-		d := entity.GetDeserializer()
-		prefixDeserializer = serial.DeserializeTypeCheck[*PrefixBale](d)
-		r, ok := d.Detyper.(serial.TypeRegistrar)
+	entity.RegisterListener(func() {
+		t := entity.GetTyper()
+		r, ok := t.(serial.TypeRegistrar)
 		if ok {
-			r.RegisterType((*NodeBale)(nil))
-			r.RegisterType((*PrefixBale)(nil))
+			r.RegisterType((*node)(nil))
+			r.RegisterType((*Prefix)(nil))
 		}
-	})
-	entity.AddSerializerListener(func() {
 		serializer = entity.GetSerializer()
+		deserializer = entity.GetDeserializer()
+		close(initCh)
 	})
 	baleChildren = lmap.TransformVal[rune](lmap.ForAll((*node).bale))
 	unbaleChildren = lmap.TransformVal[rune](lmap.ForAll((*NodeBale).unbale))
+}
+
+func Wait() {
+	<-initCh
 }
 
 func (p *Prefix) EntKey() entity.Key {
@@ -34,7 +38,7 @@ func (p *Prefix) EntKey() entity.Key {
 
 func (p *Prefix) EntVal(buf []byte) ([]byte, error) {
 	p.Purge()
-	return serializer.SerializeType(p.Bale(), buf)
+	return serializer.Serialize(p.Bale(), buf)
 }
 
 func (p *Prefix) Save() (*entity.Ref[Prefix, *Prefix], error) {
@@ -44,7 +48,8 @@ func (p *Prefix) Save() (*entity.Ref[Prefix, *Prefix], error) {
 }
 
 func (p *Prefix) EntLoad(k entity.Key, data []byte) error {
-	bale, err := prefixDeserializer(data)
+	bale := &PrefixBale{}
+	err := deserializer.Deserialize(bale, data)
 	if err != nil {
 		return err
 	}
@@ -52,4 +57,8 @@ func (p *Prefix) EntLoad(k entity.Key, data []byte) error {
 	p.key = k
 
 	return nil
+}
+
+func (*Prefix) TypeID32() uint32 {
+	return 1399013115
 }

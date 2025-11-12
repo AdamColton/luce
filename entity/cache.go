@@ -23,6 +23,7 @@ type cacheRecord struct {
 // allRefs tracks all refs whose pointer is not nil
 // first entry is nil so 0 can be used as "unset"
 // kind of hacky, but works (for now)
+// this is just here to make ClearCache work
 var allRefs = []entRefer{nil}
 
 var cache = lmap.EmptySafe[uint64, *cacheRecord](0)
@@ -36,6 +37,8 @@ func ClearCache() {
 
 // T does not need to fulfill entity because it could be an interface where
 // the underlying type fulfills both Entity and ...
+// found indicates if it was found in cache, not if it exists in the entity
+// store.
 func Get[T any, E EntPtr[T]](key Key) (out *Ref[T, E], found bool) {
 	var cr *cacheRecord
 	cr, found = cache.Get(key.Hash64())
@@ -109,4 +112,26 @@ func Put[T any, E EntPtr[T]](ent E) *Ref[T, E] {
 	DeferStrategy.DeferCacheClear(er)
 
 	return er
+}
+
+type weakGetter interface {
+	GetEnt() (e Entity, ok bool)
+	Referer
+}
+
+func GetEnt(k Key) (ent Entity, found bool) {
+	var cr *cacheRecord
+	cr, found = cache.Get(k.Hash64())
+	//TODO: add typecheck here
+	if found && cr.ref != nil {
+		var getter weakGetter
+		getter, found = cr.ref.(weakGetter)
+		if found {
+			ent, found = getter.GetEnt()
+		}
+		if found {
+			DeferStrategy.DeferCacheClear(getter)
+		}
+	}
+	return
 }
