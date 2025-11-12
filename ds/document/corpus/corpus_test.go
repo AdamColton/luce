@@ -193,7 +193,7 @@ func TestCorpusEntity(t *testing.T) {
 	// This should delete the document and update the corpus record
 	id := c.Find("uffish").Slice(nil)[0]
 	k := c.GetDoc(id).Key
-	assert.True(t, entity.Store.Get(k).Found)
+	assert.True(t, enttest.EntStore.Get(k).Found)
 	c.Remove(id)
 	assert.Equal(t, 0, c.Find("uffish").Len())
 

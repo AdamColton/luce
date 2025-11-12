@@ -2,8 +2,8 @@ package corpus
 
 import (
 	"github.com/adamcolton/luce/ds/document"
-	"github.com/adamcolton/luce/ds/prefix"
 	"github.com/adamcolton/luce/entity"
+	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/serial"
 )
 
@@ -13,27 +13,38 @@ var (
 	corpusDeserializer   func(data []byte) (*CorpusBale, error)
 	rootDeserializer     func(data []byte) (*RootBale, error)
 	documentDeserializer func(data []byte) (*DocumentBale, error)
-	serializer           serial.PrefixSerializer
+	serializer           serial.Serializer
 )
 
 func init() {
-	entity.AddDeserializerListener(func() {
+	entity.RegisterListener(func() {
 		d := entity.GetDeserializer()
-		corpusDeserializer = serial.DeserializeTypeCheck[*CorpusBale](d)
-		rootDeserializer = serial.DeserializeTypeCheck[*RootBale](d)
-		documentDeserializer = serial.DeserializeTypeCheck[*DocumentBale](d)
-		r, ok := d.Detyper.(serial.TypeRegistrar)
-		if ok {
-			r.RegisterType((*CorpusBale)(nil))
-			r.RegisterType((*RootBale)(nil))
-			r.RegisterType((*DocumentBale)(nil))
-			//TODO: move these to their own packages
-			r.RegisterType((*DocBaleType)(nil))
-			r.RegisterType((*prefix.PrefixBale)(nil))
+		corpusDeserializer = func(data []byte) (*CorpusBale, error) {
+			out := &CorpusBale{}
+			err := d.Deserialize(out, data)
+			return out, err
 		}
-	})
-	entity.AddSerializerListener(func() {
+		rootDeserializer = func(data []byte) (*RootBale, error) {
+			out := &RootBale{}
+			err := d.Deserialize(out, data)
+			return out, err
+		}
+		documentDeserializer = func(data []byte) (*DocumentBale, error) {
+			out := &DocumentBale{}
+			err := d.Deserialize(out, data)
+			return out, err
+		}
+		r, ok := entity.GetTyper().(serial.TypeRegistrar)
+		if ok {
+			lerr.Panic(r.RegisterType((*Corpus)(nil)))
+			lerr.Panic(r.RegisterType((*root)(nil)))
+			lerr.Panic(r.RegisterType((*Document)(nil)))
+			//TODO: move these to their own packages
+			//r.RegisterType((*DocBaleType)(nil))
+			//r.RegisterType((*prefix.PrefixBale)(nil))
+		}
 		serializer = entity.GetSerializer()
+
 	})
 }
 
@@ -42,7 +53,7 @@ func (c *Corpus) EntKey() entity.Key {
 }
 
 func (c *Corpus) EntVal(buf []byte) ([]byte, error) {
-	return serializer.SerializeType(c.Bale(), buf)
+	return serializer.Serialize(c.Bale(), buf)
 }
 
 func (c *Corpus) EntInit() {
@@ -97,7 +108,7 @@ func (d *Document) EntKey() entity.Key {
 }
 
 func (d *Document) EntVal(buf []byte) ([]byte, error) {
-	return serializer.SerializeType(d.Bale(), buf)
+	return serializer.Serialize(d.Bale(), buf)
 }
 
 func (d *Document) EntLoad(k entity.Key, data []byte) error {
