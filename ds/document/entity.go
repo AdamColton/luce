@@ -56,6 +56,10 @@ func (doc *Document[WordID, VariantID]) EntVal(buf []byte) ([]byte, error) {
 	return s.Serialize(doc.Bale(), buf)
 }
 
+func (doc *Document[WordID, VariantID]) EntRefs(data []byte) ([]entity.Key, error) {
+	return nil, nil
+}
+
 func (doc *Document[WordID, VariantID]) EntLoad(k entity.Key, data []byte) error {
 	doc.Key = k
 	doc.save = true

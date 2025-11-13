@@ -17,11 +17,17 @@ import (
 type Foo struct {
 	ID   []byte
 	Name string
-	entity.Refs
+	Refs []entity.Key
 }
 
 func (f *Foo) EntKey() entity.Key {
 	return f.ID
+}
+
+func (*Foo) EntRefs(data []byte) ([]entity.Key, error) {
+	f := &Foo{}
+	err := entity.GetDeserializer().Deserialize(f, data)
+	return f.Refs, err
 }
 
 func (f *Foo) EntVal(buf []byte) ([]byte, error) {
@@ -92,6 +98,10 @@ func (s *String) TypeID32() uint32 {
 	return 3350641450
 }
 
+func (s *String) EntRefs(data []byte) ([]entity.Key, error) {
+	return nil, nil
+}
+
 func (s *String) String() string {
 	return s.Str
 }
@@ -115,6 +125,10 @@ type Int struct {
 
 func (i *Int) TypeID32() uint32 {
 	return 2065445151
+}
+
+func (i *Int) EntRefs(data []byte) ([]entity.Key, error) {
+	return nil, nil
 }
 
 func (i *Int) String() string {

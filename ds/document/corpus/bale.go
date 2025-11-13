@@ -45,6 +45,9 @@ func (c *Corpus) Bale() *CorpusBale {
 }
 
 func (bale *CorpusBale) EntRefs() []entity.Key {
+	if bale == nil {
+		return nil
+	}
 	out := make([]entity.Key, 1, len(bale.Docs)+1)
 	out[0] = bale.Prefix
 	for _, k := range bale.Docs {
@@ -139,8 +142,4 @@ func (bale *DocumentBale) UnbaleTo(d *Document) {
 	d.c = entity.KeyRef[Corpus](bale.Corpus)
 	d.DocType = &DocType{}
 	bale.DocBale.UnbaleTo(d.DocType)
-}
-
-func (bale *DocumentBale) EntRefs() []entity.Key {
-	return nil
 }
