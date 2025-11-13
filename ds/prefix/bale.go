@@ -3,7 +3,6 @@ package prefix
 import (
 	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/ds/slice"
-	"github.com/adamcolton/luce/entity"
 )
 
 type NodeBale struct {
@@ -65,10 +64,6 @@ func (bale *PrefixBale) Unbale() *Prefix {
 	p := &Prefix{}
 	bale.UnbaleTo(p)
 	return p
-}
-
-func (bale *PrefixBale) EntRefs() []entity.Key {
-	return nil
 }
 
 func (bale *PrefixBale) UnbaleTo(p *Prefix) {

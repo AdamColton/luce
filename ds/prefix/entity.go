@@ -47,6 +47,10 @@ func (p *Prefix) Save() (*entity.Ref[Prefix, *Prefix], error) {
 	return er, err
 }
 
+func (p *Prefix) EntRefs(data []byte) ([]entity.Key, error) {
+	return nil, nil
+}
+
 func (p *Prefix) EntLoad(k entity.Key, data []byte) error {
 	bale := &PrefixBale{}
 	err := deserializer.Deserialize(bale, data)

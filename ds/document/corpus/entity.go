@@ -72,6 +72,11 @@ func (c *Corpus) EntLoad(k entity.Key, data []byte) error {
 	return nil
 }
 
+func (*Corpus) EntRefs(data []byte) ([]entity.Key, error) {
+	bale, err := corpusDeserializer(data)
+	return bale.EntRefs(), err
+}
+
 func (c *Corpus) Save() (*CorpusRef, error) {
 	if !c.save {
 		c.prefix.Save(nil)
@@ -105,6 +110,10 @@ func (c *Corpus) saveIf(toSave ...saver) {
 
 func (d *Document) EntKey() entity.Key {
 	return d.DocType.Key
+}
+
+func (*Document) EntRefs(data []byte) ([]entity.Key, error) {
+	return nil, nil
 }
 
 func (d *Document) EntVal(buf []byte) ([]byte, error) {
