@@ -1,13 +1,13 @@
 package entity
 
 import (
+	"reflect"
 	"sync/atomic"
 	"time"
 
 	"github.com/adamcolton/luce/ds/channel"
 	"github.com/adamcolton/luce/ds/lset"
 	"github.com/adamcolton/luce/lerr"
-	"github.com/adamcolton/luce/util/reflector"
 )
 
 type Refs []Key
@@ -142,16 +142,11 @@ func (gc *gcStruct) step() {
 
 	t, data, err := typer.GetType(rec.Value)
 	lerr.Panic(lerr.Wrap(err, "get type failed during ent gc"))
-	i := reflector.Make(t).Interface()
-	err = deserializer.Deserialize(i, data)
-	lerr.Panic(lerr.Wrap(err, "deserialization failed during ent gc"))
+	i := reflect.New(t).Elem().Interface().(Entity)
 
-	r, ok := i.(Refser)
-	if !ok {
-		panic("ent gc got not Refser")
-	}
-
-	for _, k := range r.EntRefs() {
+	refs, err := i.EntRefs(data)
+	lerr.Panic(err) // TODO: I don't know, something
+	for _, k := range refs {
 		gc.add <- addReq{Key: k, action: fromSweep}
 	}
 }
