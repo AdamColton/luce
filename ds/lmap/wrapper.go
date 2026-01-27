@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/adamcolton/luce/ds/slice"
+	"github.com/adamcolton/luce/util/liter"
 )
 
 // Wrapper provides helpers around a Mapper.
@@ -126,4 +127,19 @@ func SortKeys[K cmp.Ordered, V any](m map[K]V) slice.Slice[K] {
 // SortKeys creates a sorted slice of the keys.
 func (w Wrapper[K, V]) SortKeys(less Less[K], buf []K) slice.Slice[K] {
 	return w.Keys(buf).Sort(less)
+}
+
+// EachKey calls fn for every key the iterator provides, in the order it
+// provides them, starting from the iterator's current value. Keys that are not
+// in the map are skipped. Setting done in fn stops the iteration.
+func (w Wrapper[K, V]) EachKey(i liter.Iter[K], fn EachFunc[K, V]) {
+	for cur, done := i.Cur(); !done; cur, done = i.Next() {
+		v, found := w.Get(cur)
+		if found {
+			fn(cur, v, &done)
+			if done {
+				break
+			}
+		}
+	}
 }
