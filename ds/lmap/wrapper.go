@@ -26,3 +26,11 @@ func (w Wrapper[K, V]) GetVal(key K) (v V) {
 	}
 	return
 }
+
+// Each adds a nil check before calling Mapper.Each.
+func (w Wrapper[K, V]) Each(fn EachFunc[K, V]) {
+	if w.Mapper == nil {
+		return
+	}
+	w.Mapper.Each(fn)
+}
