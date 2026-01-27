@@ -143,3 +143,41 @@ func (w Wrapper[K, V]) SortedEachKey(less Less[K], buf []K, fn EachFunc[K, V]) s
 	w.EachKey(keys.Iter(), fn)
 	return keys
 }
+
+// KeyLessKP is a helper that converts a Less function on the Key type to
+// a Less funciton on the KeyPair type.
+func KeyLessKP[V, K any](less Less[K]) Less[KeyPair[K, V]] {
+	return func(i, j KeyPair[K, V]) bool {
+		return less(i.Key, j.Key)
+	}
+}
+
+func (w Wrapper[K, V]) KeyLessKP(less Less[K]) Less[KeyPair[K, V]] {
+	return KeyLessKP[V](less)
+}
+
+func ValLessKP[K, V any](less Less[V]) Less[KeyPair[K, V]] {
+	return func(i, j KeyPair[K, V]) bool {
+		return less(i.Val, j.Val)
+	}
+}
+
+func (w Wrapper[K, V]) ValLessKP(less Less[V]) Less[KeyPair[K, V]] {
+	return ValLessKP[K](less)
+}
+
+// Slice converts the underlying map to a slice of keyPairs. If less is
+// provided, it will be sorted.
+func (w Wrapper[K, V]) Slice(less Less[KeyPair[K, V]], buf []KeyPair[K, V]) slice.Slice[KeyPair[K, V]] {
+	out := slice.NewBuffer(buf).Cap(w.Len())
+	w.Each(func(key K, val V, done *bool) {
+		out = append(out, KeyPair[K, V]{
+			Key: key,
+			Val: val,
+		})
+	})
+	if less != nil {
+		out.Sort(less)
+	}
+	return out
+}
