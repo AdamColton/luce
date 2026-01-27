@@ -148,6 +148,28 @@ func (f Filter[T]) Chan(pipe channel.Pipe[T]) channel.Pipe[T] {
 	return out
 }
 
+// OrAnd is a set of alternatives. Every slice inside it is a set of values that
+// must all pass a filter, and any one of the sets is enough.
+type OrAnd[T any] [][]T
+
+// OrAnd returns true if the filter is true for every value of at least one of
+// the sets in orAnd. With no sets it returns true: there is nothing to satisfy.
+func (f Filter[T]) OrAnd(orAnd OrAnd[T]) bool {
+	foundMatch := true
+	for _, or := range orAnd {
+		for _, and := range or {
+			foundMatch = f(and)
+			if !foundMatch {
+				break
+			}
+		}
+		if foundMatch {
+			break
+		}
+	}
+	return foundMatch
+}
+
 // Checker returns an error for a value, or nil if the value is acceptable.
 type Checker[T any] func(T) error
 
