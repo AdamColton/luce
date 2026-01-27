@@ -1,5 +1,9 @@
 package lerr
 
+// NotImplemented is a sentinel error for functionality that has not been
+// written yet.
+const NotImplemented = Str("not implemented")
+
 // Panic if err is not nil. If err is in the exception list, it will return
 // true, but will not panic.
 func Panic(err error, except ...error) bool {
