@@ -20,7 +20,7 @@ func TestWrapped(t *testing.T) {
 	assert.Equal(t, w.Mapper, w.Wrapped())
 }
 
-func TestWrapperEach(t *testing.T) {
+func TestWrapperLenEach(t *testing.T) {
 	var m lmap.Wrapper[string, int]
 	type kv struct {
 		k string
@@ -33,6 +33,7 @@ func TestWrapperEach(t *testing.T) {
 	}
 	m.Each(fn)
 	assert.Len(t, vals, 0)
+	assert.Equal(t, 0, m.Len())
 
 	m = lmap.New(map[string]int{
 		"a": 1,
@@ -50,4 +51,5 @@ func TestWrapperEach(t *testing.T) {
 		{"c", 3},
 	}
 	assert.Equal(t, expected, vals)
+	assert.Equal(t, 3, m.Len())
 }

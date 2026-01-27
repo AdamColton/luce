@@ -34,3 +34,11 @@ func (w Wrapper[K, V]) Each(fn EachFunc[K, V]) {
 	}
 	w.Mapper.Each(fn)
 }
+
+// Len adds a nil check before calling Mapper.Len.
+func (w Wrapper[K, V]) Len() int {
+	if w.Mapper == nil {
+		return 0
+	}
+	return w.Mapper.Len()
+}
