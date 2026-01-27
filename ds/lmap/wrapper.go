@@ -135,3 +135,11 @@ func (w Wrapper[K, V]) EachKey(i liter.Iter[K], fn EachFunc[K, V]) {
 		}
 	}
 }
+
+// SortedEachKey is shorthand for invoking SortedKeys and then EachKey. It
+// creates a sorted slice as intermediary product.
+func (w Wrapper[K, V]) SortedEachKey(less Less[K], buf []K, fn EachFunc[K, V]) slice.Slice[K] {
+	keys := w.SortKeys(less, buf)
+	w.EachKey(keys.Iter(), fn)
+	return keys
+}
