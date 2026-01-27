@@ -139,6 +139,24 @@ func (f Filter[T]) Chan(pipe channel.Pipe[T]) channel.Pipe[T] {
 	return out
 }
 
+type OrAnd[T any] [][]T
+
+func (f Filter[T]) OrAnd(orAnd OrAnd[T]) bool {
+	foundMatch := true
+	for _, or := range orAnd {
+		for _, and := range or {
+			foundMatch = f(and)
+			if !foundMatch {
+				break
+			}
+		}
+		if foundMatch {
+			break
+		}
+	}
+	return foundMatch
+}
+
 // Checker returns an error based on a single argument.
 type Checker[T any] func(T) error
 
