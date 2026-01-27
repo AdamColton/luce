@@ -1,10 +1,10 @@
 package lmap
 
 import (
+	"cmp"
 	"fmt"
 
 	"github.com/adamcolton/luce/ds/slice"
-	"golang.org/x/exp/constraints"
 )
 
 // Wrapper provides helpers around a Mapper.
@@ -107,10 +107,17 @@ func (w Wrapper[K, V]) DeleteMany(keys []K) {
 	}
 }
 
+type Less[T any] = slice.Less[T]
+
 // SortKeys is a convenience function that returns the sorted keys. This is
 // equivalent to calling m.Keys(nil).Sort(slice.LT[K]()). It assumes slice.LT
 // for sorting and a nil buffer. If either of those assumtions are not true, use
 // Keys and Sort explicitly.
-func SortKeys[K constraints.Ordered, V any](m map[K]V) slice.Slice[K] {
-	return New(m).Keys(nil).Sort(slice.LT[K]())
+func SortKeys[K cmp.Ordered, V any](m map[K]V) slice.Slice[K] {
+	return New(m).Keys(nil).Sort(cmp.Less[K])
+}
+
+// SortKeys creates a sorted slice of the keys.
+func (w Wrapper[K, V]) SortKeys(less Less[K], buf []K) slice.Slice[K] {
+	return w.Keys(buf).Sort(less)
 }

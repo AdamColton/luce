@@ -1,6 +1,7 @@
 package lmap_test
 
 import (
+	"cmp"
 	"testing"
 
 	"github.com/adamcolton/luce/ds/lmap"
@@ -126,5 +127,9 @@ func TestSortKeys(t *testing.T) {
 	}
 	ks := lmap.SortKeys(m)
 	expected := slice.Slice[rune]{'a', 'b', 'c'}
+	assert.Equal(t, expected, ks)
+
+	w := lmap.New(m)
+	ks = w.SortKeys(cmp.Less[rune], nil)
 	assert.Equal(t, expected, ks)
 }
