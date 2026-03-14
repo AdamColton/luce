@@ -1,5 +1,7 @@
 package document
 
+// == projects.Code.luce.document ==
+
 import (
 	"reflect"
 
@@ -49,7 +51,9 @@ func getDeserializer[WordID, VariantID comparable]() func(data []byte) (*Documen
 
 func (doc *Document[WordID, VariantID]) EntVal(buf []byte) ([]byte, error) {
 	s := entity.GetSerializer()
-	//TODO: this is redundant, only needs to happen once
+	// [ ] document.Document.EntVal redundant
+	// typeRegistrar registration happens each time
+	// only needs to happen once.
 	if typeRegistrar != nil {
 		lerr.Panic(typeRegistrar.RegisterType((*Document[WordID, VariantID])(nil)))
 	}

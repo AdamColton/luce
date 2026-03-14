@@ -144,6 +144,14 @@ func (sc *serviceConn) routeToRequestConverter(cfg service.Route) func(r *http.R
 	}
 }
 
+// == projects.Code.luce.server ==
+// [ ] remove stale service routes from the router
+//  A route whose path, host or method changes between runs of its service
+//  gets a new mux.Route, and the old one is left in the router as BuildOnly
+//  until the server restarts. It never matches, so it's harmless, but each
+//  change adds one. gorilla/mux has no way to remove a route, so this would
+//  need the router rebuilt or a router of our own in front of it.
+
 // getServiceRoute returns the route at idx, creating it the first time the
 // service registers it and reactivating it after a reconnect. The id it
 // returns is the route's key in serviceRoutes.
