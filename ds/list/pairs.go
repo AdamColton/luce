@@ -48,3 +48,13 @@ func (p *Pairs[T]) Len() int {
 func (p *Pairs[T]) Wrap() Wrapper[[2]T] {
 	return Wrapper[[2]T]{p}
 }
+
+// For is shorthand for Wrap().Iter().For(fn)
+func (p *Pairs[T]) For(fn func(t [2]T)) {
+	p.Wrap().Iter().For(fn)
+}
+
+// ForIdx is shorthand for Wrap().Iter().Each(fn)
+func (p *Pairs[T]) Each(fn func(idx int, t [2]T, done *bool)) {
+	p.Wrap().Iter().Each(fn)
+}
