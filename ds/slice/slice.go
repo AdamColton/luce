@@ -44,6 +44,8 @@ func (s Slice[T]) Clone(cp int) Slice[T] {
 
 // Swaps two values in the slice.
 func (s Slice[T]) Swap(i, j int) {
+	i, _ = s.Idx(i)
+	j, _ = s.Idx(j)
 	s[i], s[j] = s[j], s[i]
 }
 
