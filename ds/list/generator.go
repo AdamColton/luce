@@ -9,6 +9,15 @@ func NewGenerator[T any](ln int, fn func(int) T) Wrapper[T] {
 	}}
 }
 
+// NullaryGenerator uses a function that takes no arguments to create a list
+// generator.
+func NullaryGenerator[T any](ln int, fn func() T) Wrapper[T] {
+	wrapped := func(idx int) T {
+		return fn()
+	}
+	return NewGenerator(ln, wrapped)
+}
+
 // Generator fulfills List using a function to generate values by index.
 type Generator[T any] struct {
 	// Fn is called with the index to generate a value.
