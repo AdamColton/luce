@@ -108,3 +108,16 @@ func TestReduce(t *testing.T) {
 	sum := list.Reduce(l, func(a, b int) int { return a + b })
 	assert.Equal(t, 15, sum)
 }
+
+func TestNullary(t *testing.T) {
+	c := 0
+	counter := func() int {
+		c++
+		return c
+	}
+	g := list.NullaryGenerator(5, counter)
+
+	expected := []int{1, 2, 3, 4, 5}
+	got := g.Slice(nil)
+	assert.Equal(t, expected, got)
+}
