@@ -1,5 +1,20 @@
 package lset
 
+// == projects.Code.luce.wrappers ==
+// [ ] experiment with typed wrappers
+//	instead of taking an interace
+//	use a constraint, which can make the type concrete
+//	which allows the wrapper to return the type
+//	though it can't be embedded, only a pointer can be
+
+// == projects.Code.luce.lset ==
+// [ ] Create a Set interface
+// [ ] Move Set to MapSet
+// [ ] Add SliceSet
+// [ ] Allow flood to take a Set
+//	this will be useful when I want to use
+//	a slice as the set backer for space and time effiency
+
 // FloodProc is invoked by Flood. It is invoked once for each value of T in
 // the set. Calling add checks if the value is already in the Set
 type FloodProc[T comparable] func(t T, add func(T))

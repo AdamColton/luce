@@ -9,6 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// == projects.Code.luce.funcs ==
+// [ ] change mutli_test to multi_test
+
 var (
 	circA = func(t float64) (x, y float64) {
 		x, y = math.Sincos(t * 6.28)

@@ -1,5 +1,7 @@
 package prefix
 
+// == projects.Code.luce.prefix ==
+
 import (
 	"github.com/adamcolton/luce/ds/list"
 	"github.com/adamcolton/luce/ds/lmap"
@@ -91,7 +93,9 @@ func (n *node) Next(r rune, create bool, p *Prefix) (*node, bool) {
 		p.starts[r] = append(p.starts[r], next)
 		n.setChild(r, next)
 		ok = true
-		p.saveIf() // TODO: probably overkill
+		// [ ] prefix.Node.Next saveIf
+		//	this is probably overkill
+		p.saveIf()
 	}
 	return next, ok
 }
@@ -120,7 +124,8 @@ func (n *node) Child(r rune) Node {
 }
 
 func (n *node) Children() []rune {
-	// TODO: use buf
+	// [ ] prefix.Node.Children buf
+	//	accept a buffer
 	return n.children.Keys(nil)
 }
 

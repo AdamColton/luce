@@ -1,5 +1,7 @@
 package entity
 
+// == projects.Code.luce.entity ==
+
 import (
 	"reflect"
 
@@ -42,7 +44,9 @@ func ClearCache() {
 func Get[T any, E EntPtr[T]](key Key) (out *Ref[T, E], found bool) {
 	var cr *cacheRecord
 	cr, found = cache.Get(key.Hash64())
-	//TODO: add typecheck here
+
+	// [ ] add typecheck entity.Get
+	//	add typecheck here
 	if found && cr.ref != nil {
 		out, found = cr.ref.(*Ref[T, E])
 		DeferStrategy.DeferCacheClear(out)
@@ -122,7 +126,7 @@ type weakGetter interface {
 func GetEnt(k Key) (ent Entity, found bool) {
 	var cr *cacheRecord
 	cr, found = cache.Get(k.Hash64())
-	//TODO: add typecheck here
+	// [ ] entity.GetEnt add type check
 	if found && cr.ref != nil {
 		var getter weakGetter
 		getter, found = cr.ref.(weakGetter)

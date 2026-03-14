@@ -1,6 +1,10 @@
 package serialbus
 
-// TODO: move this...somewhere
+// == projects.Code.luce.serialbus ==
+
+// [ ] move serialbus.String
+// 	String(in <-chan []byte) <-chan string
+
 // String converts []byte to string on a channel.
 func String(in <-chan []byte) <-chan string {
 	out := make(chan string, len(in))

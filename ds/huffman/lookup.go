@@ -1,5 +1,7 @@
 package huffman
 
+// == projects.Code.luce.huffman ==
+
 import (
 	"github.com/adamcolton/luce/ds/list"
 	"github.com/adamcolton/luce/ds/lmap"
@@ -51,7 +53,7 @@ func (l mapLookup[T]) Get(v T) *rye.Bits {
 }
 
 func (l mapLookup[T]) All() []T {
-	// TODO: use buf
+	// [ ] huffman.mapLookup.All - use buf
 	return lmap.New(l).Keys(nil)
 }
 

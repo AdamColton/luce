@@ -1,5 +1,7 @@
 package list
 
+// == projects.Code.luce.list ==
+
 import (
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
@@ -78,7 +80,7 @@ func (w Wrapper[T]) AssertEqual(to interface{}, t cmpr.Tolerance) error {
 			return lerr.NewTypeMismatch(w, to)
 		}
 	}
-	// TODO: I don't like this but leads to a whole mess of issues.
+	// [ ] list.Wrapper.AssertEqual
 	// by including cmprtest, this ends up including testify/assert.
 	// I really don't want that to be included in builds.
 	return lerr.NewSliceErrs(w.Len(), toList.Len(), func(i int) error {

@@ -20,6 +20,10 @@ func (l Less[T]) Sort(s []T) []T {
 	return s
 }
 
+// == projects.Code.luce ==
+// [ ] remove LT
+//	just use cmp.Less
+
 // LT returns an instance of Less[T] that does a less than comparison.
 func LT[T constraints.Ordered]() Less[T] {
 	return func(i, j T) bool {

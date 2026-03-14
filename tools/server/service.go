@@ -133,6 +133,14 @@ func (sc *serviceConn) routeToRequestConverter(cfg service.Route) func(r *http.R
 	}
 }
 
+// == projects.Code.luce.server ==
+// [ ] handle Collisions
+//	I lost a bunch of time setting up the journal service
+//	because I chose /hello as a test path but it was already taken
+//  there is no alert, and since the whole path was actually
+//	/journal.service/journalHello
+//	it should be able to handle this
+
 func (sc *serviceConn) getServiceRoute(idx int) *serviceRoute {
 	srv := sc.service
 	rt := srv.Routes[idx]

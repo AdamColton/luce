@@ -97,6 +97,8 @@ func (mr MethodsRegistrar) Commands(handlerType any) lmap.Wrapper[string, *Comma
 	return out
 }
 
+// == projects.Code.luce.handler ==
+// [ ] AddAlias accept lmap.Wrapper
 func AddAlias(cmds lmap.Mapper[string, *Command], cmdAliasPairs ...string) {
 	for i := 0; i < len(cmdAliasPairs); i += 2 {
 		cmd, alias := cmdAliasPairs[i], cmdAliasPairs[i+1]

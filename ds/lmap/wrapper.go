@@ -80,6 +80,9 @@ func (w Wrapper[K, V]) All(fn func(k K, v V)) {
 	w.Each(All(fn))
 }
 
+// == projects.Code.luce.lmap ==
+// [ ] Wrapper.(Vals,Keys) accept less
+
 // Vals returns the values of the map as a Slice. The provided buffer will be
 // used if it has sufficient capacity.
 func (w Wrapper[K, V]) Vals(buf slice.Slice[V]) slice.Slice[V] {

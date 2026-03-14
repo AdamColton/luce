@@ -39,6 +39,9 @@ func DivDown[T constraints.Integer](a, b T) T {
 	return a / b
 }
 
+// == projects.Code.luce.ints ==
+// [ ] DivRound(a, b T) T
+
 // Mod provides a version of modulus consistent with most other languages and
 // calculators.
 //

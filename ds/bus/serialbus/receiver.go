@@ -1,5 +1,7 @@
 package serialbus
 
+// == projects.Code.luce.serialbus ==
+
 import (
 	"github.com/adamcolton/luce/ds/bus"
 	"github.com/adamcolton/luce/ds/bus/listener"
@@ -25,7 +27,8 @@ func NewListener(in <-chan []byte, d serial.TypeDeserializer, r serial.TypeRegis
 		TypeDeserializer: d,
 		TypeRegistrar:    r,
 	}
-	// TODO: don't use arbitrary size
+	// [ ] serialbus.NewListener arbitrary size
+	//	don't use arbitrary size
 	return listener.New(10, rc, errHandler, handlers...)
 }
 

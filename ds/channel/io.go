@@ -1,5 +1,7 @@
 package channel
 
+// == projects.Code.luce.channel ==
+
 // Writer uses a []byte channel to fulfill io.Writer
 type Writer struct {
 	Ch chan<- []byte
@@ -11,4 +13,6 @@ func (w Writer) Write(data []byte) (n int, err error) {
 	return len(data), nil
 }
 
-// TODO Writer.ReadFrom, Reader.Read, Reader.WriteTo
+// [ ] channel.Writer.ReadFrom
+// [ ] channel.Reader.Read
+// [ ] channel.Reader.WriteTo

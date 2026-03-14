@@ -5,6 +5,15 @@ import (
 	"github.com/adamcolton/luce/util/upgrade"
 )
 
+// == projects.Code.luce.slice ==
+// [ ] order slice by slice
+//	given 2 slices, apply SortInPlace
+//	to the first, based on if a value appears in the second
+//	but it should be able to swap if included goes to the front or back
+//	and it should iterate over the shorter and compare to the longer
+//	because the runtime will be m*log(n)
+//	see Delaunay.missingEdges for inspiration
+
 // Iter wraps a slice to fulfillliter.Iter.
 type Iter[T any] struct {
 	S []T

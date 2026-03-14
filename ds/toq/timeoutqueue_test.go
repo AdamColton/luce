@@ -14,7 +14,9 @@ import (
 // difficult to guarentee the execution order. Adding small delays doesn't
 // slow down the test much, but keeps the execution order predictible.
 
-// TODO: replace direct calls to time.Now and time.Sleep
+// == projects.Code.luce.toq ==
+// [ ] toq_test
+// replace direct calls to time.Now and time.Sleep
 
 func getAction(ch chan<- int, i int) func() {
 	time.Sleep(time.Millisecond)
