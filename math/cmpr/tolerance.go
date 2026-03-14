@@ -47,3 +47,11 @@ func Equal(a, b float64) bool {
 func Zero(x float64) bool {
 	return DefaultTolerance.Zero(x)
 }
+
+// Range returns [t, end-t]
+func (t Tolerance) Range(end float64) *[2]float64 {
+	return &[2]float64{
+		float64(t),
+		end - float64(t),
+	}
+}
