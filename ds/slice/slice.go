@@ -28,10 +28,15 @@ func Make[T any](ln, cp int) Slice[T] {
 }
 
 // Clone a slice. The capacity can be set with cp. If cp is less than the length
-// of s, that length will be used as the capacity.
+// of s, that length will be used as the capacity. If cp is less than zero,
+// then the length of s will be used.
 func (s Slice[T]) Clone(cp int) Slice[T] {
 	ln := len(s)
-	cp = cmpr.Max(cp, ln)
+	if cp < 0 {
+		cp = ln
+	} else {
+		cp = cmpr.Max(cp, ln)
+	}
 	out := make([]T, ln, cp)
 	copy(out, s)
 	return out
