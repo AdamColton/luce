@@ -33,3 +33,13 @@ func (i ByIdx[T, N]) AtIdx(idx int) T {
 	ii := int(i.Idxs.AtIdx(idx))
 	return i.Source.AtIdx(ii)
 }
+
+// For is shorthand for Wrap().Iter().For(fn)
+func (i ByIdx[T, N]) For(fn func(t T)) {
+	i.Wrap().Iter().For(fn)
+}
+
+// Each is shorthand for Wrap().Iter().Each(fn)
+func (i ByIdx[T, N]) Each(fn func(idx int, t T, done *bool)) {
+	i.Wrap().Iter().Each(fn)
+}
