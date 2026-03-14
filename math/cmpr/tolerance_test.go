@@ -14,3 +14,11 @@ func TestEqual(t *testing.T) {
 	assert.True(t, cmpr.Equal(a, b))
 	assert.True(t, cmpr.Zero(d))
 }
+
+func TestRange(t *testing.T) {
+	got := cmpr.DefaultTolerance.Range(1)
+
+	dt := float64(cmpr.DefaultTolerance)
+	expected := [2]float64{dt, 1 - dt}
+	assert.Equal(t, &expected, got)
+}
