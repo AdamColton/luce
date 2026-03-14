@@ -98,7 +98,9 @@ func (n *node) Next(r rune, create bool, p *Prefix) (*node, bool) {
 		p.starts[r] = append(p.starts[r], next)
 		n.setChild(r, next)
 		ok = true
-		p.saveIf() // TODO: probably overkill
+		// [ ] prefix.Node.Next saveIf
+		//	this is probably overkill
+		p.saveIf()
 	}
 	return next, ok
 }

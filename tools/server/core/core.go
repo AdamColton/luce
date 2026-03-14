@@ -1,5 +1,11 @@
 package core
 
+// == projects.Code.luce.server ==
+// [ ] rename core
+//	it only makes sense in context
+//	should probably be core -> server
+//  server -> lserver
+
 import (
 	"net/http"
 
