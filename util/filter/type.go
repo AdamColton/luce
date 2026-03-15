@@ -221,6 +221,16 @@ func (t Type) Check(errFn func(reflect.Type) error) TypeChecker {
 	}
 }
 
+// Panic returns the type of i, found the way Check does, and panics if it does
+// not pass the filter.
+func (t Type) Panic(i any) reflect.Type {
+	it := reflector.ToType(i)
+	if !t.Filter(it) {
+		panic("did not get expected type")
+	}
+	return it
+}
+
 // IsKind creates a Type filter that returns true when given a type that
 // matches the specified kind.
 func IsKind(kind reflect.Kind) Type {
