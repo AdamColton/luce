@@ -1,11 +1,24 @@
 package ldate
 
 import (
+	"cmp"
 	"strconv"
 	"time"
 
 	"github.com/adamcolton/luce/util/filter"
 )
+
+// Less returns true if a is before b, which makes it usable for sorting.
+func Less(a, b Date) bool {
+	c := cmp.Compare(a.Year, b.Year)
+	if c == 0 {
+		c = cmp.Compare(a.Month, b.Month)
+		if c == 0 {
+			c = cmp.Compare(a.Day, b.Day)
+		}
+	}
+	return c == -1
+}
 
 // Date is a day in the calendar. A Date is not normalized: New and Resolve turn
 // a Month or Day that is out of range into the date it means.
@@ -13,6 +26,11 @@ type Date struct {
 	Year  Year
 	Month Month
 	Day   int
+}
+
+// FromTime returns the Date of t, in t's location.
+func FromTime(t time.Time) Date {
+	return New(t.Year(), int(t.Month()), t.Day())
 }
 
 // New returns the Date for day d of month m of year y. A month or day out of
