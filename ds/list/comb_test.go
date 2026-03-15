@@ -56,5 +56,5 @@ func TestSliceCombinator(t *testing.T) {
 	})
 	got := list.SliceCombinator(ints.Pair, a, b).Slice(nil)
 	expected := [][]float64{{5, 15}, {6, 16}, {7, 17}, {8, 18}, {9, 19}}
-	assert.Equal(t, got, expected)
+	assert.Equal(t, expected, [][]float64(got))
 }

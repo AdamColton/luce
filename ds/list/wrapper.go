@@ -59,7 +59,7 @@ func (w Wrapper[T]) Reverse() Wrapper[T] {
 // Slice converts a List to a slice. If the underlying List (possibly through a
 // Wrapper) fulfills slice.Slicer, that will be invoked. Otherwise the values are
 // copied into buf if it has enough capacity, or a new slice if not.
-func (w Wrapper[T]) Slice(buf []T) []T {
+func (w Wrapper[T]) Slice(buf []T) slice.Slice[T] {
 	if s, ok := upgrade.To[slice.Slicer[T]](w.List); ok {
 		return s.Slice(buf)
 	}
