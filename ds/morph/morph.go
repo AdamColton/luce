@@ -35,6 +35,13 @@ func (kv KeyValAll[K, V, Out]) ToKV() KeyVal[K, V, Out] {
 	}
 }
 
+// GetKey returns a KeyValAll that returns the key and ignores the value.
+func GetKey[K, V any]() KeyValAll[K, V, K] {
+	return func(k K, v V) K {
+		return k
+	}
+}
+
 // Val converts a value to an Out. The tools that apply a Val skip the values for
 // which include is false.
 type Val[V, Out any] func(v V) (out Out, include bool)
