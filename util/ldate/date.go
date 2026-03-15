@@ -204,3 +204,8 @@ func TimeToDate(t time.Time) Date {
 		Day:   t.Day(),
 	}
 }
+
+// Time returns the Date as a time.Time at midnight in the local time zone.
+func (n Date) Time() time.Time {
+	return time.Date(int(n.Year), time.Month(n.Month), n.Day, 0, 0, 0, 0, time.Local)
+}

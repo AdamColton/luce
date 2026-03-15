@@ -2,6 +2,7 @@ package ldate_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/adamcolton/luce/util/ldate"
 	"github.com/stretchr/testify/assert"
@@ -21,4 +22,9 @@ func TestFromStringErrors(t *testing.T) {
 	d, err := ldate.FromString("-001_12_31")
 	assert.NoError(t, err)
 	assert.Equal(t, ldate.New(-1, 12, 31), d)
+}
+
+func TestDateTime(t *testing.T) {
+	d := ldate.New(2024, 2, 29)
+	assert.Equal(t, time.Date(2024, time.February, 29, 0, 0, 0, 0, time.Local), d.Time())
 }
