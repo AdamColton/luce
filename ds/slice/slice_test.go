@@ -467,3 +467,15 @@ func TestReverse(t *testing.T) {
 	s.Reverse()
 	assert.Equal(t, expected, s)
 }
+
+func TestAppendIf(t *testing.T) {
+	s := slice.Slice[int]{3, 1}
+	s = s.AppendIf(true, 4, 1).
+		AppendIf(false, 5).
+		AppendIf(true, 9)
+	assert.Equal(t, slice.Slice[int]{3, 1, 4, 1, 9}, s)
+
+	var empty slice.Slice[int]
+	assert.Nil(t, empty.AppendIf(false, 1))
+	assert.Equal(t, slice.Slice[int]{1}, empty.AppendIf(true, 1))
+}

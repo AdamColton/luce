@@ -239,3 +239,13 @@ func (s Slice[T]) Reverse() {
 		s.Swap(i, ln-i)
 	}
 }
+
+// AppendIf appends v to s if cond is true, otherwise s is returned unchanged.
+// This is useful for conditionally adding values while building a slice in a
+// single expression.
+func (s Slice[T]) AppendIf(cond bool, v ...T) Slice[T] {
+	if cond {
+		return append(s, v...)
+	}
+	return s
+}
