@@ -534,3 +534,10 @@ func TestSliceSplit(t *testing.T) {
 	assert.Panics(t, func() { s.Split(-1) })
 	assert.Panics(t, func() { s.Split(len(s) + 1) })
 }
+
+// func TestTransformAll(t *testing.T) {
+// 	s := slice.Slice[int]{3, 1, 4, 1, 5}
+// 	got := slice.TransformAll(s, nil, strconv.Itoa)
+// 	expected := slice.Slice[string]{"3", "1", "4", "1", "5"}
+// 	assert.Equal(t, expected, got)
+// }

@@ -40,7 +40,13 @@ package slice
 // ForAll is a helper function for transformers. Transformers have an index
 // argument and a bool return that are often not used.
 // func ForAll[In, Out any](fn func(in In) Out) TransformFunc[In, Out] {
-// return func(in In, idx int) (Out, bool) {
-// return fn(in), true
+// 	return func(in In, idx int) (Out, bool) {
+// 		return fn(in), true
+// 	}
 // }
+
+// TransformAll applies the given function to each element of "in". This is
+// shorthand for TransformSlice(in, buf, ForAll(fn))
+// func TransformAll[In, Out any](in []In, buf []Out, fn func(in In) Out) Slice[Out] {
+// 	return TransformSlice(in, buf, ForAll(fn))
 // }
