@@ -1,6 +1,7 @@
 package linject
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/adamcolton/luce/ds/morph"
@@ -141,7 +142,10 @@ func (ifn *InitilizedFunc) Call(args []reflect.Value) []reflect.Value {
 	// == projects.Code.luce.linject ==
 	// [ ] linject.InitilizedFunc.Call handle Inject errors
 	//	they are not returned because Call has no error to return them in
-	cbs, _ := ifn.dis.Inject(args)
+	cbs, err := ifn.dis.Inject(args)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	out := ifn.fn.Call(args)
 
