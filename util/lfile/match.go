@@ -74,6 +74,12 @@ func (m Match) Root(root ...string) MatchRoot {
 	}
 }
 
+// SetCoreFS is a helper to allow dot chaining when creating a new MatchRoot.
+func (mr MatchRoot) SetCoreFS(cf CoreFS) MatchRoot {
+	mr.CoreFS = cf
+	return mr
+}
+
 type matchRootIter struct {
 	MatchRoot
 	path  string
