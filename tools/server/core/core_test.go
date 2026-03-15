@@ -1,6 +1,7 @@
 package core_test
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -11,6 +12,7 @@ import (
 	"github.com/adamcolton/luce/util/cli"
 	"github.com/adamcolton/luce/util/handler"
 	"github.com/adamcolton/luce/util/timeout"
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,6 +20,15 @@ type cmdr struct {
 	*core.Server
 	cli.Helper
 	ec *cli.ExitClose
+}
+
+func cmdrFactory(srv *core.Server) func(ec *cli.ExitClose) cli.Commander {
+	return func(ec *cli.ExitClose) cli.Commander {
+		return &cmdr{
+			Server: srv,
+			ec:     ec,
+		}
+	}
 }
 
 func (c *cmdr) Commands() *handler.Commands {
@@ -64,12 +75,7 @@ func TestCore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expected, got)
 
-	srv.CliHandler = func(ec *cli.ExitClose) cli.Commander {
-		return &cmdr{
-			Server: srv,
-			ec:     ec,
-		}
-	}
+	srv.CliHandler = cmdrFactory(srv)
 	buf := &syncBuffer{}
 	in := make(chan []byte)
 	ctx := cli.NewContext(buf, in, nil)
@@ -109,4 +115,31 @@ func TestCore(t *testing.T) {
 	assert.NoError(t, err)
 
 	timeout.After(10, didExit)
+}
+
+func TestGorillaVars(t *testing.T) {
+	cfg := core.Config{
+		Addr: ":53453",
+	}
+	srv := cfg.NewServer()
+	srv.Router.HandleFunc("/test/{myVar}", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		fmt.Fprintf(w, "Got: %s", vars["myVar"])
+	})
+
+	closed := make(chan bool)
+	go func() {
+		srv.Run()
+		closed <- true
+	}()
+
+	resp, err := http.Get("http://localhost" + cfg.Addr + "/test/foo")
+	assert.NoError(t, err)
+	got, err := io.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	expected := []byte("Got: foo")
+	assert.Equal(t, expected, got)
+
+	srv.Close()
+	timeout.After(10, closed)
 }
