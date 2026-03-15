@@ -242,14 +242,15 @@ func (s Slice[T]) Sort(less Less[T]) Slice[T] {
 	return less.Sort(s)
 }
 
-// Reverse a slice in place.
-func (s Slice[T]) Reverse() {
+// Reverse a slice in place. It returns s, so the call can be chained.
+func (s Slice[T]) Reverse() Slice[T] {
 	ln := len(s)
 	end := ln / 2
 	ln--
 	for i := 0; i < end; i++ {
 		s.Swap(i, ln-i)
 	}
+	return s
 }
 
 // ErrRng is the error AtIdx panics with when the index is out of range.
