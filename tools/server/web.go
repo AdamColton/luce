@@ -1,6 +1,7 @@
 package server
 
 import (
+	"cmp"
 	"net/http"
 
 	"github.com/adamcolton/luce/lerr"
@@ -68,12 +69,14 @@ var (
 </html>`
 )
 
+var ltStr = cmp.Less[string]
+
 func (s *Server) listServices(w http.ResponseWriter, r *http.Request, d *struct {
 	Session *lusess.Session
 }) {
 	sw := luceio.NewSumWriter(w)
 	sw.WriteString(servicesHeader)
-	s.services.Each(func(name string, srv *serviceConn, done *bool) {
+	s.services.SortedEachKey(ltStr, nil, func(name string, srv *serviceConn, done *bool) {
 		sw.WriteStrings("<h2>", name, "</h2><ul>")
 		for _, l := range srv.service.Links {
 			sw.WriteStrings("<li><a href=\"", l.Get(s.coreserver.Host, s.coreserver.Addr), "\">", l.Name, "</a></li>")
