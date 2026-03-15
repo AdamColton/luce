@@ -234,3 +234,10 @@ func (s Slice[T]) AtIdx(idx int) T {
 func (s Slice[T]) Len() int {
 	return len(s)
 }
+
+func (s Slice[T]) AppendIf(cond bool, v ...T) Slice[T] {
+	if cond {
+		return append(s, v...)
+	}
+	return s
+}
