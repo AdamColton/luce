@@ -3,8 +3,10 @@ package ldate
 import (
 	"cmp"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/util/filter"
 )
 
@@ -31,6 +33,40 @@ type Date struct {
 // FromTime returns the Date of t, in t's location.
 func FromTime(t time.Time) Date {
 	return New(t.Year(), int(t.Month()), t.Day())
+}
+
+// ErrMalformed is returned by FromString for a string without two underscores.
+const ErrMalformed = lerr.Str("malformed")
+
+// FromString parses what String writes, YYYY_MM_DD. A month or day out of range
+// is carried over as in New. It returns ErrMalformed if there are not two
+// underscores and the error from strconv if a part is not a number.
+func FromString(str string) (Date, error) {
+	var out Date
+	u1 := strings.Index(str, "_")
+	if u1 == -1 {
+		return out, ErrMalformed
+	}
+	u2 := strings.Index(str[u1+1:], "_")
+	if u2 == -1 {
+		return out, ErrMalformed
+	}
+	u2 += u1 + 1
+
+	y, err := strconv.Atoi(str[:u1])
+	if err != nil {
+		return out, err
+	}
+	m, err := strconv.Atoi(str[u1+1 : u2])
+	if err != nil {
+		return out, err
+	}
+	d, err := strconv.Atoi(str[u2+1:])
+	if err != nil {
+		return out, err
+	}
+
+	return New(y, m, d), nil
 }
 
 // New returns the Date for day d of month m of year y. A month or day out of
@@ -167,4 +203,9 @@ func TimeToDate(t time.Time) Date {
 		Month: Month(t.Month()),
 		Day:   t.Day(),
 	}
+}
+
+// Time returns the Date as a time.Time at midnight in the local time zone.
+func (n Date) Time() time.Time {
+	return time.Date(int(n.Year), time.Month(n.Month), n.Day, 0, 0, 0, 0, time.Local)
 }

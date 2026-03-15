@@ -25,6 +25,22 @@ func TestDateString(t *testing.T) {
 	}
 }
 
+func TestFromString(t *testing.T) {
+	tt := map[string]string{
+		"2026_04_01": "2026_04_01",
+		"2025_13_01": "2026_01_01",
+		"2025_12_32": "2026_01_01",
+	}
+
+	for n, tc := range tt {
+		t.Run(n, func(t *testing.T) {
+			d, err := ldate.FromString(n)
+			assert.NoError(t, err)
+			assert.Equal(t, tc, d.String())
+		})
+	}
+}
+
 func TestDateValid(t *testing.T) {
 	tt := []struct {
 		ldate.Date
@@ -126,6 +142,10 @@ func TestResolve(t *testing.T) {
 		},
 		{
 			init:     ldate.New(2024, 20, 1),
+			resolved: ldate.New(2025, 8, 1),
+		},
+		{
+			init:     ldate.New(2026, 5, 35),
 			resolved: ldate.New(2025, 8, 1),
 		},
 	}
