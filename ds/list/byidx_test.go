@@ -15,7 +15,7 @@ func TestByIdx(t *testing.T) {
 	})
 	got := list.NewByIdx(src, idxs).Wrap().Slice(nil)
 	expected := []int{3, 4, 5, 2, 5}
-	assert.Equal(t, expected, got)
+	assert.Equal(t, expected, []int(got))
 }
 
 func TestByIdxShorthand(t *testing.T) {

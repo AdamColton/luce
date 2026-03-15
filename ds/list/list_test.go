@@ -71,7 +71,7 @@ func TestLists(t *testing.T) {
 			assert.Equal(t, len(tc.expected), w.Len())
 
 			got := w.Slice(nil)
-			assert.Equal(t, tc.expected, got)
+			assert.Equal(t, tc.expected, []int(got))
 
 			c := 0
 			fn := func(idx, i int, done *bool) {
@@ -95,7 +95,7 @@ func TestLists(t *testing.T) {
 
 			got = liter.Appender[int]().
 				Iter(got[:0], it)
-			assert.Equal(t, tc.expected, got)
+			assert.Equal(t, tc.expected, []int(got))
 
 			_, done := it.Next()
 			assert.True(t, done)
@@ -119,5 +119,5 @@ func TestNullary(t *testing.T) {
 
 	expected := []int{1, 2, 3, 4, 5}
 	got := g.Slice(nil)
-	assert.Equal(t, expected, got)
+	assert.Equal(t, expected, []int(got))
 }

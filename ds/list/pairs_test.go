@@ -29,7 +29,7 @@ func TestPairs(t *testing.T) {
 		{3, 4},
 		{4, 0},
 	}
-	assert.Equal(t, expected, w.Slice(nil))
+	assert.Equal(t, expected, [][2]int(w.Slice(nil)))
 }
 
 func TestPairsShorthand(t *testing.T) {
