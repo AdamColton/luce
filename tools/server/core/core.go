@@ -23,7 +23,8 @@ type SSL struct {
 
 // Config holds the settings needed to build a Server.
 type Config struct {
-	Addr            string
+	Addr string
+	// TODO: Host isn't used
 	Host            string
 	Socket          string
 	CliStartMessage string

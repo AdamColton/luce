@@ -15,7 +15,7 @@ import (
 	"github.com/adamcolton/luce/util/lexec"
 	"github.com/adamcolton/luce/util/lfile"
 	"github.com/adamcolton/luce/util/ltmpl"
-	"github.com/quasoft/memstore"
+	"github.com/gorilla/sessions"
 )
 
 // == projects.Code.luce.server ==
@@ -28,7 +28,8 @@ import (
 // The config file should be json formatted.
 type Config struct {
 	// Session is a list of base 64 URL Encoded key pairs.
-	Session []string
+	Session      []string
+	SessionsPath string
 	// BoltFile is the file used for the bolt database
 	BoltFile      string
 	Socket        string
@@ -77,7 +78,8 @@ func main() {
 	err := lfile.JsonConfig("luce_server_config", "config.json", conf)
 	lerr.Panic(err)
 
-	ss := memstore.NewMemStore(conf.SessionBytes()...)
+	fmt.Println(conf.SessionsPath)
+	ss := sessions.NewFilesystemStore(conf.SessionsPath, conf.SessionBytes()...)
 	ss.Options.Domain = conf.Host
 
 	srvConf := &server.Config{

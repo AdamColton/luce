@@ -39,9 +39,6 @@ func init() {
 			lerr.Panic(r.RegisterType((*Corpus)(nil)))
 			lerr.Panic(r.RegisterType((*root)(nil)))
 			lerr.Panic(r.RegisterType((*Document)(nil)))
-			//TODO: move these to their own packages
-			//r.RegisterType((*DocBaleType)(nil))
-			//r.RegisterType((*prefix.PrefixBale)(nil))
 		}
 		serializer = entity.GetSerializer()
 
