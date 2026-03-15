@@ -2,8 +2,8 @@ package compact
 
 import "github.com/adamcolton/luce/serial/rye"
 
-// EncodeBits takes a slice of *Bits and encodes them as a single []byte. The
-// []*Bits can be recovered with DecodeBits.
+// EncodeBits takes a slice of *Bits and encodes them as a single []byte.
+// The []*Bits can be recovered with DecodeBits.
 func EncodeBits(bs []*rye.Bits) []byte {
 	sum := &rye.Bits{}
 	var maxLn int
@@ -36,8 +36,8 @@ func EncodeBits(bs []*rye.Bits) []byte {
 	return s.Data
 }
 
-// EncodeBits takes a slice of *Bits and encodes them as a single []byte. The
-// []*Bits can be recovered with DecodeBits. The structure of the encoded data
+// EncodeBits takes a slice of *Bits and encodes them as a single []byte.
+// The []*Bits can be recovered with DecodeBits. The structure of the encoded data
 // is a CompactUint64 for the data length. Then a byte bit length to use when
 // looking up lengths. Then all the lengths are encoded, then all the Bits are
 // encoded.

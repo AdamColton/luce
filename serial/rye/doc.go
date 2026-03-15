@@ -1,7 +1,7 @@
 // Package rye is a helper for writing serializing and deserializing logic.
 //
-// There are two related compact formats. One for Uint64 and one for []byte. The
-// []byte format is PrefixSlice. If the slice is one byte and that byte is less
+// There are two related compact formats. One for Uint64 and one for []byte.
+// The []byte format is PrefixSlice. If the slice is one byte and that byte is less
 // than 129, it is written directly. So all one byte values upto 128 are encoded
 // in a single byte. The byte 129 is reseverved for a nil slice. For any slice
 // up to 121 bytes, the length is encoded in a single slice as len+129. For
