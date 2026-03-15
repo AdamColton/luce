@@ -1,16 +1,32 @@
 package ldate
 
 import (
+	"cmp"
 	"strconv"
 	"time"
 
 	"github.com/adamcolton/luce/util/filter"
 )
 
+func Less(a, b Date) bool {
+	c := cmp.Compare(a.Year, b.Year)
+	if c == 0 {
+		c = cmp.Compare(a.Month, b.Month)
+		if c == 0 {
+			c = cmp.Compare(a.Day, b.Day)
+		}
+	}
+	return c == -1
+}
+
 type Date struct {
 	Year  Year
 	Month Month
 	Day   int
+}
+
+func FromTime(t time.Time) Date {
+	return New(t.Year(), int(t.Month()), t.Day())
 }
 
 func New(y, m, d int) Date {
