@@ -14,7 +14,7 @@ func (fn M) PartialDerivative(x []float64, idx int) float64 {
 	step := 1e-2
 	d := 1.0
 	xi := x[idx]
-	for !small.Zero(d) {
+	for !small.Zero(d) && step > 1e-12 {
 		step /= 2
 		x[idx] = xi + step
 		d = fn(x)

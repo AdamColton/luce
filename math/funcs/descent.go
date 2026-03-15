@@ -4,8 +4,20 @@ import (
 	"math"
 
 	"github.com/adamcolton/luce/ds/morph"
+	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/math/cmpr"
 )
+
+const (
+	DefaultDamper = 0.1
+)
+
+// == projects.Code.luce.funcs ==
+// [ ] gradient descent
+//	I need this working for melange
+// 	and I'm not sure why it's not
+// [ ] stop on NaN
+//	Run and Record should stop when encountering NaN
 
 // Note: the issue I was having is that Newton and Secant are for finding zeros.
 // I need quasi-Newton methods for finding minima. But that's not necessary
@@ -26,6 +38,22 @@ type Descender struct {
 	G, DG           float64
 	X, DX, Momentum []float64
 	Steps           int
+	// Momentum is scaled by the damper at each step
+	Damper float64
+}
+
+type StepRecord struct {
+	G, DG           float64
+	X, DX, Momentum []float64
+}
+
+func (d *Descender) StepRecord() StepRecord {
+	return StepRecord{
+		G:  d.G,
+		DG: d.DG,
+		X:  slice.New(d.X).Clone(-1),
+		DX: slice.New(d.DX).Clone(-1),
+	}
 }
 
 func (d *Descender) SetDX() {
@@ -34,7 +62,7 @@ func (d *Descender) SetDX() {
 
 func (d *Descender) Step() {
 	for i, dx := range d.DX {
-		d.Momentum[i] = d.Momentum[i]*.1 + dx*d.G
+		d.Momentum[i] = d.Momentum[i]*d.Damper + dx*d.G
 		d.X[i] -= d.Momentum[i]
 	}
 
@@ -79,6 +107,9 @@ func (d *Descender) Init() *Descender {
 	if d.DG == 0 {
 		d.SetDG(1e-3)
 	}
+	if d.Damper == 0 {
+		d.Damper = DefaultDamper
+	}
 	return d
 }
 
@@ -87,4 +118,14 @@ func (d *Descender) Run() *Descender {
 		d.Step()
 	}
 	return d
+}
+
+func (d *Descender) Record() (*Descender, []StepRecord) {
+	log := make([]StepRecord, 0, d.Steps+1)
+	log = append(log, d.StepRecord())
+	for d.Steps > 0 {
+		d.Step()
+		log = append(log, d.StepRecord())
+	}
+	return d, log
 }

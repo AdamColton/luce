@@ -426,3 +426,10 @@ func TestSliceList(t *testing.T) {
 	assert.Equal(t, 4, l.Len())
 	assert.Equal(t, "banana", l.AtIdx(1))
 }
+
+// func TestTransformAll(t *testing.T) {
+// 	s := slice.Slice[int]{3, 1, 4, 1, 5}
+// 	got := slice.TransformAll(s, nil, strconv.Itoa)
+// 	expected := slice.Slice[string]{"3", "1", "4", "1", "5"}
+// 	assert.Equal(t, expected, got)
+// }
