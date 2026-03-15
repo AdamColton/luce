@@ -89,8 +89,8 @@ func TestMRILMock(t *testing.T) {
 	lt := slice.LT[string]()
 	for n, tc := range tt {
 		t.Run(n, func(t *testing.T) {
-			r := tc.Match.Root("/")
-			r.CoreFS = repo
+			r := tc.Match.Root("/").
+				SetCoreFS(repo)
 			got := slice.FromIterFactory(r.Factory, nil)
 			got.Sort(lt)
 			expected := slice.New(append(slice.New(tc.expectedDirs).Clone(0), tc.expectedFiles...))

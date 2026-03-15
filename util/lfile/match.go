@@ -7,6 +7,7 @@ import (
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/util/filter"
 	"github.com/adamcolton/luce/util/liter"
+	"github.com/adamcolton/luce/util/upgrade"
 )
 
 // Match describes which files and directories a walk returns and which
@@ -94,6 +95,23 @@ func (m Match) Root(root ...string) MatchRoot {
 		Root:   path.Join(root...),
 		CoreFS: OSRepository{},
 	}
+}
+
+// SetCoreFS is a helper to allow dot chaining when creating a new MatchRoot. A
+// CoreFS that can describe a file by path (an FSReader, as OSRepository and
+// testing/fstest.MapFS are) is used as it is. One that can't, such as an
+// embed.FS, is wrapped with WrapCoreFS so the MatchRoot can. A nil CoreFS is
+// OSRepository.
+func (mr MatchRoot) SetCoreFS(cf CoreFS) MatchRoot {
+	if cf == nil {
+		cf = OSRepository{}
+	} else if fsr, ok := upgrade.To[FSReader](cf); ok {
+		cf = fsr
+	} else {
+		cf = WrapCoreFS(cf)
+	}
+	mr.CoreFS = cf
+	return mr
 }
 
 // == projects.Code.luce.lfile ==
