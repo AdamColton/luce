@@ -12,6 +12,14 @@ type Heap[T any] struct {
 	Less func(i, j int) bool
 }
 
+// New creates a Heap that compares values with less: Pop returns the value less
+// puts first.
+func New[T any](less func(i, j T) bool) *Heap[T] {
+	h := &Heap[T]{}
+	h.SetLess(less)
+	return h
+}
+
 // Ordered data types can be used with NewMin and NewMax without the need to
 // define the Less func on the Heap.
 type Ordered interface {
