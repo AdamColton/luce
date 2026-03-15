@@ -12,11 +12,13 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/adamcolton/luce/tools/server/core"
+	"github.com/adamcolton/luce/util/cli"
 	"github.com/adamcolton/luce/util/timeout"
 	"github.com/stretchr/testify/assert"
 )
@@ -124,4 +126,60 @@ func TestServerSocketNotConfigured(t *testing.T) {
 	cfg := core.Config{Addr: ":53458"}
 	srv := cfg.NewServer()
 	assert.False(t, srv.AwaitSocket())
+}
+
+
+func TestRunStdIO(t *testing.T) {
+	cfg := core.Config{Addr: ":53459"}
+	srv := cfg.NewServer()
+	srv.CliHandler = cmdrFactory(srv)
+
+	oldIn, oldOut := cli.StdIn, cli.StdOut
+	defer func() { cli.StdIn, cli.StdOut = oldIn, oldOut }()
+	pr, pw := io.Pipe()
+	cli.StdIn = pr
+	buf := &syncBuffer{}
+	cli.StdOut = buf
+
+	// RunStdIO blocks running the CLI over StdIn/StdOut, same as a real
+	// admin session; it isn't meant to return, so this leaves the
+	// goroutine running for the rest of the test binary's life.
+	go srv.RunStdIO()
+
+	err := timeout.After(200, func() {
+		for !strings.Contains(buf.String(), "> ") {
+			time.Sleep(time.Millisecond)
+		}
+	})
+	assert.NoError(t, err)
+
+	pw.Write([]byte("help\n"))
+	err = timeout.After(200, func() {
+		for !strings.Contains(buf.String(), "h, help") {
+			time.Sleep(time.Millisecond)
+		}
+	})
+	assert.NoError(t, err)
+}
+
+func TestServerSocket(t *testing.T) {
+	dir := t.TempDir()
+	cfg := core.Config{
+		Addr:   ":53457",
+		Socket: dir + "/admin.sock",
+	}
+	srv := cfg.NewServer()
+	srv.CliHandler = cmdrFactory(srv)
+
+	closed := make(chan bool)
+	go func() {
+		srv.Run()
+		closed <- true
+	}()
+
+	assert.True(t, srv.AwaitSocket())
+
+	assert.NoError(t, srv.Close())
+	err := timeout.After(100, closed)
+	assert.NoError(t, err)
 }
