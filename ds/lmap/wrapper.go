@@ -7,6 +7,7 @@ import (
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/math/cmpr"
 	"github.com/adamcolton/luce/util/liter"
+	"github.com/adamcolton/luce/util/upgrade"
 )
 
 // Wrapper provides helpers around a Mapper.
@@ -140,24 +141,33 @@ func (w Wrapper[K, V]) SortKeys(less Less[K], buf []K) slice.Slice[K] {
 }
 
 // EachKey invokes the EachFunc for every
-func (w Wrapper[K, V]) EachKey(i liter.Iter[K], fn EachFunc[K, V]) {
-	for cur, done := i.Cur(); !done; cur, done = i.Next() {
-		v, found := w.Get(cur)
-		if found {
-			fn(cur, v, &done)
-			if done {
-				break
-			}
-		}
+func (w Wrapper[K, V]) EachKey(i liter.Iter[K]) Each[K, V] {
+	ln := 0
+	if l, ok := upgrade.To[Lener](i); ok {
+		ln = l.Len()
 	}
+	return Each[K, V]{
+		L: ln,
+		Func: func(fn EachFunc[K, V]) {
+			for cur, done := i.Cur(); !done; cur, done = i.Next() {
+				v, found := w.Get(cur)
+				if found {
+					fn(cur, v, &done)
+					if done {
+						break
+					}
+				}
+			}
+		},
+	}
+
 }
 
 // SortedEachKey is shorthand for invoking SortedKeys and then EachKey. It
 // creates a sorted slice as intermediary product.
-func (w Wrapper[K, V]) SortedEachKey(less Less[K], buf []K, fn EachFunc[K, V]) slice.Slice[K] {
+func (w Wrapper[K, V]) SortedEachKey(less Less[K], buf []K, fn EachFunc[K, V]) Each[K, V] {
 	keys := w.SortKeys(less, buf)
-	w.EachKey(keys.Iter(), fn)
-	return keys
+	return w.EachKey(keys.Iter())
 }
 
 // KeyLessKP is a helper that converts a Less function on the Key type to
@@ -196,4 +206,12 @@ func (w Wrapper[K, V]) Slice(less Less[KeyPair[K, V]], buf []KeyPair[K, V]) slic
 		out.Sort(less)
 	}
 	return out
+}
+
+// Contains returns true if the underlying Mapper contains the key.
+func (w Wrapper[K, V]) Contains(key K) (contains bool) {
+	if w.Mapper != nil {
+		_, contains = w.Get(key)
+	}
+	return
 }
