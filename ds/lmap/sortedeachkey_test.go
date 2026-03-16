@@ -12,9 +12,15 @@ func TestSortedEachKey(t *testing.T) {
 	less := func(i, j string) bool { return i < j }
 
 	var got []string
-	keys := m.SortedEachKey(less, nil, func(k string, v int, done *bool) {
+	m.SortedEachKey(less, nil, func(k string, v int, done *bool) {
 		got = append(got, k)
 	})
 	assert.Equal(t, []string{"a", "b", "c"}, got)
-	assert.Equal(t, []string{"a", "b", "c"}, []string(keys))
+
+	got = nil
+	m.SortedEachKey(less, nil, func(k string, v int, done *bool) {
+		got = append(got, k)
+		*done = k == "b"
+	})
+	assert.Equal(t, []string{"a", "b"}, got)
 }
