@@ -162,3 +162,14 @@ func TestCopy(t *testing.T) {
 	assert.Equal(t, "date", m.GetVal('d'))
 	assert.NotEqual(t, base, cp)
 }
+
+func TestContains(t *testing.T) {
+	base := map[rune]string{
+		'a': "apple",
+		'b': "banana",
+		'c': "cantaloupe",
+	}
+	m := lmap.New(base)
+	assert.True(t, m.Contains('a'))
+	assert.False(t, m.Contains('z'))
+}

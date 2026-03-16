@@ -7,6 +7,7 @@ import (
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/math/cmpr"
 	"github.com/adamcolton/luce/util/liter"
+	"github.com/adamcolton/luce/util/upgrade"
 )
 
 // Wrapper provides helpers around a Mapper.
@@ -147,27 +148,38 @@ func (w Wrapper[K, V]) SortKeys(less Less[K], buf []K) slice.Slice[K] {
 	return w.Keys(buf).Sort(less)
 }
 
-// EachKey calls fn for every key the iterator provides, in the order it
-// provides them, starting from the iterator's current value. Keys that are not
-// in the map are skipped. Setting done in fn stops the iteration.
-func (w Wrapper[K, V]) EachKey(i liter.Iter[K], fn EachFunc[K, V]) {
-	for cur, done := i.Cur(); !done; cur, done = i.Next() {
-		v, found := w.Get(cur)
-		if found {
-			fn(cur, v, &done)
-			if done {
-				break
-			}
-		}
+// EachKey returns an Each that calls its EachFunc for every key the iterator
+// provides, in the order it provides them, starting from the iterator's current
+// value. Keys that are not in the map are skipped. The Len of the Each is the
+// length of the iterator if it fulfills Lener (possibly through a Wrapper),
+// otherwise 0; it does not count skipped keys.
+func (w Wrapper[K, V]) EachKey(i liter.Iter[K]) Each[K, V] {
+	ln := 0
+	if l, ok := upgrade.To[Lener](i); ok {
+		ln = l.Len()
 	}
+	return Each[K, V]{
+		L: ln,
+		Func: func(fn EachFunc[K, V]) {
+			for cur, done := i.Cur(); !done; cur, done = i.Next() {
+				v, found := w.Get(cur)
+				if found {
+					fn(cur, v, &done)
+					if done {
+						break
+					}
+				}
+			}
+		},
+	}
+
 }
 
 // SortedEachKey is shorthand for invoking SortKeys and then EachKey. It
 // creates a sorted slice as intermediary product.
-func (w Wrapper[K, V]) SortedEachKey(less Less[K], buf []K, fn EachFunc[K, V]) slice.Slice[K] {
+func (w Wrapper[K, V]) SortedEachKey(less Less[K], buf []K, fn EachFunc[K, V]) {
 	keys := w.SortKeys(less, buf)
-	w.EachKey(keys.Iter(), fn)
-	return keys
+	w.EachKey(keys.Iter()).Each(fn)
 }
 
 // KeyLessKP is a helper that converts a Less function on the Key type to
@@ -213,4 +225,12 @@ func (w Wrapper[K, V]) Slice(less Less[KeyPair[K, V]], buf []KeyPair[K, V]) slic
 		out.Sort(less)
 	}
 	return out
+}
+
+// Contains returns true if the underlying Mapper contains the key.
+func (w Wrapper[K, V]) Contains(key K) (contains bool) {
+	if w.Mapper != nil {
+		_, contains = w.Get(key)
+	}
+	return
 }
