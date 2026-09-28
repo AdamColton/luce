@@ -52,3 +52,14 @@ func TestLast(t *testing.T) {
 	w := list.Slice([]int{3, 1, 4, 1, 5})
 	assert.Equal(t, 5, w.Last())
 }
+
+func TestFor(t *testing.T) {
+	expected := []int{3, 1, 4, 1, 5}
+	w := list.Slice(expected)
+	got := make([]int, 0, w.Len())
+	w.For(func(t int) {
+		got = append(got, t)
+	})
+
+	assert.Equal(t, expected, got)
+}
