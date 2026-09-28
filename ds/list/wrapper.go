@@ -93,3 +93,8 @@ func (w Wrapper[T]) AssertEqual(to interface{}, t cmpr.Tolerance) error {
 		return cmprtest.AssertEqual(w.AtIdx(i), toList.AtIdx(i), t)
 	})
 }
+
+// For is syntactic sugar for w.Iter().For(fn).
+func (w Wrapper[T]) For(fn func(t T)) {
+	w.Iter().For(fn)
+}
