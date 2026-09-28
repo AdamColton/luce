@@ -234,3 +234,9 @@ func (w Wrapper[K, V]) Contains(key K) (contains bool) {
 	}
 	return
 }
+
+// CheckSet returns ErrCollision if key is already defined, otherwise, it sets
+// the given keypair. The Mapper must not be nil.
+func (w Wrapper[K, V]) CheckSet(key K, val V) error {
+	return CheckSet(w, key, val)
+}
