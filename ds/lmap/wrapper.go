@@ -245,3 +245,12 @@ func (w Wrapper[K, V]) CheckSet(key K, val V) error {
 func (w Wrapper[K, V]) IsNil() bool {
 	return w.Mapper == nil
 }
+
+// Ensure checks if the underlying Mapper is nil, and if it is, returns a
+// Wrapper for a new map.
+func (w Wrapper[K, V]) Ensure() Wrapper[K, V] {
+	if w.IsNil() {
+		return New[K, V](nil)
+	}
+	return w
+}
