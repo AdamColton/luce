@@ -240,3 +240,8 @@ func (w Wrapper[K, V]) Contains(key K) (contains bool) {
 func (w Wrapper[K, V]) CheckSet(key K, val V) error {
 	return CheckSet(w, key, val)
 }
+
+// IsNil checks if the underlying Mapper is nil.
+func (w Wrapper[K, V]) IsNil() bool {
+	return w.Mapper == nil
+}
