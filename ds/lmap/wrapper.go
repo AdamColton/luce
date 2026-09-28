@@ -254,3 +254,22 @@ func (w Wrapper[K, V]) Ensure() Wrapper[K, V] {
 	}
 	return w
 }
+
+// Fetch looks up the key and returns the value if it is found. If no value is
+// found, the generator is invoked. If the generator is invoked and the
+// underlying mapper is not nil, the value is stored. A nil Mapper never finds
+// a value.
+func (w Wrapper[K, V]) Fetch(key K, generator func() V) V {
+	var v V
+	var found bool
+	if w.Mapper != nil {
+		v, found = w.Get(key)
+	}
+	if !found {
+		v = generator()
+		if w.Mapper != nil {
+			w.Set(key, v)
+		}
+	}
+	return v
+}
