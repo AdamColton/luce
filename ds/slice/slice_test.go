@@ -479,3 +479,27 @@ func TestAppendIf(t *testing.T) {
 	assert.Nil(t, empty.AppendIf(false, 1))
 	assert.Equal(t, slice.Slice[int]{1}, empty.AppendIf(true, 1))
 }
+
+func TestSliceSplit(t *testing.T) {
+	s := slice.Slice[int]{3, 1, 4, 1, 5}
+
+	a, b := s.Split(2)
+	assert.Equal(t, slice.Slice[int]{3, 1}, a)
+	assert.Equal(t, slice.Slice[int]{4, 1, 5}, b)
+
+	a, b = s.Split(0)
+	assert.Empty(t, a)
+	assert.Equal(t, s, b)
+
+	a, b = s.Split(len(s))
+	assert.Equal(t, s, a)
+	assert.Empty(t, b)
+
+	// shares backing array
+	_, b = s.Split(2)
+	b[0] = 9
+	assert.Equal(t, 9, s[2])
+
+	assert.Panics(t, func() { s.Split(-1) })
+	assert.Panics(t, func() { s.Split(len(s) + 1) })
+}
