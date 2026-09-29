@@ -329,6 +329,41 @@ func TestSearch(t *testing.T) {
 	assert.Equal(t, len(data), idx)
 }
 
+func TestFind(t *testing.T) {
+	data := slice.Slice[int]{2, 3, 5, 7, 11, 13, 17, 19, 23}
+	cmp := func(target int) func(int) int {
+		return func(i int) int { return target - i }
+	}
+
+	idx, found := data.Find(cmp(11))
+	assert.True(t, found)
+	assert.Equal(t, 4, idx)
+
+	idx, found = data.Find(cmp(2))
+	assert.True(t, found)
+	assert.Equal(t, 0, idx)
+
+	idx, found = data.Find(cmp(23))
+	assert.True(t, found)
+	assert.Equal(t, len(data)-1, idx)
+
+	idx, found = data.Find(cmp(10))
+	assert.False(t, found)
+	assert.Equal(t, 4, idx)
+
+	idx, found = data.Find(cmp(0))
+	assert.False(t, found)
+	assert.Equal(t, 0, idx)
+
+	idx, found = data.Find(cmp(24))
+	assert.False(t, found)
+	assert.Equal(t, len(data), idx)
+
+	idx, found = slice.Slice[int]{}.Find(cmp(1))
+	assert.False(t, found)
+	assert.Equal(t, 0, idx)
+}
+
 func TestIdxCheck(t *testing.T) {
 	data := slice.Slice[int]{2, 3, 5, 7, 11, 13, 17, 19, 23}
 	assert.False(t, data.IdxCheck(-3))
