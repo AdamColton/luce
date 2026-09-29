@@ -17,6 +17,12 @@ func New[T any](s []T) Slice[T] {
 	return s
 }
 
+// Vals creates a Slice from the arguments. This is syntactic sugar for
+// creating a Slice without specifying the type.
+func Vals[T any](vals ...T) Slice[T] {
+	return vals
+}
+
 // Make creates a Slice with the specified length and capacity. If cp is 0, ln
 // is used for the capacity as well.
 func Make[T any](ln, cp int) Slice[T] {

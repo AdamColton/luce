@@ -310,6 +310,18 @@ func TestMake(t *testing.T) {
 	assert.Equal(t, 15, len(data))
 }
 
+func TestVals(t *testing.T) {
+	assert.Equal(t, slice.Slice[int]{3, 1, 4}, slice.Vals(3, 1, 4))
+	assert.Equal(t, slice.Slice[string]{"a"}, slice.Vals("a"))
+	assert.Empty(t, slice.Vals[int]())
+
+	// shares backing array when passed a slice with ...
+	s := []int{3, 1, 4}
+	v := slice.Vals(s...)
+	v[0] = 9
+	assert.Equal(t, 9, s[0])
+}
+
 func TestNewCap(t *testing.T) {
 	data := slice.NewCap[int](10)
 	assert.Equal(t, 10, cap(data))
