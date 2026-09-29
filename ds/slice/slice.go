@@ -202,6 +202,17 @@ func (s Slice[T]) Search(fn func(T) bool) int {
 	})
 }
 
+// Find wraps sort.Find. The slice must be sorted so that compare returns
+// values > 0 for a prefix of the slice, then 0, then < 0. Find returns the
+// first idx where compare(s[idx]) <= 0 and found is true if compare returns 0
+// at that idx. If there is no such element, idx is len(s).
+func (s Slice[T]) Find(compare func(T) int) (idx int, found bool) {
+	fn := func(idx int) int {
+		return compare(s[idx])
+	}
+	return sort.Find(len(s), fn)
+}
+
 // IdxCheck returns false if idx is out of the range of s.
 func (s Slice[T]) IdxCheck(idx int) bool {
 	return idx >= 0 && idx < len(s)
