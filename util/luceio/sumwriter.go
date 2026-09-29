@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+
+	"github.com/adamcolton/luce/util/liter"
 )
 
 // SumWriter is a helper that wraps a Writer and sums the bytes written. If it
@@ -126,6 +128,22 @@ func (s *SumWriter) Join(elems []string, sep string) (int, error) {
 	s.WriteString(elems[0])
 	for _, e := range elems[1:] {
 		s.WriteStrings(sep, e)
+	}
+	return int(s.Sum - d), s.Err
+}
+
+// Iter writes the strings from an iterator using sep as a separator. Writing
+// starts from the iterator's current value, it is not reset. As with Join, an
+// empty iterator writes nothing. It returns the number of bytes written by this
+// call.
+func (s *SumWriter) Iter(elems liter.Iter[string], sep string) (int, error) {
+	d := s.Sum
+	cur, done := elems.Cur()
+	if !done {
+		s.WriteString(cur)
+		for cur, done = elems.Next(); !done; cur, done = elems.Next() {
+			s.WriteStrings(sep, cur)
+		}
 	}
 	return int(s.Sum - d), s.Err
 }
