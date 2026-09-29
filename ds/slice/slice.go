@@ -249,3 +249,9 @@ func (s Slice[T]) AppendIf(cond bool, v ...T) Slice[T] {
 	}
 	return s
 }
+
+// Split s at idx returning s[:idx] and s[idx:]. Both share the same backing
+// array as s. It will panic if idx is outside the range [0, len(s)].
+func (s Slice[T]) Split(idx int) (Slice[T], Slice[T]) {
+	return s[:idx], s[idx:]
+}
