@@ -310,6 +310,17 @@ func TestMake(t *testing.T) {
 	assert.Equal(t, 15, len(data))
 }
 
+func TestNewCap(t *testing.T) {
+	data := slice.NewCap[int](10)
+	assert.Equal(t, 10, cap(data))
+	assert.Equal(t, 0, len(data))
+	assert.NotNil(t, data)
+
+	data = slice.NewCap[int](0)
+	assert.Equal(t, 0, cap(data))
+	assert.NotNil(t, data)
+}
+
 func TestSearch(t *testing.T) {
 	data := slice.Slice[int]{2, 3, 5, 7, 11, 13, 17, 19, 23}
 	fn := func(i int) bool { return i >= 5 }

@@ -26,6 +26,11 @@ func Make[T any](ln, cp int) Slice[T] {
 	return make(Slice[T], ln, cp)
 }
 
+// NewCap makes an empty Slice with capacity c.
+func NewCap[T any](c int) Slice[T] {
+	return make(Slice[T], 0, c)
+}
+
 // Clone returns a copy of the slice. The capacity can be set with cp. If cp is less than the length
 // of s, that length will be used as the capacity. If cp is less than zero,
 // then the length of s will be used.
