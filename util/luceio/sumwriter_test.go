@@ -86,6 +86,68 @@ func TestSumWriterJoin(t *testing.T) {
 	assert.Equal(t, "this is a test", b.String())
 }
 
+// strIter is a minimal liter.Iter[string] over a slice.
+type strIter struct {
+	strs []string
+	idx  int
+}
+
+func (si *strIter) Cur() (string, bool) {
+	if si.idx >= len(si.strs) {
+		return "", true
+	}
+	return si.strs[si.idx], false
+}
+
+func (si *strIter) Next() (string, bool) {
+	si.idx++
+	return si.Cur()
+}
+
+func (si *strIter) Done() bool {
+	return si.idx >= len(si.strs)
+}
+
+func (si *strIter) Idx() int {
+	return si.idx
+}
+
+func TestSumWriterIter(t *testing.T) {
+	b, sw := luceio.BufferSumWriter()
+	n, err := sw.Iter(&strIter{strs: []string{"this", "is", "a", "test"}}, " ")
+	assert.NoError(t, err)
+	assert.Equal(t, 14, n)
+	assert.Equal(t, "this is a test", b.String())
+
+	// n only counts bytes written by this call
+	n, err = sw.Iter(&strIter{strs: []string{"", "x", "y"}}, "-")
+	assert.NoError(t, err)
+	assert.Equal(t, 4, n)
+	assert.Equal(t, "this is a test-x-y", b.String())
+	assert.Equal(t, int64(18), sw.Sum)
+
+	// empty iterator writes nothing
+	b, sw = luceio.BufferSumWriter()
+	n, err = sw.Iter(&strIter{}, " ")
+	assert.NoError(t, err)
+	assert.Equal(t, 0, n)
+	assert.Equal(t, "", b.String())
+
+	// starts from the current value, not reset
+	b, sw = luceio.BufferSumWriter()
+	it := &strIter{strs: []string{"a", "b", "c"}, idx: 1}
+	n, err = sw.Iter(it, ",")
+	assert.NoError(t, err)
+	assert.Equal(t, 3, n)
+	assert.Equal(t, "b,c", b.String())
+
+	// errors are returned
+	expected := lerr.Str("test err")
+	sw = luceio.NewSumWriter(&errWriter{after: 5, err: expected})
+	_, err = sw.Iter(&strIter{strs: []string{"this", "is", "a", "test"}}, " ")
+	assert.Equal(t, expected, err)
+}
+
 func TestWriterToErr(t *testing.T) {
 	sw := luceio.NewSumWriter(bytes.NewBuffer(nil))
 	sw.Err = lerr.Str("test err")
