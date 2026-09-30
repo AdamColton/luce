@@ -88,6 +88,26 @@ func (s Seperator) Split(str string) slice.Slice[string] {
 	return strings.Split(str, string(s))
 }
 
+// Trailing makes sure str ends with the Seperator if want is true and does not
+// end with it if want is false. If str already is as wanted it is returned
+// unchanged. Only one Seperator is added or removed, so with a "/" Seperator
+// "a//" becomes "a/". An empty str is returned as it is, there is nothing for
+// the Seperator to trail.
+func (s Seperator) Trailing(str string, want bool) string {
+	if str == "" {
+		return str
+	}
+	sep := string(s)
+	has := strings.HasSuffix(str, sep)
+	if want && !has {
+		return str + sep
+	}
+	if !want && has {
+		return str[:len(str)-len(sep)]
+	}
+	return str
+}
+
 const (
 	// NewLine seperator
 	NewLine Seperator = "\n"
