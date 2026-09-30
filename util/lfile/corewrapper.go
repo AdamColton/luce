@@ -3,6 +3,8 @@ package lfile
 import (
 	"io"
 	"io/fs"
+
+	"github.com/adamcolton/luce/util/upgrade"
 )
 
 // coreWrapper adds what a CoreFS lacks to make it an FSReader.
@@ -101,4 +103,38 @@ func (f *fsFileWrapper) Readdirnames(n int) (names []string, err error) {
 		out[i] = de.Name()
 	}
 	return out, nil
+}
+
+// fsCore makes a bare fs.FS a CoreFS by reading through fs.ReadFile and
+// fs.ReadDir, which use the file system's own methods when it has them.
+type fsCore struct {
+	fs.FS
+}
+
+// Wrapped returns the fs.FS so upgrade.To can look through the wrapper.
+func (c fsCore) Wrapped() any {
+	return c.FS
+}
+
+func (c fsCore) ReadFile(name string) ([]byte, error) {
+	return fs.ReadFile(c.FS, name)
+}
+
+func (c fsCore) ReadDir(name string) ([]fs.DirEntry, error) {
+	return fs.ReadDir(c.FS, name)
+}
+
+func (c fsCore) Stat(name string) (fs.FileInfo, error) {
+	return fs.Stat(c.FS, name)
+}
+
+// WrapFS makes an fs.FS that has nothing but Open, such as an archive/zip
+// reader, into an FSReader. Reading a file, listing a directory and Stat use the
+// methods of the file system when it has them and fall back to Open when it
+// does not. If the file system is already an FSReader it is returned as it is.
+func WrapFS(fsys fs.FS) FSReader {
+	if r, ok := upgrade.To[FSReader](fsys); ok {
+		return r
+	}
+	return WrapCoreFS(fsCore{fsys})
 }
