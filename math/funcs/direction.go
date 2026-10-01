@@ -38,9 +38,7 @@ func (gr *Gradient) Reset(n int) {
 
 // Dir implements Direction.
 func (gr *Gradient) Dir(m M, x []float64, f float64, g, d []float64) float64 {
-	for i, gi := range g {
-		d[i] = -gi
-	}
+	neg(g, d)
 	if gr.t == 0 {
 		return 1
 	}
@@ -193,9 +191,7 @@ func (l *LBFGS) Dir(m M, x []float64, f float64, g, d []float64) float64 {
 		axpy(alpha[i]-beta, l.s[i], d)
 	}
 	// d now holds H⁻¹g; the step goes the opposite way.
-	for i := range d {
-		d[i] = -d[i]
-	}
+	neg(d, d)
 	return 1
 }
 
