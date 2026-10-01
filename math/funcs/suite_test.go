@@ -147,7 +147,7 @@ func problems() []problem {
 // result is what one solver did on one problem.
 type result struct {
 	converged bool
-	// steps is the step where it first converged, or the steps it took.
+	// steps is how many steps the solver took before it stopped.
 	steps int
 	// evals counts the calls the solver made to the function.
 	evals int
@@ -155,14 +155,13 @@ type result struct {
 	gap   float64
 }
 
-// solver runs a problem. f counts the evaluations; converged is for the
-// solver to stop as soon as it reaches the answer, and doesn't count.
+// solver runs a problem with its own stop rules. f counts the evaluations.
 type solver struct {
 	name string
 	// solves lists the problems the solver is known to solve. The suite fails
 	// if one of them stops converging.
 	solves []string
-	run    func(p problem, f funcs.M, converged func([]float64) bool) (x []float64, steps int)
+	run    func(p problem, f funcs.M) (x []float64, steps int)
 }
 
 func (s solver) expected(name string) bool {
@@ -176,26 +175,28 @@ func (s solver) expected(name string) bool {
 
 const maxSteps = 20000
 
-var solvers = []solver{
-	{
-		// The Descender as it is today, with the defaults from Init.
-		name:   "descender",
-		solves: []string{"bowl", "line-fit"},
-		run: func(p problem, f funcs.M, converged func([]float64) bool) ([]float64, int) {
-			d := (&funcs.Descender{
-				Multi: funcs.Multi{Ln: len(p.start), M: f},
-				Steps: maxSteps,
-				X:     append([]float64(nil), p.start...),
-			}).Init()
-			for step := 1; d.Steps > 0; step++ {
-				d.Step()
-				if converged(d.X) {
-					return d.X, step
-				}
-			}
-			return d.X, maxSteps
+// descent returns a solver that runs a Descender with the Direction that
+// newDir returns and the default Stop, apart from MaxSteps.
+func descent(name string, newDir func() funcs.Direction, solves ...string) solver {
+	return solver{
+		name:   name,
+		solves: solves,
+		run: func(p problem, f funcs.M) ([]float64, int) {
+			d := funcs.NewDescender(funcs.Multi{Ln: len(p.start), M: f}, append([]float64(nil), p.start...))
+			d.Direction = newDir()
+			d.Stop.MaxSteps = maxSteps
+			r := d.Run()
+			return r.X, r.Steps
 		},
-	},
+	}
+}
+
+var all = []string{"bowl", "bowl-cond1e3", "bowl-cond1e6", "rosenbrock", "circles", "series", "divider", "wide-range", "diode", "line-fit"}
+
+var solvers = []solver{
+	descent("lbfgs", func() funcs.Direction { return &funcs.LBFGS{} }, all...),
+	descent("diagonal", func() funcs.Direction { return &funcs.Diagonal{} }, all...),
+	descent("gradient", func() funcs.Direction { return &funcs.Gradient{} }, "bowl", "bowl-cond1e3", "circles", "wide-range", "diode", "line-fit"),
 }
 
 func solve(s solver, p problem) result {
@@ -204,7 +205,7 @@ func solve(s solver, p problem) result {
 		evals++
 		return p.f(x)
 	}
-	x, steps := s.run(p, counted, p.converged)
+	x, steps := s.run(p, counted)
 	return result{
 		converged: p.converged(x),
 		steps:     steps,

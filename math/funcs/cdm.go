@@ -130,6 +130,9 @@ func (e Exp) IdxDM(x []float64, idx int) float64 {
 	return math.Pow(e.Base, m) * math.Log(e.Base) * dm
 }
 
+// RMSE is the root mean square of zeros. It is not smooth where every value is
+// zero (its derivative there is 0/0), so it is a poor thing to minimize; use
+// SumSquares for that.
 func RMSE(zeros ...CDM) CDM {
 	ln := len(zeros)
 	sum := make(Sum, ln)
@@ -138,6 +141,17 @@ func RMSE(zeros ...CDM) CDM {
 	}
 	ms := Product{sum, Const(1.0 / float64(ln))}
 	return CoExp{Base: ms, C: 1, E: 0.5}
+}
+
+// SumSquares is half the sum of the squares of zeros. It is zero where every
+// value is zero and smooth everywhere, and for a linear system it is a
+// quadratic, so it is the thing to minimize to solve a system of equations.
+func SumSquares(zeros ...CDM) CDM {
+	sum := make(Sum, len(zeros))
+	for i, z := range zeros {
+		sum[i] = CoExp{Base: z, C: 0.5, E: 2}
+	}
+	return sum
 }
 
 func BuildDM(idxDM func(x []float64, idx int) float64) func(x, buf []float64) []float64 {
@@ -151,17 +165,13 @@ func BuildDM(idxDM func(x []float64, idx int) float64) func(x, buf []float64) []
 }
 
 // System of equations where each CDM is equal to zero when the system is
-// solved. It wraps the whole system of equations in a RMSE.
+// solved. It returns a Descender, starting at x, that minimizes SumSquares of
+// the system with its exact gradient.
 func System(x []float64, zeros []CDM) *Descender {
-	ln := len(x)
-	rmse := RMSE(zeros...)
-	return (&Descender{
-		Multi: Multi{
-			Ln: ln,
-			M:  rmse.M,
-			DM: BuildDM(rmse.IdxDM),
-		},
-		Steps: 1000,
-		X:     x,
-	})
+	ss := SumSquares(zeros...)
+	return NewDescender(Multi{
+		Ln: len(x),
+		M:  ss.M,
+		DM: BuildDM(ss.IdxDM),
+	}, x)
 }

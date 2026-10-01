@@ -1,8 +1,6 @@
 // Command descent draws how gradient descent, from math/funcs, looks for the
 // closest points of two circles: steps.png is the path it takes over the map of
-// distances and result.png shows the circles and the two points it found. The
-// gradient descent is unfinished (see the project marker in math/funcs), so the
-// result may be off.
+// distances and result.png shows the circles and the two points it found.
 package main
 
 import (
@@ -76,32 +74,26 @@ func main() {
 		return x * s64
 	}
 
-	// x^n = .1
-	// .1^1/.n
-
 	rand.Seed(time.Now().UnixMicro())
-	d := (&funcs.Descender{
-		Multi: funcs.Multi{
-			Ln: 2,
-			M:  dist,
-		},
-		Steps: 100,
-		X:     []float64{rand.Float64(), rand.Float64()},
-	}).Init()
-
-	fmt.Println(d.DG)
-	ctx.MoveTo(s2(d.X[0]), s2(d.X[1]))
-
-	for d.Steps > 0 {
-		d.Step()
-		setColor(255-uint8(d.Steps), 0, uint8(d.Steps))
-		x, y := s2(d.X[0]), s2(d.X[1])
+	d := funcs.NewDescender(funcs.Multi{
+		Ln: 2,
+		M:  dist,
+	}, []float64{rand.Float64(), rand.Float64()})
+	// Draw each step as it is taken, from red for the first to blue.
+	d.Record = func(r funcs.StepRecord) {
+		x, y := s2(r.X[0]), s2(r.X[1])
+		if r.Step == 0 {
+			ctx.MoveTo(x, y)
+			return
+		}
+		c := uint8(255 * math.Min(1, float64(r.Step)/50))
+		setColor(255-c, 0, c)
 		ctx.LineTo(x, y)
 		ctx.Stroke()
 		ctx.MoveTo(x, y)
-
-		//d.G = cmpr.Min(d.G, setG(0.1, d.DX))
 	}
+	r := d.Run()
+	fmt.Printf("%d steps, %d evaluations, stopped: %s\n", r.Steps, r.Evals, r.Reason)
 
 	ctx.SavePNG("steps.png")
 
@@ -111,12 +103,12 @@ func main() {
 	setColor(0, 0, 255)
 	draw(circB, ctx)
 
-	xa, ya := circA(d.X[0])
+	xa, ya := circA(r.X[0])
 	setColor(255, 255, 0)
 	ctx.DrawCircle(xa, ya, 3)
 	ctx.Stroke()
 
-	xb, yb := circB(d.X[1])
+	xb, yb := circB(r.X[1])
 	setColor(0, 255, 255)
 	ctx.DrawCircle(xb, yb, 3)
 	ctx.Stroke()
