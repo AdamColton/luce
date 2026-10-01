@@ -15,7 +15,7 @@ type M func([]float64) float64
 //	accurate to about 1e-13, at 10-20 calls each instead of 2. The package is
 //	meant as a general tool for multivariate functions, not only descent, so
 //	it should also document how reliable PartialDerivative is (its error
-//	grows with f''' and with features near the scale of DiffStep) and offer
+//	grows with f''' and with features near the scale of diffStep) and offer
 //	ways to trade precision against cost.
 //	https://en.wikipedia.org/wiki/Richardson_extrapolation
 
@@ -27,7 +27,7 @@ func (fn M) PartialDerivative(x []float64, idx int) float64 {
 	// A central difference: (f(x+h) - f(x-h)) / 2h.
 	// https://en.wikipedia.org/wiki/Numerical_differentiation
 	xi := x[idx]
-	h := DiffStep(xi)
+	h := diffStep(xi)
 	x[idx] = xi + h
 	d := fn(x)
 	x[idx] = xi - h
@@ -36,8 +36,8 @@ func (fn M) PartialDerivative(x []float64, idx int) float64 {
 	return d / (2 * h)
 }
 
-// DiffStep returns the step h to use for a central-difference derivative at x.
-func DiffStep(x float64) float64 {
+// diffStep returns the step h to use for a central-difference derivative at x.
+func diffStep(x float64) float64 {
 	// The error of a central difference has two parts. The formula's own error
 	// shrinks with h², so h should be small. Rounding error in f(x+h) - f(x-h)
 	// grows with ε/h, so h shouldn't be too small. Their sum is smallest when
@@ -49,7 +49,12 @@ func DiffStep(x float64) float64 {
 	// this is not an error
 	// x + h may not land exactly h away from x.
 	// Recomputing h this way gives the distance actually stepped
-	return (x + h) - x
+	//
+	// The conversion forces x + h to be rounded to a float64 before the
+	// subtraction. The Go spec allows floating-point operations to be fused,
+	// which could otherwise turn (x + h) - x back into h.
+	// https://go.dev/ref/spec#Arithmetic_operators
+	return float64(x+h) - x
 }
 
 // cbrtEpsilon is ∛ε, where ε = 2⁻⁵² is the float64 machine epsilon.

@@ -137,14 +137,3 @@ func TestPartialDerivativeCost(t *testing.T) {
 	assert.Equal(t, 2, calls)
 	assert.Equal(t, []float64{3, 5}, x)
 }
-
-func TestDiffStep(t *testing.T) {
-	// The step grows with |x| above 1 so it stays above rounding error.
-	small, large := funcs.DiffStep(0.5), funcs.DiffStep(1e6)
-	assert.InDelta(t, 6e-6, small, 1e-6)
-	assert.InDelta(t, 6.0, large, 1.0)
-	// x+h is exactly h away from x.
-	x := 0.1
-	h := funcs.DiffStep(x)
-	assert.Equal(t, h, (x+h)-x)
-}

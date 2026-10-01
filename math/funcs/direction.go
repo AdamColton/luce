@@ -73,7 +73,7 @@ func (dg *Diagonal) Reset(n int) {
 }
 
 // fourthRootEpsilon is the step for a second difference. It balances the
-// formula's error against rounding error, as DiffStep does for a first
+// formula's error against rounding error, as diffStep does for a first
 // difference: rounding error in a second difference grows with ε/h², which
 // moves the best step up to about ⁴√ε.
 var fourthRootEpsilon = math.Pow(0x1p-52, 0.25)

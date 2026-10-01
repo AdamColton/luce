@@ -25,7 +25,7 @@ func (fn S) DPrecise(x float64, small cmpr.Tolerance) float64 {
 // about 1e-10 for smooth functions. It calls fn twice.
 func (fn S) D(x float64) float64 {
 	// A central difference, as in M.PartialDerivative.
-	h := DiffStep(x)
+	h := diffStep(x)
 	return (fn(x+h) - fn(x-h)) / (2 * h)
 }
 
