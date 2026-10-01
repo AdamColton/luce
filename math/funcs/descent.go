@@ -19,6 +19,10 @@ const (
 // 	and I'm not sure why it's not
 // [ ] stop on NaN
 //	Run and Record should stop when encountering NaN
+// [ ] Levenberg-Marquardt
+//	A solver for systems of equations (residuals that are zero at the
+//	solution), such as circuits in melange. It is far less sensitive to
+//	badly scaled variables than gradient descent.
 
 // Note: the issue I was having is that Newton and Secant are for finding zeros.
 // I need quasi-Newton methods for finding minima. But that's not necessary
