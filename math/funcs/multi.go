@@ -9,6 +9,16 @@ import (
 // M is a function of several variables.
 type M func([]float64) float64
 
+// == projects.Code.luce.funcs ==
+// [ ] PreciseDM
+//	A DM using Richardson extrapolation (Ridders' method) for derivatives
+//	accurate to about 1e-13, at 10-20 calls each instead of 2. The package is
+//	meant as a general tool for multivariate functions, not only descent, so
+//	it should also document how reliable PartialDerivative is (its error
+//	grows with f''' and with features near the scale of DiffStep) and offer
+//	ways to trade precision against cost.
+//	https://en.wikipedia.org/wiki/Richardson_extrapolation
+
 // PartialDerivative estimates the derivative of fn with respect to x[idx]
 // numerically, to a relative error of about 1e-10 for smooth functions. It
 // calls fn twice. It writes to x[idx] during those calls and restores it
