@@ -120,7 +120,31 @@ func TestPartialDerivative(t *testing.T) {
 		got := dm(pt, buf)
 		t.Log(pt)
 		for i, g := range got {
-			assert.InDelta(t, expected[i], g, 4e-4)
+			assert.InDelta(t, expected[i], g, 1e-6)
 		}
 	}
+}
+
+func TestPartialDerivativeCost(t *testing.T) {
+	// f(x, y) = x²y, so ∂f/∂x = 2xy.
+	calls := 0
+	var f funcs.M = func(x []float64) float64 {
+		calls++
+		return x[0] * x[0] * x[1]
+	}
+	x := []float64{3, 5}
+	assert.InDelta(t, 30.0, f.PartialDerivative(x, 0), 1e-8)
+	assert.Equal(t, 2, calls)
+	assert.Equal(t, []float64{3, 5}, x)
+}
+
+func TestDiffStep(t *testing.T) {
+	// The step grows with |x| above 1 so it stays above rounding error.
+	small, large := funcs.DiffStep(0.5), funcs.DiffStep(1e6)
+	assert.InDelta(t, 6e-6, small, 1e-6)
+	assert.InDelta(t, 6.0, large, 1.0)
+	// x+h is exactly h away from x.
+	x := 0.1
+	h := funcs.DiffStep(x)
+	assert.Equal(t, h, (x+h)-x)
 }

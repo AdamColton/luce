@@ -21,9 +21,11 @@ func (fn S) DPrecise(x float64, small cmpr.Tolerance) float64 {
 	return d / (2 * float64(step))
 }
 
-// D estimates the derivative at x, using DPrecise with a tolerance of 1e-6.
+// D estimates the derivative at x with a central difference,
+// (f(x+h) - f(x-h)) / 2h, where h is DiffStep(x). It calls the function twice.
 func (fn S) D(x float64) float64 {
-	return fn.DPrecise(x, 1e-6)
+	h := DiffStep(x)
+	return (fn(x+h) - fn(x-h)) / (2 * h)
 }
 
 // NewtonStep returns the step dx that Newton's method takes from x, and y, the
