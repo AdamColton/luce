@@ -21,9 +21,10 @@ func (fn S) DPrecise(x float64, small cmpr.Tolerance) float64 {
 	return d / (2 * float64(step))
 }
 
-// D estimates the derivative at x with a central difference,
-// (f(x+h) - f(x-h)) / 2h, where h is DiffStep(x). It calls the function twice.
+// D estimates the derivative of fn at x numerically, to a relative error of
+// about 1e-10 for smooth functions. It calls fn twice.
 func (fn S) D(x float64) float64 {
+	// A central difference, as in M.PartialDerivative.
 	h := DiffStep(x)
 	return (fn(x+h) - fn(x-h)) / (2 * h)
 }

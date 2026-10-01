@@ -13,17 +13,17 @@ import (
 //	For functions that are a sum over many terms, step on a sample of the
 //	terms at a time.
 
-// https://en.wikipedia.org/wiki/Gradient_descent
-// https://en.wikipedia.org/wiki/Limited-memory_BFGS
-// https://en.wikipedia.org/wiki/Backtracking_line_search
-
 const (
 	// DefaultMaxSteps is the MaxSteps that a zero Stop uses.
 	DefaultMaxSteps = 10000
 	// DefaultStepTol is the StepTol that a zero Stop uses.
 	DefaultStepTol = 1e-15
-	// armijo is how much of the decrease that the slope predicts a step has to
-	// achieve for the line search to accept it.
+	// armijo is the constant c of the Armijo condition: the line search
+	// accepts a step only if f falls by at least c times what the slope at the
+	// start predicts. 1e-4 is the usual choice: almost any decrease is enough,
+	// but a step that merely bounces to the other side of the valley at the
+	// same height is not.
+	// https://en.wikipedia.org/wiki/Backtracking_line_search
 	armijo = 1e-4
 )
 
@@ -31,21 +31,18 @@ const (
 type Stop struct {
 	// MaxSteps limits the number of steps. 0 means DefaultMaxSteps.
 	MaxSteps int
-	// MaxEvals limits the number of calls to M. 0 means no limit. It is
-	// checked before each trial point of the line search, so the gradient at
-	// the last accepted point can take it over by up to 2*Ln calls (with
-	// NumericDM).
+	// MaxEvals limits the number of calls to M. 0 means no limit. The count
+	// can go over by up to 2*Ln when the gradient is numeric (NumericDM).
 	MaxEvals int
 	// GradTol stops when every component of the gradient is within
-	// GradTol*max(1, |f|) of zero. 0 means the gradient is not checked: the
-	// descent runs until a step can no longer lower f (StepTol). That is the
-	// safe choice when the scale of f isn't known, for example a system of
-	// equations measured in milliamps.
+	// GradTol*max(1, |f|) of zero. 0 means the gradient is not checked, and the
+	// descent runs until no step lowers f (StepTol). 0 is the safe choice when
+	// the scale of f isn't known, for example a system of equations measured
+	// in milliamps.
 	GradTol float64
-	// StepTol stops when the line search has shrunk the step to within
-	// StepTol*max(1, |x|) in every component without lowering f: x is then
-	// as close to the minimum as the precision of f allows. 0 means
-	// DefaultStepTol.
+	// StepTol stops when no step longer than StepTol*max(1, |x|) in every
+	// component lowers f. With the default, x is then as close to the minimum
+	// as the precision of f allows. 0 means DefaultStepTol.
 	StepTol float64
 }
 
@@ -105,13 +102,13 @@ func (r Reason) String() string {
 	return "unknown"
 }
 
-// Descender minimizes Multi.M, starting from a point, one step at a time. Each
-// step asks Direction which way to go, then searches along that direction for
-// a point where M is lower by enough (a backtracking line search). A trial
-// point where M is NaN counts as too far, so the search backs away from it.
-// Stop decides when it is done.
+// Descender finds a local minimum of Multi.M, one step at a time. Every step
+// lowers M. M may return NaN where it isn't defined: the Descender stays out
+// of those regions, as long as it doesn't start in one.
 //
 // Fields can be set after NewDescender and before the first Step.
+//
+// https://en.wikipedia.org/wiki/Gradient_descent
 type Descender struct {
 	Multi
 	// Direction picks the direction of each step. nil means
@@ -122,17 +119,27 @@ type Descender struct {
 	// after each step.
 	Record func(StepRecord)
 
-	dm           DM
-	x, g         []float64
-	d, prevX     []float64
-	prevG, s, y  []float64
-	f, t         float64
+	// dm is the gradient, wrapped so that its calls to M are counted.
+	dm DM
+	// x is the current point, f = M(x) and g the gradient at x.
+	x, g []float64
+	f    float64
+	// d is the direction of the current step, and t its length along d: the
+	// step is t*d.
+	d []float64
+	t float64
+	// prevX and prevG are x and g before the current step.
+	prevX, prevG []float64
+	// s and y are the changes in x and g over the last step, which the
+	// Direction learns from.
+	s, y         []float64
 	steps, evals int
 	started      bool
 	reason       Reason
 }
 
-// StepRecord is the state of a Descender after a step. The slices are copies.
+// StepRecord is the state of a Descender after a step. The slices are copies,
+// so they can be kept.
 type StepRecord struct {
 	Step int
 	X    []float64
@@ -164,8 +171,8 @@ func NewDescender(m Multi, x []float64) *Descender {
 	}
 }
 
-// start evaluates the starting point. It runs before the first step so that
-// fields set after NewDescender are used.
+// start evaluates the starting point. It runs at the first Step rather than in
+// NewDescender, so that fields set in between are used.
 func (d *Descender) start() {
 	d.started = true
 	if d.Direction == nil {
@@ -201,8 +208,8 @@ func (d *Descender) eval(x []float64) float64 {
 	return d.Multi.M(x)
 }
 
-// Step takes one step. It returns false, without stepping, once the
-// Descender has stopped.
+// Step takes one step and reports whether the Descender can keep going.
+// Once it has stopped, Step does nothing and returns false.
 func (d *Descender) Step() bool {
 	if !d.started {
 		d.start()
@@ -216,10 +223,13 @@ func (d *Descender) Step() bool {
 	}
 
 	d.t = d.Direction.Dir(d.eval, d.x, d.f, d.g, d.d)
+	// slope is the rate at which f changes along d at x. It must be negative
+	// for d to lead down. The test is written !(slope < 0) so that a NaN slope
+	// also falls back.
 	slope := dot(d.g, d.d)
 	if !(slope < 0) {
-		// Not a way down: fall back to the gradient and start the
-		// Direction's history again.
+		// Fall back to straight down the gradient, which always leads down,
+		// and clear the Direction's history, which led it astray.
 		for i, gi := range d.g {
 			d.d[i] = -gi
 		}
@@ -228,6 +238,11 @@ func (d *Descender) Step() bool {
 		d.Direction.Reset(len(d.x))
 	}
 
+	// The backtracking line search: try x + t*d, and halve t until the
+	// Armijo condition holds, f(x + t*d) <= f(x) + armijo*t*slope. A NaN f
+	// fails the comparison, so a step into a region where M is undefined is
+	// treated like a step that went too far.
+	// https://en.wikipedia.org/wiki/Backtracking_line_search
 	copy(d.prevX, d.x)
 	copy(d.prevG, d.g)
 	tol := d.Stop.stepTol()
@@ -244,6 +259,8 @@ func (d *Descender) Step() bool {
 				small = false
 			}
 		}
+		// Once the step is too small to matter, no step lowers f: x is at the
+		// minimum as far as the precision of f can tell.
 		if small {
 			copy(d.x, d.prevX)
 			d.reason = StepSmall
@@ -258,6 +275,8 @@ func (d *Descender) Step() bool {
 	}
 
 	d.g = d.dm(d.x, d.g)
+	// The step taken and how the gradient changed over it tell the Direction
+	// about the curvature of f.
 	for i := range d.s {
 		d.s[i] = d.x[i] - d.prevX[i]
 		d.y[i] = d.g[i] - d.prevG[i]

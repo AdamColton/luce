@@ -130,9 +130,9 @@ func (e Exp) IdxDM(x []float64, idx int) float64 {
 	return math.Pow(e.Base, m) * math.Log(e.Base) * dm
 }
 
-// RMSE is the root mean square of zeros. It is not smooth where every value is
-// zero (its derivative there is 0/0), so it is a poor thing to minimize; use
-// SumSquares for that.
+// RMSE is the root mean square of zeros. Its derivative is undefined where
+// every value is zero, so to solve a system of equations, minimize SumSquares
+// instead.
 func RMSE(zeros ...CDM) CDM {
 	ln := len(zeros)
 	sum := make(Sum, ln)
@@ -143,9 +143,9 @@ func RMSE(zeros ...CDM) CDM {
 	return CoExp{Base: ms, C: 1, E: 0.5}
 }
 
-// SumSquares is half the sum of the squares of zeros. It is zero where every
-// value is zero and smooth everywhere, and for a linear system it is a
-// quadratic, so it is the thing to minimize to solve a system of equations.
+// SumSquares is half the sum of the squares of zeros. It is zero exactly where
+// every value is zero and is smooth everywhere, so minimizing it solves the
+// system of equations zeros = 0.
 func SumSquares(zeros ...CDM) CDM {
 	sum := make(Sum, len(zeros))
 	for i, z := range zeros {
