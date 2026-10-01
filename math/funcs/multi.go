@@ -47,9 +47,9 @@ type Multi struct {
 	DM DM
 }
 
-// AnalyticDM is a DM that estimates each partial derivative with
-// M.PartialDerivative. Despite the name it is numeric.
-func (s *Multi) AnalyticDM(x, buf []float64) []float64 {
+// NumericDM is a DM that estimates each partial derivative with
+// M.PartialDerivative.
+func (s *Multi) NumericDM(x, buf []float64) []float64 {
 	out := slice.NewBuffer(buf).Slice(s.Ln)
 	for i := range out {
 		out[i] = s.M.PartialDerivative(x, i)
@@ -58,10 +58,10 @@ func (s *Multi) AnalyticDM(x, buf []float64) []float64 {
 	return out
 }
 
-// GetDM returns DM, or AnalyticDM if DM is nil.
+// GetDM returns DM, or NumericDM if DM is nil.
 func (s *Multi) GetDM() DM {
 	if s.DM == nil {
-		return s.AnalyticDM
+		return s.NumericDM
 	}
 	return s.DM
 }
