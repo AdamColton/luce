@@ -16,7 +16,9 @@ type M func([]float64) float64
 //	meant as a general tool for multivariate functions, not only descent, so
 //	it should also document how reliable PartialDerivative is (its error
 //	grows with f''' and with features near the scale of diffStep) and offer
-//	ways to trade precision against cost.
+//	ways to trade precision against cost. S.DPrecise should be replaced by
+//	the same method: its halving loop has no floor, so for steep functions it
+//	runs into rounding error (10¹²·x² at x = 3 gives 0, not 6e12).
 //	https://en.wikipedia.org/wiki/Richardson_extrapolation
 
 // PartialDerivative estimates the derivative of fn with respect to x[idx]

@@ -11,6 +11,13 @@ import (
 //	A solver for systems of equations (residuals that are zero at the
 //	solution), such as circuits in melange. It is far less sensitive to
 //	badly scaled variables than gradient descent.
+// [ ] bounds and global search
+//	Box bounds on the variables (lo <= x <= hi), for example projected
+//	L-BFGS (L-BFGS-B style), so that a minimum can sit exactly on a bound.
+//	Today a caller reparameterizes (x = e^u), adds a penalty, or returns NaN
+//	outside the domain. And a global search, such as starting the Descender
+//	from several points and keeping the best.
+//	https://en.wikipedia.org/wiki/Limited-memory_BFGS#L-BFGS-B
 // [ ] stochastic descent
 //	For functions that are a sum over many terms, step on a sample of the
 //	terms at a time.

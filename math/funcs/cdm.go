@@ -154,6 +154,14 @@ func SumSquares(zeros ...CDM) CDM {
 	return sum
 }
 
+// == projects.Code.luce.funcs ==
+// [ ] reverse-mode automatic differentiation for CDM
+//	BuildDM calls IdxDM once per variable, and each call evaluates the whole
+//	expression again, so a gradient costs about n evaluations. Reverse mode
+//	gets the whole gradient in about one pass. See also the forward-mode note
+//	in _dev.md.
+//	https://en.wikipedia.org/wiki/Automatic_differentiation#Reverse_accumulation
+
 func BuildDM(idxDM func(x []float64, idx int) float64) func(x, buf []float64) []float64 {
 	return func(x, buf []float64) []float64 {
 		buf = slice.NewBuffer(buf).Zeros(len(x))
@@ -163,6 +171,12 @@ func BuildDM(idxDM func(x []float64, idx int) float64) func(x, buf []float64) []
 		return buf
 	}
 }
+
+// == projects.Code.luce.funcs ==
+// [ ] solver-independent System
+//	System returns a Descender, so a system of equations can only be solved
+//	by descent. Make the system its own type, so Levenberg-Marquardt or
+//	Newton's method can solve it too.
 
 // System of equations where each CDM is equal to zero when the system is
 // solved. It returns a Descender, starting at x, that minimizes SumSquares of

@@ -11,6 +11,8 @@ type S func(float64) float64
 
 // DPrecise estimates the derivative at x. It halves the step, starting at
 // small, until the difference between the two sides is within small of zero.
+// It is unreliable for steep functions, where it can return 0 or a value off
+// by a few percent; use D.
 func (fn S) DPrecise(x float64, small cmpr.Tolerance) float64 {
 	step := float64(small)
 	d := 1.0
