@@ -2,3 +2,7 @@
 // finding the documents that hold a word is fast, and decodes it back to the
 // original string.
 package document
+
+// == projects.Code.luce.document ==
+// [ ] optimize document and corpus #chunk << Entity
+// review approach w/ Claude

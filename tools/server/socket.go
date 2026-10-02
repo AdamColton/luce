@@ -10,6 +10,12 @@ import (
 	"github.com/adamcolton/luce/util/handler"
 )
 
+// == projects.Code.server ==
+// [ ] update user
+// when adding a user to group, need to update that user session
+// if they're already logged in
+// or have a way to check for update on permission fail
+
 func (s *Server) coreCommander(ec *cli.ExitClose) cli.Commander {
 	return &cliHandlers{
 		Server:           s,
@@ -113,6 +119,7 @@ func (*cliHandlers) UserUsage() *handler.CommandDetails {
 
 // ListUsersReq lists the server's user names.
 type ListUsersReq struct{}
+
 // ListUsersResp is the user names returned by ListUsersReq.
 type ListUsersResp []string
 
@@ -131,6 +138,7 @@ func (*cliHandlers) ListUsersUsage() *handler.CommandDetails {
 type GroupReq struct {
 	Name string
 }
+
 // GroupResp reports whether GroupReq failed.
 type GroupResp struct {
 	Error error
@@ -150,6 +158,7 @@ func (*cliHandlers) GroupUsage() *handler.CommandDetails {
 
 // ListGroupsReq lists the server's group names.
 type ListGroupsReq struct{}
+
 // ListGroupsResp is the group names returned by ListGroupsReq.
 type ListGroupsResp []string
 
@@ -168,6 +177,7 @@ func (*cliHandlers) ListGroupsUsage() *handler.CommandDetails {
 type UserGroupReq struct {
 	User, Group string
 }
+
 // UserGroupResp reports whether UserGroupReq failed.
 type UserGroupResp struct {
 	Error error
@@ -210,6 +220,7 @@ func (*cliHandlers) UserGroupUsage() *handler.CommandDetails {
 type SetPortReq struct {
 	Port string
 }
+
 // SetPortResp confirms SetPortReq; the server has already restarted.
 type SetPortResp struct{}
 
@@ -229,6 +240,7 @@ func (*cliHandlers) SetPortUsage() *handler.CommandDetails {
 
 // SettingsReq requests the server's current Settings.
 type SettingsReq struct{}
+
 // Settings holds the server's admin-configurable settings.
 type Settings struct {
 	AdminLockUserCreation bool
@@ -250,6 +262,7 @@ func (*cliHandlers) SettingsUsage() *handler.CommandDetails {
 type AdminLockUserCreationReq struct {
 	AdminLockUserCreation bool
 }
+
 // AdminLockUserCreationResp confirms AdminLockUserCreationReq.
 type AdminLockUserCreationResp struct{}
 
@@ -284,6 +297,7 @@ func (c *cliHandlers) Commands() *handler.Commands {
 // RoutesReq requests the server's currently active service routes.
 type RoutesReq struct {
 }
+
 // RoutesResp lists the active service routes, one per line, returned by
 // RoutesReq.
 type RoutesResp string

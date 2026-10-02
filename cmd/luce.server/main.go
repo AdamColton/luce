@@ -19,7 +19,7 @@ import (
 )
 
 // == projects.Code.luce.server ==
-// [ ] luce.server mobile login
+// [ ] Fix up luce.server HTML #chunklet
 //	make it more convenient on mobile
 
 // Config holds the values needed to create a Luce Server. If an environmental
