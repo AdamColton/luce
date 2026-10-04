@@ -31,5 +31,5 @@ type SocketMessage struct {
 
 // TypeID32 fulfill TypeIDer32. The ID was choosen at random.
 func (SocketMessage) TypeID32() uint32 {
-	return 3196974518
+	return 2410464137
 }
