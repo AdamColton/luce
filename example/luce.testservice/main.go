@@ -4,13 +4,19 @@ package main
 import (
 	"fmt"
 	"html/template"
+	"strconv"
+	"time"
 
+	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/tools/server/service"
+	"github.com/adamcolton/luce/util/lusers"
 )
 
+var conn *service.Client
+
 func main() {
-	conn := lerr.Must(service.NewClient("/tmp/luceserver.service"))
+	conn = lerr.Must(service.NewClient("/tmp/luceserver.service"))
 
 	srv := conn.Service
 	srv.Base = "/testsrv"
@@ -42,6 +48,16 @@ func main() {
 		RequireGroup("admin").
 		Handle(conn, Admin)
 	conn.Service.AddLink("Admin Only", "", "admin")
+
+	service.NewRoute("ws").
+		WithSocket().
+		Handle(conn, OpenWebSocket)
+
+	service.NewRoute("websocket").
+		Handle(conn, WebSocket)
+	conn.Service.AddLink("WebSocket Demo", "", "websocket")
+
+	lerr.Panic(conn.RegisterHandlers(SocketMessage, SocketClose))
 
 	conn.Run()
 }
@@ -88,4 +104,72 @@ func Admin(req *service.Request) *service.Response {
 
 func Host(req *service.Request) *service.Response {
 	return req.ResponseString("DOMAIN:" + req.PathVars["domain"])
+}
+
+var sockets = lmap.NewSafe[uint32, *lusers.User](nil)
+
+func OpenWebSocket(req *service.Request) *service.Response {
+	id := req.WebSocket
+	sockets.Set(id, req.User)
+	go func() {
+		for i := range 10 {
+			if !sockets.Contains(id) {
+				return
+			}
+			msg := strconv.Itoa(i)
+			conn.SocketMessage(id, []byte(msg))
+			time.Sleep(time.Second * 2)
+		}
+		conn.SocketClose(id)
+	}()
+	return req.ResponseString("this does nothing")
+}
+
+func SocketMessage(msg service.SocketMessage) {
+	fmt.Println("got msg: ", string(msg.Body))
+}
+
+func SocketClose(c service.SocketClose) {
+	fmt.Println("socket closed")
+	sockets.Delete(c.ID)
+}
+
+var wsTmpl = template.Must(template.New("websocket").Parse(`<!DOCTYPE html>
+<html>
+	<head><title>WebSocket Demo</title></head>
+	<body>
+		<div id="buttons">
+			<button id="send">Send</button>
+			<button id="close">Close</button>
+		</div>
+		<script>
+			var counter = 0;
+			var wsScheme = location.protocol === "https:" ? "wss:" : "ws:";
+			var ws = new WebSocket(wsScheme + "//" + location.host + "{{.WSPath}}");
+			ws.onclose = function() {
+				console.log("the service closed the websocket");
+			};
+			ws.onmessage = function(e) {
+				console.log("message from service:", e.data);
+			};
+			document.getElementById("send").onclick = function() {
+				counter++;
+				ws.send(String(counter));
+			};
+			document.getElementById("close").onclick = function() {
+				ws.close();
+				document.getElementById("buttons").innerHTML = "Done";
+			};
+		</script>
+	</body>
+</html>
+`))
+
+func WebSocket(req *service.Request) *service.Response {
+	n := struct {
+		WSPath string
+	}{
+		WSPath: conn.Service.Base + "/ws",
+	}
+	return req.ResponseTemplate("", wsTmpl, n)
 }
