@@ -4,6 +4,13 @@ import (
 	"github.com/adamcolton/luce/math/cmpr"
 )
 
+// == projects.Code.luce.sockets ==
+// [ ] Rename All
+// naming should consistently identify if something is
+// a websocket or a unixsocket
+// [ ] Socket Closer
+// MessageReaderWriter should also be a closer
+
 // Socket wraps a MessageReaderWriter, usually a websocket, as an io.Reader and
 // io.Writer. Each Write is sent as one text message; Read returns the bytes of
 // the messages received, one message after another.
