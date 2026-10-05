@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"html/template"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/adamcolton/luce/ds/lmap"
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/lhttp"
 	"github.com/adamcolton/luce/store"
 	"github.com/adamcolton/luce/tools/server/core"
 	"github.com/adamcolton/luce/util/lexec"
@@ -16,6 +18,7 @@ import (
 	"github.com/adamcolton/luce/util/lusers/lusess"
 	"github.com/gorilla/schema"
 	"github.com/gorilla/sessions"
+	"github.com/gorilla/websocket"
 )
 
 // Config is used to create a Server. It holds all the configuration values.
@@ -32,6 +35,15 @@ type Config struct {
 	Commander    lexec.Commander
 }
 
+// WebSocket upgrades HTTP connections for routes registered with
+// service.Route.WithSocket and tracks each open socket by the ID a
+// registered service uses to address it over the service socket.
+type WebSocket struct {
+	websocket.Upgrader
+	byId    lmap.Wrapper[uint32, *lhttp.Socket]
+	counter atomic.Uint32
+}
+
 // Server runs a webserver.
 type Server struct {
 	coreserver    *core.Server
@@ -46,6 +58,7 @@ type Server struct {
 	lerr.ErrHandler
 	BashCommands slice.Slice[BashCmd]
 	Commander    lexec.Commander
+	WebSocket
 }
 
 // TimeoutDuration bounds how long RunServiceSocket waits for a registered
@@ -78,6 +91,13 @@ func (c *Config) New() (*Server, error) {
 		},
 		BashCommands: c.BashCommands,
 		Commander:    c.Commander,
+		WebSocket: WebSocket{
+			Upgrader: websocket.Upgrader{
+				ReadBufferSize:  1024,
+				WriteBufferSize: 1024,
+			},
+			byId: lmap.NewSafe[uint32, *lhttp.Socket](nil),
+		},
 	}
 	srv.coreserver.CliHandler = srv.coreCommander
 

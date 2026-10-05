@@ -11,14 +11,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/adamcolton/luce/ds/bus/iobus"
 	"github.com/adamcolton/luce/lerr"
+	"github.com/adamcolton/luce/lhttp"
 	"github.com/adamcolton/luce/tools/server/service"
 	"github.com/adamcolton/luce/util/lusers"
 	"github.com/gorilla/mux"
 )
 
-// So I need to remember how this works because there's some magic involved.
-// But somehow this method ends up getting called.
+// This is wired up using magic. Because it ends in Handler, it's wired by type
 func (sc *serviceConn) ServiceHandler(srv *service.Service) {
 	sc.service = srv
 	sc.s.services.Set(srv.Name, sc)
@@ -27,13 +28,39 @@ func (sc *serviceConn) ServiceHandler(srv *service.Service) {
 	}
 }
 
+// SocketMessageHandler is wired up the same way as ServiceHandler: a
+// registered service sends a SocketMessage to push Body out over the
+// client websocket it opened, identified by msg.ID.
+func (sc *serviceConn) SocketMessageHandler(msg service.SocketMessage) {
+	ws := sc.s.byId.GetVal(msg.ID)
+	if ws == nil {
+		return
+	}
+	ws.Write(msg.Body)
+}
+
+// SocketCloseHandler is wired up the same way as ServiceHandler: a
+// registered service sends a SocketClose to close the client websocket it
+// opened, identified by msg.ID, and stop tracking it.
+func (sc *serviceConn) SocketCloseHandler(msg service.SocketClose) {
+	ws := sc.s.byId.GetVal(msg.ID)
+	if ws == nil {
+		return
+	}
+	ws.MessageReaderWriter.(io.Closer).Close()
+	sc.s.WebSocket.byId.Delete(msg.ID)
+}
+
 func (sc *serviceConn) registerService(idx int) {
 	cfg := sc.service.Routes[idx]
 	cvrt := sc.routeToRequestConverter(cfg)
 	h := func(w http.ResponseWriter, r *http.Request) {
-		//fmt.Println("Route Request: ", route.PathPrefix, route.Path)
-		req := cvrt(r)
+		req := cvrt(r, w)
 		if req == nil {
+			return
+		}
+		if req.WebSocket > 0 {
+			sc.websocket(w, r, req)
 			return
 		}
 		ch := make(chan *service.Response)
@@ -87,13 +114,52 @@ func (sc *serviceConn) registerService(idx int) {
 	sr.HandlerFunc(h)
 }
 
-func (sc *serviceConn) routeToRequestConverter(cfg service.Route) func(r *http.Request) *service.Request {
+// websocket proxies the client websocket req.WebSocket names: it sends req
+// to the registered service as a normal request, then reads frames off the
+// upgraded socket and forwards each as a SocketMessage until the socket
+// closes, at which point it sends a SocketClose.
+func (sc *serviceConn) websocket(w http.ResponseWriter, r *http.Request, req *service.Request) {
+	ch := make(chan *service.Response)
+	sc.respMap.Set(req.ID, ch)
+	err := sc.Sender.Send(req)
+	lerr.Panic(err)
+	select {
+	case <-ch:
+	case <-time.After(TimeoutDuration):
+	}
+	sc.respMap.Delete(req.ID)
+	// nothing is done with the reponse...
+
+	ws := sc.s.WebSocket.byId.GetVal(req.WebSocket)
+	from := make(chan []byte)
+	stop := false
+	go (iobus.Config{
+		CloseOnEOF: true,
+	}).Reader(ws, from, nil, &stop)
+	for body := range from {
+		msg := service.SocketMessage{
+			Body: body,
+			ID:   req.WebSocket,
+		}
+		err := sc.Sender.Send(msg)
+		lerr.Panic(err)
+	}
+
+	cls := service.SocketClose{
+		ID: req.WebSocket,
+	}
+	err = sc.Sender.Send(cls)
+	lerr.Panic(err)
+	sc.s.WebSocket.byId.Delete(req.WebSocket)
+}
+
+func (sc *serviceConn) routeToRequestConverter(cfg service.Route) func(r *http.Request, w http.ResponseWriter) *service.Request {
 	var groups []string
 	if cfg.Require.Group != "" {
 		groups = strings.Split(cfg.Require.Group, ",")
 	}
 
-	return func(r *http.Request) *service.Request {
+	return func(r *http.Request, w http.ResponseWriter) *service.Request {
 		var u *lusers.User
 		if len(groups) > 0 || cfg.User {
 			u, _ = sc.s.Users.User(r)
@@ -134,6 +200,16 @@ func (sc *serviceConn) routeToRequestConverter(cfg service.Route) func(r *http.R
 				}
 			}
 
+		}
+
+		if cfg.WebSocket {
+			out.WebSocket = sc.s.WebSocket.counter.Add(1)
+			ws, err := sc.s.WebSocket.Upgrader.Upgrade(w, r, nil)
+			if err != nil {
+				fmt.Println(err.Error())
+				return nil
+			}
+			sc.s.WebSocket.byId.Set(out.WebSocket, lhttp.NewSocket(ws))
 		}
 
 		if cfg.User {

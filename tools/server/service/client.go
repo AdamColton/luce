@@ -83,3 +83,31 @@ func (c *Client) Add(h RequestResponder, route *Route) {
 func (r *Route) Handle(c *Client, h RequestResponder) {
 	c.Add(h, r)
 }
+
+// RegisterHandlers registers handlers with the Client's Listener, as
+// bus.Listener.RegisterHandlers does, so the Client can receive message types
+// other than Request, such as SocketMessage and SocketClose.
+func (c *Client) RegisterHandlers(handlers ...any) error {
+	return c.Listener.RegisterHandlers(handlers...)
+}
+
+// SocketClose tells the server to close the client websocket identified by
+// id.
+func (c *Client) SocketClose(id uint32) {
+	msg := SocketClose{
+		ID: id,
+	}
+	// == projects.Code.luce.service ==
+	// [ ] handle Sender errors
+	// this isn't the only one
+	c.Sender.Send(msg)
+}
+
+// SocketMessage sends data to the client websocket identified by id.
+func (c *Client) SocketMessage(id uint32, data []byte) {
+	msg := SocketMessage{
+		ID:   id,
+		Body: data,
+	}
+	c.Sender.Send(msg)
+}

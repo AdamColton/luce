@@ -41,6 +41,7 @@ type Route struct {
 	Body       bool
 	User       bool
 	Query      bool
+	WebSocket  bool
 	Require
 }
 
@@ -86,6 +87,12 @@ func (r *Route) WithQuery() *Route {
 // WithQuery is a chainable helper. It sets the Form field to true.
 func (r *Route) WithForm() *Route {
 	r.Form = true
+	return r
+}
+
+// WithSocket is a chainable helper. It sets the WebSocket field to true.
+func (r *Route) WithSocket() *Route {
+	r.WebSocket = true
 	return r
 }
 

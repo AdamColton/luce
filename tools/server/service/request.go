@@ -23,6 +23,7 @@ type Request struct {
 	Form        url.Values
 	Body        []byte
 	User        *lusers.User
+	WebSocket   uint32
 }
 
 // RequestTypeID32 is Request's type32 ID.
