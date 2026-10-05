@@ -18,10 +18,6 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-// == projects.Code.luce.server ==
-// [ ] Fix up luce.server HTML #chunklet
-//	make it more convenient on mobile
-
 // Config holds the values needed to create a Luce Server. If an environmental
 // variable is set for luce_server_config, it will look in that location for a
 // config file. Otherwise it will look in the running directory for config.json.
