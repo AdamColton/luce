@@ -7,7 +7,6 @@ import (
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/lhttp/midware"
 	"github.com/adamcolton/luce/lhttp/valuedecoder"
-	"github.com/adamcolton/luce/util/luceio"
 	"github.com/adamcolton/luce/util/lusers/lusess"
 )
 
@@ -17,6 +16,7 @@ type TemplateNames struct {
 	SignIn       string
 	Home         string
 	HomeSignedIn string
+	Services     string
 }
 
 func (s *Server) setRoutes(host string) {
@@ -62,29 +62,32 @@ func (s *Server) home(w http.ResponseWriter, r *http.Request, d *struct {
 	lerr.Panic(err)
 }
 
-var (
-	servicesHeader = `<!DOCTYPE html>
-<html>
-	<head><title>Luce Server:Services</title></head>
-	<body>`
-	servicesFooter = `</body>
-</html>`
-)
-
 var ltStr = cmp.Less[string]
+
+// serviceLink is a single link rendered on the services page, with its URL
+// already resolved against the server's host and port.
+type serviceLink struct {
+	Name, URL string
+}
+
+// serviceListing is one service's name and resolved links, as rendered on
+// the services page.
+type serviceListing struct {
+	Name  string
+	Links []serviceLink
+}
 
 func (s *Server) listServices(w http.ResponseWriter, r *http.Request, d *struct {
 	Session *lusess.Session
 }) {
-	sw := luceio.NewSumWriter(w)
-	sw.WriteString(servicesHeader)
+	var listings []serviceListing
 	s.services.SortedEachKey(ltStr, nil, func(name string, srv *serviceConn, done *bool) {
-		sw.WriteStrings("<h2>", name, "</h2><ul>")
-		for _, l := range srv.service.Links {
-			sw.WriteStrings("<li><a href=\"", l.Get(s.coreserver.Host, s.coreserver.Addr), "\">", l.Name, "</a></li>")
+		links := make([]serviceLink, len(srv.service.Links))
+		for i, l := range srv.service.Links {
+			links[i] = serviceLink{Name: l.Name, URL: l.Get(s.coreserver.Host, s.coreserver.Addr)}
 		}
-
-		sw.WriteString("</ul>")
+		listings = append(listings, serviceListing{Name: name, Links: links})
 	})
-	sw.WriteString(servicesFooter)
+	err := s.Templates.ExecuteTemplate(w, s.TemplateNames.Services, listings)
+	lerr.Panic(err)
 }

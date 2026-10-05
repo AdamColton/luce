@@ -1,0 +1,10 @@
+{{template "layout/header.html" "Services"}}
+{{range .}}
+<h2>{{.Name}}</h2>
+<ul>
+{{range .Links}}
+    <li><a href="{{.URL}}">{{.Name}}</a></li>
+{{end}}
+</ul>
+{{end}}
+{{template "layout/footer.html"}}

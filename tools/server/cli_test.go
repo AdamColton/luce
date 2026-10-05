@@ -50,6 +50,8 @@ func testTemplates() *template.Template {
 	tmpl := template.Must(template.New("SignIn").Parse("signin: {{.Message}}"))
 	template.Must(tmpl.New("Home").Parse("home"))
 	template.Must(tmpl.New("HomeSignedIn").Parse("home, signed in"))
+	template.Must(tmpl.New("Services").Parse(
+		`Services{{range .}} {{.Name}}{{range .Links}} {{.Name}}{{end}}{{end}}`))
 	return tmpl
 }
 
@@ -66,6 +68,7 @@ func testConfig(addr string) server.Config {
 			SignIn:       "SignIn",
 			Home:         "Home",
 			HomeSignedIn: "HomeSignedIn",
+			Services:     "Services",
 		},
 	}
 	cfg.Addr = addr
