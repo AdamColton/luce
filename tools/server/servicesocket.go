@@ -28,6 +28,10 @@ type serviceConn struct {
 	*serialbus.Sender
 	respMap lmap.Wrapper[uint32, chan<- *service.Response]
 	routes  *lset.Set[string]
+	// sockets is every client websocket this service is proxying. A proxy
+	// runs on its request's goroutine while the teardown runs on this
+	// connection's, so it has to be the safe variant.
+	sockets *lset.Set[uint32]
 }
 
 func (s *Server) handleServiceSocket(netConn net.Conn) {
@@ -41,6 +45,7 @@ func (s *Server) handleServiceSocket(netConn net.Conn) {
 		Sender:  conn.Sender,
 		respMap: lmap.NewSafe[uint32, chan<- *service.Response](nil),
 		routes:  lset.New[string](),
+		sockets: lset.Safe[uint32](),
 	}
 	s.servicesMux.Lock()
 	err = bus.DefaultRegistrar.Register(conn.Listener, sc)
@@ -51,6 +56,15 @@ func (s *Server) handleServiceSocket(netConn net.Conn) {
 
 	sc.routes.Each(func(id string, done *bool) {
 		s.serviceRoutes.GetVal(id).setActive(false)
+	})
+
+	// Close the client websockets this service was proxying. Nothing else
+	// would: each proxy is blocked reading its client, and the client holds a
+	// connection that looks alive with no way to learn the service behind it
+	// has gone. Closing them is what makes clients reconnect, which is how
+	// they find the service again once it is back.
+	sc.sockets.Each(func(id uint32, done *bool) {
+		s.closeSocket(id)
 	})
 
 	if sc.service != nil {

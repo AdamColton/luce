@@ -43,12 +43,21 @@ func (sc *serviceConn) SocketMessageHandler(msg service.SocketMessage) {
 // registered service sends a SocketClose to close the client websocket it
 // opened, identified by msg.ID, and stop tracking it.
 func (sc *serviceConn) SocketCloseHandler(msg service.SocketClose) {
-	ws := sc.s.byId.GetVal(msg.ID)
+	sc.sockets.Remove(msg.ID)
+	sc.s.closeSocket(msg.ID)
+}
+
+// closeSocket closes the client websocket id names and stops tracking it.
+// Closing it ends the proxy's read loop, which tidies up the rest.
+func (s *Server) closeSocket(id uint32) {
+	ws := s.WebSocket.byId.GetVal(id)
 	if ws == nil {
 		return
 	}
-	ws.MessageReaderWriter.(io.Closer).Close()
-	sc.s.WebSocket.byId.Delete(msg.ID)
+	if c, ok := ws.MessageReaderWriter.(io.Closer); ok {
+		c.Close()
+	}
+	s.WebSocket.byId.Delete(id)
 }
 
 func (sc *serviceConn) registerService(idx int) {
@@ -119,10 +128,18 @@ func (sc *serviceConn) registerService(idx int) {
 // upgraded socket and forwards each as a SocketMessage until the socket
 // closes, at which point it sends a SocketClose.
 func (sc *serviceConn) websocket(w http.ResponseWriter, r *http.Request, req *service.Request) {
+	// Tracked from here on, so that if the service disconnects while this
+	// socket is open the teardown knows to close it.
+	sc.sockets.Add(req.WebSocket)
+	defer sc.sockets.Remove(req.WebSocket)
+
 	ch := make(chan *service.Response)
 	sc.respMap.Set(req.ID, ch)
-	err := sc.Sender.Send(req)
-	lerr.Panic(err)
+	if sc.Sender.Send(req) != nil {
+		sc.s.closeSocket(req.WebSocket)
+		sc.respMap.Delete(req.ID)
+		return
+	}
 	select {
 	case <-ch:
 	case <-time.After(TimeoutDuration):
@@ -131,6 +148,11 @@ func (sc *serviceConn) websocket(w http.ResponseWriter, r *http.Request, req *se
 	// nothing is done with the reponse...
 
 	ws := sc.s.WebSocket.byId.GetVal(req.WebSocket)
+	if ws == nil {
+		// Closed while the open was in flight, which is what the teardown
+		// does to every socket when the service disconnects.
+		return
+	}
 	from := make(chan []byte)
 	stop := false
 	go (iobus.Config{
@@ -141,15 +163,19 @@ func (sc *serviceConn) websocket(w http.ResponseWriter, r *http.Request, req *se
 			Body: body,
 			ID:   req.WebSocket,
 		}
-		err := sc.Sender.Send(msg)
-		lerr.Panic(err)
+		// A send that fails means the service is gone. Its sockets are closed
+		// by the teardown, so this only has to stop proxying.
+		if sc.Sender.Send(msg) != nil {
+			return
+		}
 	}
 
 	cls := service.SocketClose{
 		ID: req.WebSocket,
 	}
-	err = sc.Sender.Send(cls)
-	lerr.Panic(err)
+	if sc.Sender.Send(cls) != nil {
+		return
+	}
 	sc.s.WebSocket.byId.Delete(req.WebSocket)
 }
 

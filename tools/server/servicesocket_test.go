@@ -8,6 +8,7 @@ import (
 
 	servicepkg "github.com/adamcolton/luce/tools/server/service"
 	"github.com/adamcolton/luce/util/timeout"
+	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -326,4 +327,78 @@ func TestServiceSocketSharedRoutePath(t *testing.T) {
 	body, err := io.ReadAll(resp.Body)
 	assert.NoError(t, err)
 	assert.Equal(t, "stt home", string(body))
+}
+
+// TestServiceDisconnectClosesSockets covers what happens to a client's
+// websocket when the service behind it disconnects, as a restart does. The
+// server owns the socket, so nothing at the client's end can tell the service
+// has gone: unless the server closes it, the client holds a connection that
+// looks alive and never reconnects.
+func TestServiceDisconnectClosesSockets(t *testing.T) {
+	sock := t.TempDir() + "/service.sock"
+	cfg := testConfig(":54431")
+	cfg.ServiceSocket = sock
+	srv, err := (&cfg).New()
+	assert.NoError(t, err)
+
+	closed := make(chan bool)
+	go func() {
+		srv.Run()
+		closed <- true
+	}()
+	defer func() {
+		assert.NoError(t, srv.Close())
+		timeout.After(300, closed)
+	}()
+
+	err = timeout.After(500, func() {
+		for {
+			conn, e := net.Dial("unix", sock)
+			if e == nil {
+				conn.Close()
+				return
+			}
+		}
+	})
+	assert.NoError(t, err)
+
+	svc, err := servicepkg.NewService("widget", "", "/widget", sock)
+	assert.NoError(t, err)
+
+	opened := make(chan uint32, 1)
+	servicepkg.NewRoute("ws").
+		WithSocket().
+		Handle(svc, func(r *servicepkg.Request) *servicepkg.Response {
+			opened <- r.WebSocket
+			return r.Response(nil)
+		})
+	go svc.Run()
+
+	// The route isn't live until the registration has been processed, so a
+	// failed dial means "not ready yet".
+	var ws *websocket.Conn
+	err = timeout.After(1000, func() {
+		for {
+			ws, _, err = websocket.DefaultDialer.Dial("ws://localhost:54431/widget/ws", nil)
+			if err == nil {
+				return
+			}
+		}
+	})
+	assert.NoError(t, err)
+	defer ws.Close()
+	assert.NoError(t, timeout.After(1000, func() { <-opened }))
+
+	// The service goes away.
+	assert.NoError(t, svc.NetConn.Close())
+
+	// The client's socket has to close, because that is the only signal it
+	// can act on. Without it this read blocks for good.
+	assert.NoError(t, timeout.After(1000, func() {
+		for {
+			if _, _, err := ws.ReadMessage(); err != nil {
+				return
+			}
+		}
+	}))
 }
