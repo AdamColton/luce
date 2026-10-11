@@ -46,5 +46,31 @@ func (w Writer) ReadFrom(r io.Reader) (n int64, err error) {
 	}
 }
 
-// [ ] channel.Reader.Read
+// Reader uses a []byte channel to fulfill io.Reader. Create one with a pointer,
+// as it keeps what is left of the last message between calls to Read.
+type Reader struct {
+	Ch   <-chan []byte
+	left []byte
+}
+
+// Read fulfills io.Reader. It blocks until a message is received if nothing is
+// left of the last one, and a message too long for p is read over several
+// calls. It returns io.EOF once the channel is closed and everything has been
+// read.
+func (r *Reader) Read(p []byte) (n int, err error) {
+	if len(p) == 0 {
+		return 0, nil
+	}
+	for len(r.left) == 0 {
+		msg, ok := <-r.Ch
+		if !ok {
+			return 0, io.EOF
+		}
+		r.left = msg
+	}
+	n = copy(p, r.left)
+	r.left = r.left[n:]
+	return n, nil
+}
+
 // [ ] channel.Reader.WriteTo

@@ -80,3 +80,49 @@ func TestWriterReadFromError(t *testing.T) {
 	assert.Equal(t, int64(len("partial")), n)
 	assert.Equal(t, []byte("partial"), <-ch)
 }
+
+func TestReader(t *testing.T) {
+	ch := make(chan []byte)
+	r := &channel.Reader{
+		Ch: ch,
+	}
+
+	go func() {
+		ch <- []byte("hello ")
+		ch <- nil
+		ch <- []byte("channel reader")
+		close(ch)
+	}()
+
+	// A message is read over several calls if p is short.
+	p := make([]byte, 4)
+	n, err := r.Read(p)
+	assert.NoError(t, err)
+	assert.Equal(t, "hell", string(p[:n]))
+
+	n, err = r.Read(nil)
+	assert.NoError(t, err)
+	assert.Zero(t, n)
+
+	got, err := io.ReadAll(r)
+	assert.NoError(t, err)
+	assert.Equal(t, "o channel reader", string(got))
+
+	n, err = r.Read(p)
+	assert.Zero(t, n)
+	assert.Equal(t, io.EOF, err)
+}
+
+// iotest checks the rest of the io.Reader contract.
+func TestReaderIOTest(t *testing.T) {
+	ch := make(chan []byte, 3)
+	ch <- []byte("hello ")
+	ch <- []byte("channel ")
+	ch <- []byte("reader")
+	close(ch)
+
+	r := &channel.Reader{
+		Ch: ch,
+	}
+	assert.NoError(t, iotest.TestReader(r, []byte("hello channel reader")))
+}
