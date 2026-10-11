@@ -126,3 +126,43 @@ func TestReaderIOTest(t *testing.T) {
 	}
 	assert.NoError(t, iotest.TestReader(r, []byte("hello channel reader")))
 }
+
+func TestReaderWriteTo(t *testing.T) {
+	ch := make(chan []byte, 3)
+	ch <- []byte("hello ")
+	ch <- []byte("channel ")
+	ch <- []byte("reader")
+	close(ch)
+
+	r := &channel.Reader{
+		Ch: ch,
+	}
+
+	// Part of a message that was already read is not written again.
+	p := make([]byte, 3)
+	r.Read(p)
+
+	// io.Copy uses Reader.WriteTo.
+	var sb strings.Builder
+	n, err := io.Copy(&sb, r)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(len("lo channel reader")), n)
+	assert.Equal(t, "lo channel reader", sb.String())
+}
+
+type failWriter struct{ err error }
+
+func (f failWriter) Write(p []byte) (int, error) { return len(p) - 1, f.err }
+
+func TestReaderWriteToError(t *testing.T) {
+	ch := make(chan []byte, 1)
+	ch <- []byte("hello")
+	r := &channel.Reader{
+		Ch: ch,
+	}
+
+	boom := errors.New("boom")
+	n, err := r.WriteTo(failWriter{boom})
+	assert.Equal(t, boom, err)
+	assert.Equal(t, int64(4), n)
+}

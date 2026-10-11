@@ -73,4 +73,23 @@ func (r *Reader) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-// [ ] channel.Reader.WriteTo
+// WriteTo fulfills io.WriterTo. It writes what is left of the last message and
+// then each message received, until the channel is closed. It returns the number
+// of bytes written and the first error from w.
+func (r *Reader) WriteTo(w io.Writer) (n int64, err error) {
+	for {
+		if len(r.left) > 0 {
+			ln, err := w.Write(r.left)
+			n += int64(ln)
+			r.left = r.left[ln:]
+			if err != nil {
+				return n, err
+			}
+		}
+		msg, ok := <-r.Ch
+		if !ok {
+			return n, nil
+		}
+		r.left = msg
+	}
+}
