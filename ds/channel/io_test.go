@@ -1,7 +1,11 @@
 package channel_test
 
 import (
+	"errors"
+	"io"
+	"strings"
 	"testing"
+	"testing/iotest"
 
 	"github.com/adamcolton/luce/ds/channel"
 	"github.com/stretchr/testify/assert"
@@ -37,4 +41,42 @@ func TestWriterReusedBuffer(t *testing.T) {
 
 	assert.Equal(t, []byte("first line"), <-ch)
 	assert.Equal(t, []byte("other text"), <-ch)
+}
+
+func TestWriterReadFrom(t *testing.T) {
+	ch := make(chan []byte)
+	w := channel.Writer{
+		Ch: ch,
+	}
+
+	// A source longer than one chunk arrives as several messages. Hiding the
+	// strings.Reader's WriteTo makes io.Copy use Writer.ReadFrom.
+	expected := strings.Repeat("hello channel writer ", 5000)
+	var n int64
+	var err error
+	go func() {
+		n, err = io.Copy(w, struct{ io.Reader }{strings.NewReader(expected)})
+		close(ch)
+	}()
+
+	var got []byte
+	for msg := range ch {
+		got = append(got, msg...)
+	}
+	assert.NoError(t, err)
+	assert.Equal(t, int64(len(expected)), n)
+	assert.Equal(t, expected, string(got))
+}
+
+func TestWriterReadFromError(t *testing.T) {
+	ch := make(chan []byte, 1)
+	w := channel.Writer{
+		Ch: ch,
+	}
+
+	boom := errors.New("boom")
+	n, err := w.ReadFrom(io.MultiReader(strings.NewReader("partial"), iotest.ErrReader(boom)))
+	assert.Equal(t, boom, err)
+	assert.Equal(t, int64(len("partial")), n)
+	assert.Equal(t, []byte("partial"), <-ch)
 }
