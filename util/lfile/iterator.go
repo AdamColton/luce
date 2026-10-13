@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/adamcolton/luce/util/liter"
+	"github.com/adamcolton/luce/util/upgrade"
 )
 
 // IteratorSource can generate an Iterator.
@@ -33,4 +34,18 @@ type Iterator interface {
 	// Reset moves the Iterator back to its first value and returns true if it has
 	// none.
 	Reset() (done bool)
+}
+
+// Deleter is an optional upgrade of an Iterator that can stop at a path that no
+// longer exists, such as an Iterator that reports changes. Deleted is true when
+// the current path has been deleted, and then Stat and Data are nil.
+type Deleter interface {
+	Deleted() bool
+}
+
+// Deleted reports whether the Iterator is at a path that has been deleted. It is
+// false for an Iterator that is not a Deleter.
+func Deleted(i Iterator) bool {
+	d, ok := upgrade.To[Deleter](i)
+	return ok && d.Deleted()
 }
