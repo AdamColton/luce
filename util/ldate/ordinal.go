@@ -78,3 +78,15 @@ func (d Date) Ordinal() Ordinal {
 	doe := yoe*365 + yoe/4 - yoe/100 + doy
 	return Ordinal(era*daysPerEra + doe + march1st2000)
 }
+
+// Leapdays returns the number of February 29ths from Ordinal(0) up to, but not
+// including, o. For a negative o it is negative: minus the number from o up to
+// Ordinal(0).
+func (o Ordinal) Leapdays() int64 {
+	d := o.Date()
+	ld := d.Year.Leapdays()
+	if d.Month > February && d.Year.IsLeapYear() {
+		ld++
+	}
+	return ld
+}

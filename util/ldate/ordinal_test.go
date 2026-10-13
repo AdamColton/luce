@@ -70,3 +70,61 @@ func TestDateOrdinalCarries(t *testing.T) {
 	assert.Equal(t, ldate.New(2023, 12, 31).Ordinal(), ldate.Date{Year: 2024, Month: 1, Day: 0}.Ordinal())
 	assert.Equal(t, ldate.New(2025, 2, 1).Ordinal(), ldate.Date{Year: 2024, Month: 14, Day: 1}.Ordinal())
 }
+
+func TestOrdinalLeapdays(t *testing.T) {
+	assert.Equal(t, int64(0), ldate.New(2000, 2, 29).Ordinal().Leapdays())
+	assert.Equal(t, int64(1), ldate.New(2000, 3, 1).Ordinal().Leapdays())
+	assert.Equal(t, int64(-1), ldate.New(1996, 2, 29).Ordinal().Leapdays())
+	assert.Equal(t, int64(0), ldate.New(1996, 3, 1).Ordinal().Leapdays())
+
+	// Count the February 29ths outward from Ordinal(0) in both directions.
+	const span = 150_000
+	var ld int64
+	for o := ldate.Ordinal(0); o <= span; o++ {
+		if !assert.Equal(t, ld, o.Leapdays(), o.Date()) {
+			break
+		}
+		if d := o.Date(); d.Month == ldate.February && d.Day == 29 {
+			ld++
+		}
+	}
+	ld = 0
+	for o := ldate.Ordinal(-1); o >= -span; o-- {
+		if d := o.Date(); d.Month == ldate.February && d.Day == 29 {
+			ld--
+		}
+		if !assert.Equal(t, ld, o.Leapdays(), o.Date()) {
+			break
+		}
+	}
+}
+
+func TestYearLeapdays(t *testing.T) {
+	assert.Equal(t, int64(0), ldate.Year(2000).Leapdays())
+	assert.Equal(t, int64(1), ldate.Year(2001).Leapdays())
+	assert.Equal(t, int64(25), ldate.Year(2100).Leapdays())
+	assert.Equal(t, int64(25), ldate.Year(2101).Leapdays(), "2100 is not a leap year")
+	assert.Equal(t, int64(0), ldate.Year(1997).Leapdays())
+	assert.Equal(t, int64(-1), ldate.Year(1996).Leapdays())
+	assert.Equal(t, int64(-24), ldate.Year(1900).Leapdays(), "1900 is not a leap year")
+
+	var ld int64
+	for y := ldate.Year(2000); y < 4000; y++ {
+		if !assert.Equal(t, ld, y.Leapdays(), y) {
+			break
+		}
+		if y.IsLeapYear() {
+			ld++
+		}
+	}
+	ld = 0
+	for y := ldate.Year(1999); y > -2000; y-- {
+		if y.IsLeapYear() {
+			ld--
+		}
+		if !assert.Equal(t, ld, y.Leapdays(), y) {
+			break
+		}
+		assert.Equal(t, ld, ldate.New(int(y), 1, 1).Ordinal().Leapdays(), y)
+	}
+}
