@@ -11,7 +11,9 @@ type M func([]float64) float64
 
 // PartialDerivative estimates the derivative of fn with respect to x[idx]
 // numerically, to a relative error of about 1e-10 for smooth functions. It
-// calls fn twice. It writes to x[idx] during those calls and restores it
+// calls fn twice. Where f changes on a scale near the step it uses, about
+// 6e-6·max(1, |x[idx]|), it can be badly off; PrecisePartial is slower but
+// more reliable (see Ridders). It writes to x[idx] during those calls and restores it
 // before returning, so x must not be used concurrently.
 func (fn M) PartialDerivative(x []float64, idx int) float64 {
 	// A central difference: (f(x+h) - f(x-h)) / 2h.
