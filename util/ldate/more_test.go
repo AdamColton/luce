@@ -80,3 +80,15 @@ func TestYearString(t *testing.T) {
 	assert.Equal(t, "2024", ldate.Year(2024).String())
 	assert.Equal(t, "-001", ldate.Year(-1).String())
 }
+
+func TestDateListener(t *testing.T) {
+	var got []ldate.Date
+	cancel := ldate.DateListener(func(d ldate.Date) {
+		got = append(got, d)
+	})
+	assert.Equal(t, []ldate.Date{ldate.Now()}, got, "called with today before it returns")
+
+	assert.True(t, cancel.Cancel())
+	assert.False(t, cancel.Cancel(), "already canceled")
+	assert.False(t, ldate.CancelToken{}.Cancel())
+}
