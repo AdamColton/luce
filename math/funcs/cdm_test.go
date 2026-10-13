@@ -159,6 +159,14 @@ func TestCDMs(t *testing.T) {
 			},
 			str: "abs(x[0] - x[1])",
 		},
+		"clamp": {
+			// x0 clamped between 0 and x1.
+			c: funcs.Max{funcs.Const(0), funcs.Min{x0, x1}},
+			want: func(x []float64) float64 {
+				return math.Max(0, math.Min(x[0], x[1]))
+			},
+			str: "max(0, min(x[0], x[1]))",
+		},
 		"rmse": {
 			c: funcs.RMSE(funcs.Sub(x0, funcs.Const(1)), funcs.Sub(x1, funcs.Const(2))),
 			want: func(x []float64) float64 {
@@ -206,6 +214,16 @@ func TestPowNegativeBase(t *testing.T) {
 	x := []float64{-3}
 	assert.Equal(t, 9.0, sq.M(x))
 	assert.Equal(t, -6.0, sq.IdxDM(x, 0))
+}
+
+func TestCDMKinks(t *testing.T) {
+	// Abs, Max and Min aren't differentiable at their kinks. There, Abs takes
+	// its derivative as 0, and Max and Min take that of the first tied term.
+	x := []float64{2, 2}
+	assert.Equal(t, 0.0, funcs.Abs(funcs.Sub(funcs.X(0), funcs.X(1))).IdxDM(x, 0))
+	assert.Equal(t, 1.0, funcs.Max{funcs.X(0), funcs.X(1)}.IdxDM(x, 0))
+	assert.Equal(t, 0.0, funcs.Min{funcs.X(1), funcs.X(0)}.IdxDM(x, 0))
+	assert.Equal(t, -1.0, funcs.Abs(funcs.X(0)).IdxDM([]float64{-2}, 0))
 }
 
 // counted is the variable x[idx], as a CDM that counts calls to M, to show

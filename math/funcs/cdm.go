@@ -412,7 +412,7 @@ func str(c CDM) string {
 // variable, a constant or a function call), so it can be used as an operand.
 func wrap(c CDM) string {
 	switch c.(type) {
-	case X, Const, Ln, Unary:
+	case X, Const, Ln, Unary, Max, Min:
 		return str(c)
 	}
 	return "(" + str(c) + ")"

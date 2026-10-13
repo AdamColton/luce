@@ -101,3 +101,57 @@ func sign(x float64) float64 {
 	}
 	return 0
 }
+
+// Max is the largest of its terms. It isn't differentiable where two terms are
+// equal and largest; there, the derivative is that of the first of them.
+type Max []CDM
+
+// M implements CDM.
+func (m Max) M(x []float64) float64 {
+	_, v := extreme(m, x, 1)
+	return v
+}
+
+// IdxDM implements CDM.
+func (m Max) IdxDM(x []float64, idx int) float64 {
+	i, _ := extreme(m, x, 1)
+	return m[i].IdxDM(x, idx)
+}
+
+// String returns the expression as max(terms).
+func (m Max) String() string {
+	return "max(" + join(m, ", ", false) + ")"
+}
+
+// Min is the smallest of its terms. It isn't differentiable where two terms
+// are equal and smallest; there, the derivative is that of the first of them.
+type Min []CDM
+
+// M implements CDM.
+func (m Min) M(x []float64) float64 {
+	_, v := extreme(m, x, -1)
+	return v
+}
+
+// IdxDM implements CDM.
+func (m Min) IdxDM(x []float64, idx int) float64 {
+	i, _ := extreme(m, x, -1)
+	return m[i].IdxDM(x, idx)
+}
+
+// String returns the expression as min(terms).
+func (m Min) String() string {
+	return "min(" + join(m, ", ", false) + ")"
+}
+
+// extreme returns the index and value of the largest of cs at x when dir is
+// 1, or the smallest when it is -1.
+func extreme(cs []CDM, x []float64, dir float64) (idx int, v float64) {
+	v = cs[0].M(x)
+	for i := 1; i < len(cs); i++ {
+		if vi := cs[i].M(x); dir*vi > dir*v {
+			idx, v = i, vi
+		}
+	}
+	return
+}
