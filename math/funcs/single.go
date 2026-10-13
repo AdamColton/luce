@@ -6,6 +6,16 @@ import (
 	"github.com/adamcolton/luce/math/cmpr"
 )
 
+// == projects.Code.luce.funcs ==
+// [ ] bracketed root finding
+//  Bisection or Brent's method for a zero between two points where f has
+//  opposite signs. Unlike Newton and secant steps, it always converges.
+//  https://en.wikipedia.org/wiki/Brent%27s_method
+// [ ] 1-D minimization
+//  Golden-section search or Brent's method for the minimum of S in an
+//  interval.
+//  https://en.wikipedia.org/wiki/Golden-section_search
+
 // S is a function of a single variable.
 type S func(float64) float64
 

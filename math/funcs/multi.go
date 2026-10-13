@@ -52,6 +52,13 @@ func diffStep(x float64) float64 {
 // cbrtEpsilon is ∛ε, where ε = 2⁻⁵² is the float64 machine epsilon.
 var cbrtEpsilon = math.Cbrt(0x1p-52)
 
+// == projects.Code.luce.funcs ==
+// [ ] numeric Jacobian
+//  For a function with several outputs (residuals that are zero at a
+//  solution), the matrix of partial derivatives, by central difference,
+//  following the buf convention. Levenberg-Marquardt needs it when the
+//  residuals aren't CDMs.
+
 // DM is the gradient of an M: it returns the partial derivatives at x, using buf
 // if it has the capacity.
 type DM func(x, buf []float64) []float64
