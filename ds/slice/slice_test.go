@@ -503,3 +503,17 @@ func TestSliceSplit(t *testing.T) {
 	assert.Panics(t, func() { s.Split(-1) })
 	assert.Panics(t, func() { s.Split(len(s) + 1) })
 }
+
+func TestSliceFor(t *testing.T) {
+	names := slice.Slice[string]{"Ada", "Grace", "Edsger"}
+
+	var greeting string
+	names.For(func(name string) {
+		greeting += "Hi " + name + ". "
+	})
+	assert.Equal(t, "Hi Ada. Hi Grace. Hi Edsger. ", greeting)
+
+	calls := 0
+	slice.Slice[string](nil).For(func(string) { calls++ })
+	assert.Equal(t, 0, calls, "nothing to call for an empty slice")
+}

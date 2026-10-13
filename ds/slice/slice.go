@@ -255,3 +255,11 @@ func (s Slice[T]) AppendIf(cond bool, v ...T) Slice[T] {
 func (s Slice[T]) Split(idx int) (Slice[T], Slice[T]) {
 	return s[:idx], s[idx:]
 }
+
+// For calls fn with each value in s, in order. It is shorthand for
+// s.Iter().For(fn).
+func (s Slice[T]) For(fn func(T)) {
+	for _, t := range s {
+		fn(t)
+	}
+}
