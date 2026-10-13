@@ -233,6 +233,44 @@ func (l Ln) String() string {
 	return "ln(" + str(l.Of) + ")"
 }
 
+// Pow is Base^Exp, where both may depend on x. Where only one does, CoExp
+// (for x^k) or Exp (for e^x) is simpler.
+type Pow struct {
+	Base, Exp CDM
+}
+
+// M implements CDM.
+func (p Pow) M(x []float64) float64 {
+	return math.Pow(p.Base.M(x), p.Exp.M(x))
+}
+
+// IdxDM implements CDM.
+func (p Pow) IdxDM(x []float64, idx int) float64 {
+	// (u^v)' = u^v * (v'*ln(u) + v*u'/u). Each term is only computed when its
+	// derivative is nonzero: ln(u) is NaN for a negative u, which would
+	// otherwise make the derivative of x^2 NaN for every negative x.
+	du := p.Base.IdxDM(x, idx)
+	dv := p.Exp.IdxDM(x, idx)
+	if du == 0 && dv == 0 {
+		return 0
+	}
+	u := p.Base.M(x)
+	v := p.Exp.M(x)
+	var d float64
+	if dv != 0 {
+		d += dv * math.Log(u)
+	}
+	if du != 0 {
+		d += v * du / u
+	}
+	return math.Pow(u, v) * d
+}
+
+// String returns the expression.
+func (p Pow) String() string {
+	return wrap(p.Base) + "^" + wrap(p.Exp)
+}
+
 // Linear is Coef[0]*x[0] + Coef[1]*x[1] + ... + C. It is the same as a Sum of
 // CoExps, but each partial derivative is just a coefficient, so it costs
 // nothing. Variables past the end of Coef have a coefficient of 0.

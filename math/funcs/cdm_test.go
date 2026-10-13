@@ -97,6 +97,20 @@ func TestCDMs(t *testing.T) {
 			},
 			str: "x[0]/4",
 		},
+		"power": {
+			c: funcs.Pow{Base: x0, Exp: x1},
+			want: func(x []float64) float64 {
+				return math.Pow(x[0], x[1])
+			},
+			str: "x[0]^x[1]",
+		},
+		"growth": {
+			c: funcs.Pow{Base: funcs.Const(1.05), Exp: x0},
+			want: func(x []float64) float64 {
+				return math.Pow(1.05, x[0])
+			},
+			str: "1.05^x[0]",
+		},
 		"log": {
 			c: funcs.Ln{Of: funcs.Add(funcs.Square(x0), funcs.Const(1))},
 			want: func(x []float64) float64 {
@@ -185,6 +199,15 @@ func TestLn(t *testing.T) {
 	assert.InDelta(t, 2.0/3, ln.IdxDM(x, 0), 1e-12)
 }
 
+func TestPowNegativeBase(t *testing.T) {
+	// x0² written as a Pow. ln(x0) is NaN for a negative x0, but the exponent
+	// is constant, so the derivative doesn't need it.
+	sq := funcs.Pow{Base: funcs.X(0), Exp: funcs.Const(2)}
+	x := []float64{-3}
+	assert.Equal(t, 9.0, sq.M(x))
+	assert.Equal(t, -6.0, sq.IdxDM(x, 0))
+}
+
 // counted is the variable x[idx], as a CDM that counts calls to M, to show
 // which ones are skipped. It has no String method.
 type counted struct {
@@ -217,6 +240,7 @@ func TestCDMSkipsUnusedValues(t *testing.T) {
 		funcs.Div{x0, x0},
 		funcs.Ln{Of: x0},
 		funcs.Square(x0),
+		funcs.Pow{Base: x0, Exp: x0},
 		funcs.Sin(x0),
 	}
 	for _, c := range cdms {
