@@ -300,6 +300,19 @@ func Square(c CDM) CDM {
 	return CoExp{Base: c, C: 1, E: 2}
 }
 
+// RMSE is the root mean square of zeros. Its derivative is undefined where
+// every value is zero, so to solve a system of equations, minimize SumSquares
+// instead.
+func RMSE(zeros ...CDM) CDM {
+	ln := len(zeros)
+	sum := make(Sum, ln)
+	for i, z := range zeros {
+		sum[i] = Square(z)
+	}
+	ms := Product{sum, Const(1.0 / float64(ln))}
+	return Sqrt(ms)
+}
+
 // SumSquares is half the sum of the squares of zeros. It is zero exactly where
 // every value is zero and is smooth everywhere, so minimizing it solves the
 // system of equations zeros = 0.
@@ -361,7 +374,7 @@ func str(c CDM) string {
 // variable, a constant or a function call), so it can be used as an operand.
 func wrap(c CDM) string {
 	switch c.(type) {
-	case X, Const, Ln:
+	case X, Const, Ln, Unary:
 		return str(c)
 	}
 	return "(" + str(c) + ")"

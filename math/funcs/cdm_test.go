@@ -46,6 +46,19 @@ func TestCDMs(t *testing.T) {
 		want func(x []float64) float64
 		str  string
 	}{
+		"diode": {
+			// The Shockley diode equation: the current through a diode for a
+			// voltage x0, with a saturation current of 1e-12 A and a thermal
+			// voltage of 25 mV.
+			c: funcs.Scale(1e-12, funcs.Sub(
+				funcs.Exp(funcs.Scale(1/0.025, x0)),
+				funcs.Const(1),
+			)),
+			want: func(x []float64) float64 {
+				return 1e-12 * (math.Exp(x[0]/0.025) - 1)
+			},
+			str: "1e-12*(exp(40*x[0]) - 1)",
+		},
 		"volume": {
 			c: funcs.Product{x0, x1, x2},
 			want: func(x []float64) float64 {
@@ -60,6 +73,14 @@ func TestCDMs(t *testing.T) {
 				return 3 * x[1] * x[1] * x[0]
 			},
 			str: "3*(x[1]^2)*x[0]",
+		},
+		"damped": {
+			// x0 appears in both factors.
+			c: funcs.Product{x0, funcs.Exp(funcs.Neg(x0)), x1},
+			want: func(x []float64) float64 {
+				return x[0] * math.Exp(-x[0]) * x[1]
+			},
+			str: "x[0]*exp(-x[0])*x[1]",
 		},
 		"parallel": {
 			// Two resistors in parallel: x0*x1/(x0 + x1).
@@ -91,6 +112,46 @@ func TestCDMs(t *testing.T) {
 				return 0.05 - 0.015*x[0] + x[1]
 			},
 			str: "-0.015*x[0] + x[1] + 0.05",
+		},
+		"wave": {
+			c: funcs.Add(funcs.Sin(x0), funcs.Cos(funcs.Scale(2, x1))),
+			want: func(x []float64) float64 {
+				return math.Sin(x[0]) + math.Cos(2*x[1])
+			},
+			str: "sin(x[0]) + cos(2*x[1])",
+		},
+		"bounded": {
+			// x0 kept between 1 and 3, and x1 between -1 and 1.
+			c: funcs.Add(
+				funcs.Add(funcs.Const(1), funcs.Scale(2, funcs.Sigmoid(x0))),
+				funcs.Tanh(x1),
+			),
+			want: func(x []float64) float64 {
+				return 1 + 2/(1+math.Exp(-x[0])) + math.Tanh(x[1])
+			},
+			str: "1 + 2*sigmoid(x[0]) + tanh(x[1])",
+		},
+		"distance": {
+			c: funcs.Sqrt(funcs.Add(funcs.Square(x0), funcs.Square(x1))),
+			want: func(x []float64) float64 {
+				return math.Hypot(x[0], x[1])
+			},
+			str: "sqrt(x[0]^2 + x[1]^2)",
+		},
+		"abs": {
+			c: funcs.Abs(funcs.Sub(x0, x1)),
+			want: func(x []float64) float64 {
+				return math.Abs(x[0] - x[1])
+			},
+			str: "abs(x[0] - x[1])",
+		},
+		"rmse": {
+			c: funcs.RMSE(funcs.Sub(x0, funcs.Const(1)), funcs.Sub(x1, funcs.Const(2))),
+			want: func(x []float64) float64 {
+				a, b := x[0]-1, x[1]-2
+				return math.Sqrt((a*a + b*b) / 2)
+			},
+			str: "sqrt(((x[0] - 1)^2 + (x[1] - 2)^2)*0.5)",
 		},
 		"negative": {
 			c: funcs.Neg(funcs.Product{x0, funcs.Const(2)}),
@@ -156,6 +217,7 @@ func TestCDMSkipsUnusedValues(t *testing.T) {
 		funcs.Div{x0, x0},
 		funcs.Ln{Of: x0},
 		funcs.Square(x0),
+		funcs.Sin(x0),
 	}
 	for _, c := range cdms {
 		assert.Equal(t, 0.0, c.IdxDM(x, 1))
