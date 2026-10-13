@@ -83,6 +83,15 @@ func TestCDMs(t *testing.T) {
 			},
 			str: "ln(x[0]^2 + 1)",
 		},
+		"node": {
+			// The current into a node from 5 V through 100 Ω, and out through
+			// 200 Ω, with x0 the node voltage and x1 a current source.
+			c: funcs.Linear{Coef: []float64{-1.0/100 - 1.0/200, 1}, C: 5.0 / 100},
+			want: func(x []float64) float64 {
+				return 0.05 - 0.015*x[0] + x[1]
+			},
+			str: "-0.015*x[0] + x[1] + 0.05",
+		},
 		"negative": {
 			c: funcs.Neg(funcs.Product{x0, funcs.Const(2)}),
 			want: func(x []float64) float64 {
@@ -152,6 +161,16 @@ func TestCDMSkipsUnusedValues(t *testing.T) {
 		assert.Equal(t, 0.0, c.IdxDM(x, 1))
 	}
 	assert.Equal(t, 0, calls)
+}
+
+func TestLinear(t *testing.T) {
+	// Variables past the end of Coef have a coefficient of 0.
+	l := funcs.Linear{Coef: []float64{2, 0, -1}}
+	x := []float64{1, 2, 3, 4}
+	assert.Equal(t, -1.0, l.M(x))
+	assert.Equal(t, 0.0, l.IdxDM(x, 3))
+	assert.Equal(t, "2*x[0] - x[2]", l.String())
+	assert.Equal(t, "0", funcs.Linear{}.String())
 }
 
 func TestCDMStringWithoutStringer(t *testing.T) {

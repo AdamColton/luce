@@ -233,6 +233,45 @@ func (l Ln) String() string {
 	return "ln(" + str(l.Of) + ")"
 }
 
+// Linear is Coef[0]*x[0] + Coef[1]*x[1] + ... + C. It is the same as a Sum of
+// CoExps, but each partial derivative is just a coefficient, so it costs
+// nothing. Variables past the end of Coef have a coefficient of 0.
+type Linear struct {
+	Coef []float64
+	C    float64
+}
+
+// M implements CDM.
+func (l Linear) M(x []float64) float64 {
+	sum := l.C
+	for i, c := range l.Coef {
+		sum += c * x[i]
+	}
+	return sum
+}
+
+// IdxDM implements CDM.
+func (l Linear) IdxDM(x []float64, idx int) float64 {
+	if idx < len(l.Coef) {
+		return l.Coef[idx]
+	}
+	return 0
+}
+
+// String returns the expression, leaving out terms with a coefficient of 0.
+func (l Linear) String() string {
+	var terms []string
+	for i, c := range l.Coef {
+		if c != 0 {
+			terms = append(terms, CoExp{Base: X(i), C: c, E: 1}.String())
+		}
+	}
+	if l.C != 0 || len(terms) == 0 {
+		terms = append(terms, formatFloat(l.C))
+	}
+	return joinTerms(terms)
+}
+
 // Add returns the sum of cs.
 func Add(cs ...CDM) CDM {
 	return Sum(cs)
