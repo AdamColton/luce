@@ -30,3 +30,23 @@ func TestCallbackAfterCancel(t *testing.T) {
 	dt.callback(hard)
 	assert.False(t, called)
 }
+
+// Update and Pause can win the race with the timer: it expires, but before its
+// Go routine gets the lock the run has been stopped. That can't be timed
+// reliably from outside the package, so this calls expire with a stopped run.
+func TestExpireAfterStop(t *testing.T) {
+	mt := timeout.NewMockTime()
+	called := false
+	tmr := newTimerWithClock(mt.Now().Add(time.Second), func() {
+		called = true
+	}, mt.Now, func(d time.Duration) (<-chan time.Time, func() bool) {
+		mtmr := mt.NewTimer(d)
+		return mtmr.C, mtmr.Stop
+	})
+	stop := tmr.stop
+	tmr.Pause()
+
+	tmr.expire(stop)
+	assert.False(t, called)
+	assert.Equal(t, Paused, tmr.State())
+}

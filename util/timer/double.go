@@ -1,5 +1,3 @@
-// Package timer provides a timer that invokes a callback when it expires.
-// The timer can be extended, but never past a hard limit.
 package timer
 
 import (
