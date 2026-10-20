@@ -29,6 +29,12 @@ type container interface {
 	Contains(v uint16) bool
 	Insert(v uint16) bool
 	Delete(v uint16) bool
+	// nextFrom returns the position of the first value at or after position
+	// i, or false if there is none. at returns the value at a position.
+	nextFrom(i int) (pos int, ok bool)
+	at(pos int) uint16
+	// appendTo appends each value, with hi as its high 16 bits, in order.
+	appendTo(out []uint32, hi uint32) []uint32
 }
 
 // New creates a set containing the provided values. Repeated values are only
