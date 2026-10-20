@@ -59,3 +59,17 @@ func (a *Array) Delete(v uint16) bool {
 func (a *Array) Len() int {
 	return len(a.values)
 }
+
+// Bitmap returns the set as a Bitmap. If buf is not nil it is cleared and
+// used for the result.
+func (a *Array) Bitmap(buf *Bitmap) *Bitmap {
+	if buf == nil {
+		buf = &Bitmap{}
+	} else {
+		*buf = Bitmap{}
+	}
+	for _, v := range a.values {
+		buf.Insert(v)
+	}
+	return buf
+}

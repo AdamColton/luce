@@ -1,6 +1,10 @@
 package roaring
 
-import "math/bits"
+import (
+	"math/bits"
+
+	"github.com/adamcolton/luce/ds/slice"
+)
 
 const bitmapWords = 1 << 16 / 64
 
@@ -63,4 +67,17 @@ func (b *Bitmap) Len() int {
 		n += bits.OnesCount64(w)
 	}
 	return n
+}
+
+// Array returns the set as an Array, using buf's memory when it has the
+// capacity.
+func (b *Bitmap) Array(buf []uint16) Array {
+	values := slice.NewBuffer(buf).Empty(b.Len())
+	for i, w := range b.words {
+		// Each pass takes the lowest set bit and then clears it.
+		for ; w != 0; w &= w - 1 {
+			values = append(values, uint16(i<<6+bits.TrailingZeros64(w)))
+		}
+	}
+	return Array{values: values}
 }
