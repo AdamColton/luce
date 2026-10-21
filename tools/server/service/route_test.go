@@ -11,6 +11,7 @@ func TestRouteChainableHelpers(t *testing.T) {
 	r := service.NewRoute("foo").
 		Get().
 		WithQuery().
+		WithHeader().
 		WithUser().
 		WithBody().
 		WithPrefix().
@@ -18,6 +19,7 @@ func TestRouteChainableHelpers(t *testing.T) {
 
 	assert.Equal(t, "GET", r.Method)
 	assert.True(t, r.Query)
+	assert.True(t, r.Header)
 	assert.True(t, r.User)
 	assert.True(t, r.Body)
 	assert.True(t, r.PathPrefix)

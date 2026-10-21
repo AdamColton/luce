@@ -228,6 +228,10 @@ func (sc *serviceConn) routeToRequestConverter(cfg service.Route) func(r *http.R
 
 		}
 
+		if cfg.Header {
+			out.Header = r.Header
+		}
+
 		if cfg.WebSocket {
 			out.WebSocket = sc.s.WebSocket.counter.Add(1)
 			ws, err := sc.s.WebSocket.Upgrader.Upgrade(w, r, nil)

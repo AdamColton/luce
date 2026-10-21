@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -406,6 +407,76 @@ func TestServiceDisconnectClosesSockets(t *testing.T) {
 			}
 		}
 	}))
+}
+
+// TestServiceSocketHeader shows a route made WithHeader seeing the request's
+// headers: here a video player's Range request, answered with only the bytes
+// it asked for.
+func TestServiceSocketHeader(t *testing.T) {
+	sock := t.TempDir() + "/service.sock"
+	cfg := testConfig(":54439")
+	cfg.ServiceSocket = sock
+	srv, err := (&cfg).New()
+	assert.NoError(t, err)
+
+	closed := make(chan bool)
+	go func() {
+		srv.Run()
+		closed <- true
+	}()
+	defer func() {
+		assert.NoError(t, srv.Close())
+		timeout.After(300, closed)
+	}()
+
+	err = timeout.After(500, func() {
+		for {
+			conn, e := net.Dial("unix", sock)
+			if e == nil {
+				conn.Close()
+				return
+			}
+		}
+	})
+	assert.NoError(t, err)
+
+	client, err := servicepkg.NewService("videos", "", "/videos", sock)
+	assert.NoError(t, err)
+
+	const video = "0123456789"
+	route := servicepkg.NewRoute("clip").Get().WithHeader()
+	client.Add(func(r *servicepkg.Request) *servicepkg.Response {
+		var start, end int
+		if _, err := fmt.Sscanf(r.Header.Get("Range"), "bytes=%d-%d", &start, &end); err != nil {
+			return r.ResponseString(video)
+		}
+		return r.ResponseString(video[start:end+1]).
+			SetStatus(http.StatusPartialContent).
+			SetHeader("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, len(video)))
+	}, route)
+
+	go client.Run()
+
+	req, err := http.NewRequest("GET", "http://localhost:54439/videos/clip", nil)
+	assert.NoError(t, err)
+	req.Header.Set("Range", "bytes=2-5")
+
+	var resp *http.Response
+	err = timeout.After(1000, func() {
+		for {
+			resp, err = http.DefaultClient.Do(req)
+			// a 404 means the route isn't registered yet
+			if err == nil && resp.StatusCode != http.StatusNotFound {
+				return
+			}
+		}
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusPartialContent, resp.StatusCode)
+	assert.Equal(t, "bytes 2-5/10", resp.Header.Get("Content-Range"))
+	body, err := io.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	assert.Equal(t, "2345", string(body))
 }
 
 // TestCloseLetsServicesCleanUp shows a service removing its own socket file

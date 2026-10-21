@@ -29,7 +29,8 @@ var slash = lstr.Seperator("/")
 const ErrPathRequired = lerr.Str("RouteConfig: Path is required")
 
 // Route describes one service endpoint: its path, allowed methods, and
-// which parts of the request (body, form, query, user) it needs decoded.
+// which parts of the request (body, form, query, headers, user) it needs
+// decoded.
 type Route struct {
 	ID   string
 	Path string
@@ -41,6 +42,7 @@ type Route struct {
 	Body       bool
 	User       bool
 	Query      bool
+	Header     bool
 	WebSocket  bool
 	Require
 }
@@ -87,6 +89,12 @@ func (r *Route) WithQuery() *Route {
 // WithQuery is a chainable helper. It sets the Form field to true.
 func (r *Route) WithForm() *Route {
 	r.Form = true
+	return r
+}
+
+// WithHeader is a chainable helper. It sets the Header field to true.
+func (r *Route) WithHeader() *Route {
+	r.Header = true
 	return r
 }
 

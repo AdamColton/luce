@@ -22,8 +22,11 @@ type Request struct {
 	Query       map[string]string
 	Form        url.Values
 	Body        []byte
-	User        *lusers.User
-	WebSocket   uint32
+	// Header holds the request's HTTP headers when the Route was made with
+	// WithHeader.
+	Header    http.Header
+	User      *lusers.User
+	WebSocket uint32
 }
 
 // RequestTypeID32 is Request's type32 ID.
