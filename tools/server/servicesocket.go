@@ -19,7 +19,26 @@ import (
 // handle proxied requests.
 func (s *Server) RunServiceSocket() error {
 	sck := unixsocket.New(s.ServiceSocket, s.handleServiceSocket)
+	s.servicesMux.Lock()
+	s.serviceSck = sck
+	s.servicesMux.Unlock()
 	return sck.Run()
+}
+
+// closeServiceSocket stops the service socket, if it is running, which removes
+// its socket file, and closes every service's connection.
+func (s *Server) closeServiceSocket() {
+	s.servicesMux.Lock()
+	sck := s.serviceSck
+	s.servicesMux.Unlock()
+	if sck != nil {
+		sck.Close()
+	}
+	// Closing the listener leaves accepted connections open, so the services
+	// wouldn't see the server go until the process exits.
+	for _, c := range s.serviceConns.Slice(nil) {
+		c.Close()
+	}
 }
 
 type serviceConn struct {
@@ -36,6 +55,8 @@ type serviceConn struct {
 
 func (s *Server) handleServiceSocket(netConn net.Conn) {
 	defer netConn.Close()
+	s.serviceConns.Add(netConn)
+	defer s.serviceConns.Remove(netConn)
 	conn, err := service.NewConn(netConn)
 	if s.Handle(err) {
 		return

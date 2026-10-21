@@ -47,6 +47,9 @@ type Server struct {
 	Router *mux.Router
 	Config
 	CliHandler func(*cli.ExitClose) cli.Commander
+	// OnShutdown is called by Shutdown, after the admin socket is closed and
+	// before the HTTP server is.
+	OnShutdown func()
 
 	httpserver    *http.Server
 	socket        *unixsocket.Socket
@@ -67,6 +70,19 @@ func (s *Server) ListenAndServe() error {
 // Close stops the HTTP server.
 func (s *Server) Close() error {
 	return s.httpserver.Close()
+}
+
+// Shutdown is a graceful Close: it stops the admin socket, which removes its
+// socket file, calls OnShutdown if it is set, and then stops the HTTP server.
+// Close alone leaves the socket file behind.
+func (s *Server) Shutdown() error {
+	if s.socket != nil {
+		s.socket.Close()
+	}
+	if s.OnShutdown != nil {
+		s.OnShutdown()
+	}
+	return s.Close()
 }
 
 // Run starts the admin socket, if configured, then blocks running the HTTP

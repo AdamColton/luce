@@ -3,11 +3,13 @@ package server
 import (
 	"fmt"
 	"html/template"
+	"net"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/adamcolton/luce/ds/lmap"
+	"github.com/adamcolton/luce/ds/lset"
 	"github.com/adamcolton/luce/ds/slice"
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/lhttp"
@@ -16,6 +18,7 @@ import (
 	"github.com/adamcolton/luce/util/lexec"
 	"github.com/adamcolton/luce/util/lusers"
 	"github.com/adamcolton/luce/util/lusers/lusess"
+	"github.com/adamcolton/luce/util/unixsocket"
 	"github.com/gorilla/schema"
 	"github.com/gorilla/sessions"
 	"github.com/gorilla/websocket"
@@ -33,6 +36,9 @@ type Config struct {
 	core.Config
 	BashCommands []BashCmd
 	Commander    lexec.Commander
+	// ExitDelay is how long Run waits, after the server is shut down, before
+	// it returns. Zero uses DefaultExitDelay.
+	ExitDelay time.Duration
 }
 
 // WebSocket upgrades HTTP connections for routes registered with
@@ -55,6 +61,10 @@ type Server struct {
 	serviceRoutes lmap.Wrapper[string, *serviceRoute]
 	services      lmap.Wrapper[string, *serviceConn]
 	servicesMux   sync.Mutex
+	serviceSck    *unixsocket.Socket
+	serviceConns  *lset.Set[net.Conn]
+	shutdown      atomic.Bool
+	exitDelay     time.Duration
 	lerr.ErrHandler
 	BashCommands slice.Slice[BashCmd]
 	Commander    lexec.Commander
@@ -65,6 +75,11 @@ type Server struct {
 // service to respond to a proxied request before replying 408 Request
 // Timeout.
 var TimeoutDuration = time.Second * 5
+
+// DefaultExitDelay is the ExitDelay used when Config leaves it zero. It gives
+// the services started by BashCommands time to clean up, removing their socket
+// files, after their connections close and before the server exits.
+var DefaultExitDelay = 500 * time.Millisecond
 
 // New Server using the values from the Config.
 func (c *Config) New() (*Server, error) {
@@ -86,6 +101,8 @@ func (c *Config) New() (*Server, error) {
 		TemplateNames: c.TemplateNames,
 		serviceRoutes: lmap.NewSafe[string, *serviceRoute](nil),
 		services:      lmap.NewSafe[string, *serviceConn](nil),
+		serviceConns:  lset.Safe[net.Conn](),
+		exitDelay:     c.ExitDelay,
 		ErrHandler: func(err error) {
 			fmt.Println(err)
 		},
@@ -100,6 +117,13 @@ func (c *Config) New() (*Server, error) {
 		},
 	}
 	srv.coreserver.CliHandler = srv.coreCommander
+	if srv.exitDelay == 0 {
+		srv.exitDelay = DefaultExitDelay
+	}
+	srv.coreserver.OnShutdown = func() {
+		srv.shutdown.Store(true)
+		srv.closeServiceSocket()
+	}
 
 	srv.setRoutes(c.Host)
 	return srv, nil
@@ -111,7 +135,8 @@ func (s *Server) Close() error {
 }
 
 // Run the server. If Socket or ServiceSocket is defined, they will be run as
-// well.
+// well. It blocks until the server stops. When it was stopped by a shutdown,
+// such as the CLI's close command, it waits ExitDelay before it returns.
 func (s *Server) Run() {
 	if s.ServiceSocket != "" {
 		go func() {
@@ -131,4 +156,7 @@ func (s *Server) Run() {
 	}()
 
 	s.coreserver.Run()
+	if s.shutdown.Load() {
+		time.Sleep(s.exitDelay)
+	}
 }

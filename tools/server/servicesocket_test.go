@@ -4,10 +4,15 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
+	"strings"
 	"testing"
+	"time"
 
 	servicepkg "github.com/adamcolton/luce/tools/server/service"
+	"github.com/adamcolton/luce/util/cli"
 	"github.com/adamcolton/luce/util/timeout"
+	"github.com/adamcolton/luce/util/unixsocket"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 )
@@ -401,4 +406,68 @@ func TestServiceDisconnectClosesSockets(t *testing.T) {
 			}
 		}
 	}))
+}
+
+// TestCloseLetsServicesCleanUp shows a service removing its own socket file
+// when the server is closed from the CLI: the server closes the service's
+// connection right away, then waits ExitDelay before Run returns, so the
+// service is done cleaning up before the server's process would exit.
+func TestCloseLetsServicesCleanUp(t *testing.T) {
+	dir := t.TempDir()
+	sock := dir + "/service.sock"
+	cfg := testConfig(":54431")
+	cfg.ServiceSocket = sock
+	cfg.ExitDelay = 200 * time.Millisecond
+	srv, err := (&cfg).New()
+	assert.NoError(t, err)
+
+	stopped := make(chan time.Time, 1)
+	go func() {
+		srv.Run()
+		stopped <- time.Now()
+	}()
+
+	var client *servicepkg.Client
+	timeout.Must(1000, func() {
+		for client == nil {
+			client, _ = servicepkg.NewService("widget", "", "/widget", sock)
+		}
+	})
+
+	// The service's own CLI socket, which it closes once the server is gone.
+	cliSock := dir + "/widget.sock"
+	widgetCLI := unixsocket.New(cliSock, func(conn net.Conn) { conn.Close() })
+	go widgetCLI.Run()
+	assert.NoError(t, widgetCLI.AwaitRunning())
+
+	serviceDone := make(chan time.Time, 1)
+	go func() {
+		client.Run()
+		widgetCLI.Close()
+		serviceDone <- time.Now()
+	}()
+	oldIn, oldOut := cli.StdIn, cli.StdOut
+	defer func() { cli.StdIn, cli.StdOut = oldIn, oldOut }()
+	in, pw := io.Pipe()
+	out := &syncBuffer{}
+	cli.StdIn, cli.StdOut = in, out
+	go srv.RunStdIO()
+	timeout.Must(1000, func() {
+		for !strings.Contains(out.String(), "widget") {
+			pw.Write([]byte("ls\n"))
+			time.Sleep(10 * time.Millisecond)
+		}
+	})
+
+	pw.Write([]byte("cls\n"))
+
+	var serviceAt, serverAt time.Time
+	timeout.Must(1000, func() {
+		serviceAt = <-serviceDone
+		serverAt = <-stopped
+	})
+	_, err = os.Stat(cliSock)
+	assert.True(t, os.IsNotExist(err), "the service removed its socket file")
+	assert.True(t, serverAt.Sub(serviceAt) > 100*time.Millisecond,
+		"the server waited for the service")
 }

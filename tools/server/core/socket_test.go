@@ -183,3 +183,32 @@ func TestServerSocket(t *testing.T) {
 	err := timeout.After(100, closed)
 	assert.NoError(t, err)
 }
+
+func TestServerShutdown(t *testing.T) {
+	dir := t.TempDir()
+	sock := dir + "/admin.sock"
+	cfg := core.Config{
+		Addr:   ":53460",
+		Socket: sock,
+	}
+	srv := cfg.NewServer()
+	srv.CliHandler = cmdrFactory(srv)
+	onShutdown := false
+	srv.OnShutdown = func() { onShutdown = true }
+
+	closed := make(chan bool)
+	go func() {
+		srv.Run()
+		closed <- true
+	}()
+
+	assert.True(t, srv.AwaitSocket())
+	_, err := os.Stat(sock)
+	assert.NoError(t, err)
+
+	assert.NoError(t, srv.Shutdown())
+	assert.NoError(t, timeout.After(100, closed))
+	assert.True(t, onShutdown)
+	_, err = os.Stat(sock)
+	assert.True(t, os.IsNotExist(err))
+}

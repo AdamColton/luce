@@ -33,10 +33,11 @@ func (s *Server) RunStdIO() {
 
 // Cli builds the CliHandler's command tree for one connection and runs it
 // against ctx, wiring onExit and the HTTP server's Close as the
-// connection's exit and close actions.
+// connection's exit and close actions. Close is a Shutdown, so the socket
+// files are removed.
 func (s *Server) Cli(ctx cli.Context, onExit func()) {
 	onClose := func() {
-		s.Close()
+		s.Shutdown()
 	}
 	ec := cli.NewExitClose(onExit, onClose)
 	c := s.CliHandler(ec)

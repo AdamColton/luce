@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"runtime"
+	"time"
 
 	"github.com/adamcolton/luce/lerr"
 	"github.com/adamcolton/luce/store/bstore"
@@ -40,6 +41,10 @@ type Config struct {
 	SSL           core.SSL
 	Cli           bool
 	BashCommands  []server.BashCmd
+	// ExitDelay is how long the server waits to exit after it is closed, as a
+	// time.ParseDuration string such as "500ms". Empty uses
+	// server.DefaultExitDelay.
+	ExitDelay string
 }
 
 // SessionBytes converts Session into a format that memstore.NewMemStore can
@@ -78,6 +83,12 @@ func main() {
 	ss := sessions.NewFilesystemStore(conf.SessionsPath, conf.SessionBytes()...)
 	ss.Options.Domain = conf.Host
 
+	var exitDelay time.Duration
+	if conf.ExitDelay != "" {
+		exitDelay, err = time.ParseDuration(conf.ExitDelay)
+		lerr.Panic(err)
+	}
+
 	srvConf := &server.Config{
 		Config: core.Config{
 			Addr:   conf.Addr,
@@ -91,6 +102,7 @@ func main() {
 		SessionStore:  ss,
 		BashCommands:  conf.BashCommands,
 		Commander:     lexec.New(),
+		ExitDelay:     exitDelay,
 	}
 
 	m := lerr.Must(lfile.RegexMatch(conf.Templates.Re, "", "")).
